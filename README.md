@@ -201,7 +201,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </nav>
       <div class="status-links">
         <span class="brand-badge"><span class="live-dot"></span>Live</span>
-        <span class="brand-badge">v4.6 Test</span>
+        <span class="brand-badge">v4.5 Test</span>
       </div>
     </div>
   </div>
@@ -1330,10 +1330,9 @@ function showTMScript(){
   const script = `// ==UserScript==
 // @name         TritoX AgencyZoom Auto-Fill
 // @namespace    http://tampermonkey.net/
-// @version      4.4-test
+// @version      4.3-test
 // @description  One-click AgencyZoom field fill and quote PDF attachment from TritoX QC
 // @match        https://app.agencyzoom.com/*
-// @match        https://tritoxtech.github.io/*
 // @match        https://saravanatritox-cloud.github.io/aaron/*
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -1346,10 +1345,7 @@ function showTMScript(){
   'use strict';
 
   console.log('[TritoX TM] hostname:', window.location.hostname);
-  const isAaronQc = window.location.hostname === 'tritoxtech.github.io'
-    || (window.location.hostname === 'saravanatritox-cloud.github.io'
-      && /^\/aaron(?:\/|$)/i.test(window.location.pathname));
-  if(isAaronQc){
+  if(window.location.hostname === 'saravanatritox-cloud.github.io'){
     console.log('[TritoX TM] Running on TritoX page');
 
     function pdfStorageKey(name){
