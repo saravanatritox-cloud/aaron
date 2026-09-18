@@ -201,7 +201,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </nav>
       <div class="status-links">
         <span class="brand-badge"><span class="live-dot"></span>Live</span>
-        <span class="brand-badge">v4.4 Test</span>
+        <span class="brand-badge">v4.6 Test</span>
       </div>
     </div>
   </div>
@@ -1330,9 +1330,10 @@ function showTMScript(){
   const script = `// ==UserScript==
 // @name         TritoX AgencyZoom Auto-Fill
 // @namespace    http://tampermonkey.net/
-// @version      4.2-test
+// @version      4.4-test
 // @description  One-click AgencyZoom field fill and quote PDF attachment from TritoX QC
 // @match        https://app.agencyzoom.com/*
+// @match        https://tritoxtech.github.io/*
 // @match        https://saravanatritox-cloud.github.io/aaron/*
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -1345,7 +1346,10 @@ function showTMScript(){
   'use strict';
 
   console.log('[TritoX TM] hostname:', window.location.hostname);
-  if(window.location.hostname === 'saravanatritox-cloud.github.io'){
+  const isAaronQc = window.location.hostname === 'tritoxtech.github.io'
+    || (window.location.hostname === 'saravanatritox-cloud.github.io'
+      && /^\/aaron(?:\/|$)/i.test(window.location.pathname));
+  if(isAaronQc){
     console.log('[TritoX TM] Running on TritoX page');
 
     function pdfStorageKey(name){
@@ -1621,7 +1625,7 @@ function showTMScript(){
     // AgencyZoom can expose its uploader from the Main section. Use any uploader
     // already present before navigating away from the fields being reviewed.
     let input=await waitFor(function(){
-      return document.querySelector('.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
+      return document.querySelector('input.agencydocupload_doc,.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
     },1500);
 
     // If the input is created only after pressing the Main-page attachment icon,
@@ -1637,7 +1641,7 @@ function showTMScript(){
       if(trigger){
         (trigger.closest('button,a,[onclick],[role="button"]')||trigger).click();
         input=await waitFor(function(){
-          return document.querySelector('.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
+          return document.querySelector('input.agencydocupload_doc,.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
         },3500);
       }
     }
@@ -1646,7 +1650,7 @@ function showTMScript(){
     if(!input){
       await openLeadTab('Files');
       input=await waitFor(function(){
-        return document.querySelector('.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
+        return document.querySelector('input.agencydocupload_doc,.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
       },5000);
     }
 
