@@ -201,7 +201,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </nav>
       <div class="status-links">
         <span class="brand-badge"><span class="live-dot"></span>Live</span>
-        <span class="brand-badge">v4.2 Test</span>
+        <span class="brand-badge">v4.3 Test</span>
       </div>
     </div>
   </div>
@@ -1330,10 +1330,10 @@ function showTMScript(){
   const script = `// ==UserScript==
 // @name         TritoX AgencyZoom Auto-Fill
 // @namespace    http://tampermonkey.net/
-// @version      4.0-test
+// @version      4.1-test
 // @description  One-click AgencyZoom field fill and quote PDF attachment from TritoX QC
 // @match        https://app.agencyzoom.com/*
-// @match        https://saravanatritox-cloud.github.io/aaron/*
+// @match        https://tritoxtech.github.io/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_deleteValue
@@ -1344,7 +1344,7 @@ function showTMScript(){
   'use strict';
 
   console.log('[TritoX TM] hostname:', window.location.hostname);
-  if(window.location.hostname === 'saravanatritox-cloud.github.io'){
+  if(window.location.hostname === 'tritoxtech.github.io'){
     console.log('[TritoX TM] Running on TritoX page');
 
     function pdfStorageKey(name){
@@ -1579,8 +1579,9 @@ function showTMScript(){
 
   function findLeadTab(label){
     const wanted=String(label).toLowerCase();
-    return Array.from(document.querySelectorAll('#referral-container a,#referral-container button,#referral-container [role="tab"]'))
+    const match=Array.from(document.querySelectorAll('#referral-container a,#referral-container button,#referral-container [role="tab"],#referral-container li,#referral-container span,#referral-container div'))
       .find(function(el){return (el.textContent||'').trim().toLowerCase()===wanted;})||null;
+    return match ? (match.closest('a,button,li,[role="tab"]')||match) : null;
   }
 
   async function openLeadTab(label){
@@ -1612,15 +1613,39 @@ function showTMScript(){
     try{payload=JSON.parse(stored);}catch(e){return {ok:false,message:'Stored PDF could not be read'};}
     if(payload.name!==data._filename) return {ok:false,message:'PDF filename mismatch — attachment stopped'};
 
-    const opened=await openLeadTab('Files');
-    if(!opened) return {ok:false,message:'AgencyZoom Files tab was not found'};
-
     const file=payloadToFile(payload);
     const transfer=new DataTransfer();
     transfer.items.add(file);
-    const input=await waitFor(function(){
+
+    // AgencyZoom can expose its uploader from the Main section. Use any uploader
+    // already present before navigating away from the fields being reviewed.
+    let input=await waitFor(function(){
       return document.querySelector('.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
-    },5000);
+    },1500);
+
+    // If the input is created only after pressing the Main-page attachment icon,
+    // activate that control and check again.
+    if(!input){
+      const trigger=document.querySelector(
+        '#referral-container [aria-label*="upload" i],#referral-container [title*="upload" i],'+
+        '#referral-container [aria-label*="attach" i],#referral-container [title*="attach" i],'+
+        '#referral-container .fa-paperclip,#referral-container [class*="paperclip"]'
+      );
+      if(trigger){
+        (trigger.closest('button,a')||trigger).click();
+        input=await waitFor(function(){
+          return document.querySelector('.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
+        },3500);
+      }
+    }
+
+    // Older AgencyZoom layouts create the uploader only inside the Files tab.
+    if(!input){
+      await openLeadTab('Files');
+      input=await waitFor(function(){
+        return document.querySelector('.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
+      },5000);
+    }
 
     try{
       if(input){
