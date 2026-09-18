@@ -1333,7 +1333,7 @@ function showTMScript(){
 // @version      4.1-test
 // @description  One-click AgencyZoom field fill and quote PDF attachment from TritoX QC
 // @match        https://app.agencyzoom.com/*
-// @match        https://tritoxtech.github.io/*
+// @match        https://saravanatritox-cloud.github.io/aaron/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_deleteValue
@@ -1344,7 +1344,7 @@ function showTMScript(){
   'use strict';
 
   console.log('[TritoX TM] hostname:', window.location.hostname);
-  if(window.location.hostname === 'tritoxtech.github.io'){
+  if(window.location.hostname === 'saravanatritox-cloud.github.io'){
     console.log('[TritoX TM] Running on TritoX page');
 
     function pdfStorageKey(name){
