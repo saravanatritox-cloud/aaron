@@ -201,7 +201,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </nav>
       <div class="status-links">
         <span class="brand-badge"><span class="live-dot"></span>Live</span>
-        <span class="brand-badge">v4.3 Test</span>
+        <span class="brand-badge">v4.4 Test</span>
       </div>
     </div>
   </div>
@@ -1330,21 +1330,22 @@ function showTMScript(){
   const script = `// ==UserScript==
 // @name         TritoX AgencyZoom Auto-Fill
 // @namespace    http://tampermonkey.net/
-// @version      4.1-test
+// @version      4.2-test
 // @description  One-click AgencyZoom field fill and quote PDF attachment from TritoX QC
 // @match        https://app.agencyzoom.com/*
-// @match        https://saravanatritox-cloud.github.io/aaron/*
+// @match        https://tritoxtech.github.io/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_deleteValue
 // @grant        GM_addStyle
+// @grant        unsafeWindow
 // ==/UserScript==
 
 (function(){
   'use strict';
 
   console.log('[TritoX TM] hostname:', window.location.hostname);
-  if(window.location.hostname === 'saravanatritox-cloud.github.io'){
+  if(window.location.hostname === 'tritoxtech.github.io'){
     console.log('[TritoX TM] Running on TritoX page');
 
     function pdfStorageKey(name){
@@ -1626,13 +1627,15 @@ function showTMScript(){
     // If the input is created only after pressing the Main-page attachment icon,
     // activate that control and check again.
     if(!input){
+      // The blue sidebar paperclip is outside #referral-container in the current
+      // AgencyZoom layout, so search the complete document.
       const trigger=document.querySelector(
-        '#referral-container [aria-label*="upload" i],#referral-container [title*="upload" i],'+
-        '#referral-container [aria-label*="attach" i],#referral-container [title*="attach" i],'+
-        '#referral-container .fa-paperclip,#referral-container [class*="paperclip"]'
+        '[aria-label*="upload" i],[title*="upload" i],'+
+        '[aria-label*="attach" i],[title*="attach" i],'+
+        '.fa-paperclip,[class*="paperclip"],[data-icon="paperclip"]'
       );
       if(trigger){
-        (trigger.closest('button,a')||trigger).click();
+        (trigger.closest('button,a,[onclick],[role="button"]')||trigger).click();
         input=await waitFor(function(){
           return document.querySelector('.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
         },3500);
@@ -1651,7 +1654,13 @@ function showTMScript(){
       if(input){
         input.files=transfer.files;
         input.dispatchEvent(new Event('input',{bubbles:true}));
-        input.dispatchEvent(new Event('change',{bubbles:true}));
+        // AgencyZoom's FileUploader is jQuery-based on some layouts.
+        const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;
+        if(pageWindow.jQuery){
+          pageWindow.jQuery(input).trigger('change');
+        }else{
+          input.dispatchEvent(new Event('change',{bubbles:true}));
+        }
       }else{
         const dropZone=document.getElementById('referral-container');
         if(!dropZone) return {ok:false,message:'AgencyZoom upload area was not found'};
@@ -1661,15 +1670,16 @@ function showTMScript(){
       return {ok:false,message:'AgencyZoom rejected the automatic attachment'};
     }
 
-    // Wait for AgencyZoom to start/render the uploaded file. Final verification
-    // remains manual during this test version.
-    await wait(3000);
+    // Never report success from the Main page alone. Open Files and require the
+    // actual PDF filename to appear before showing "PDF Attached".
+    await wait(5000);
+    await openLeadTab('Files');
+    await wait(1500);
     const pageText=(document.getElementById('referral-container')?.innerText||'').toLowerCase();
     const visibleName=pageText.includes(String(file.name).toLowerCase());
-    const emptyMessage=pageText.includes('there are no files uploaded into agencyzoom');
-    return visibleName||!emptyMessage
-      ? {ok:true,message:'PDF sent to AgencyZoom — review before saving'}
-      : {ok:false,message:'Upload not confirmed — attach PDF manually'};
+    return visibleName
+      ? {ok:true,message:'PDF verified in AgencyZoom Files — review before saving'}
+      : {ok:false,message:'PDF was not attached — please use the paperclip manually'};
   }
 
   function fillText(id, val){
