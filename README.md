@@ -1652,13 +1652,16 @@ function showTMScript(){
 
     try{
       if(input){
-        input.files=transfer.files;
-        input.dispatchEvent(new Event('input',{bubbles:true}));
-        // AgencyZoom's FileUploader is jQuery-based on some layouts.
         const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;
-        if(pageWindow.jQuery){
-          pageWindow.jQuery(input).trigger('change');
+        const jq=pageWindow.jQuery;
+        // AgencyZoom initializes this input with the jQuery File Upload plugin.
+        // Calling its add method submits the reconstructed PDF through the
+        // existing AgencyZoom uploader, including the lead ID/form data.
+        if(jq && typeof jq(input).fileupload==='function'){
+          jq(input).fileupload('add',{files:[file]});
         }else{
+          input.files=transfer.files;
+          input.dispatchEvent(new Event('input',{bubbles:true}));
           input.dispatchEvent(new Event('change',{bubbles:true}));
         }
       }else{
