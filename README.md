@@ -201,7 +201,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </nav>
       <div class="status-links">
         <span class="brand-badge"><span class="live-dot"></span>Live</span>
-        <span class="brand-badge">v4.5 Test</span>
+        <span class="brand-badge">v4.0</span>
       </div>
     </div>
   </div>
@@ -250,21 +250,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   </div>
 
   <div id="bmSection" class="bm-section" style="display:none;">
-  <h3>📋 AgencyZoom Auto-Fill — <span id="bmName">Processing...</span></h3>
+  <h3>📋 AgencyZoom Fill + Attach PDF — <span id="bmName">Processing...</span></h3>
   <div id="bmReady" class="bm-status ready" style="display:none;"></div>
   <div class="bm-steps" style="margin-top:12px;">
     <div class="bm-step"><strong>Step 1</strong>Process PDF in TritoX ✅</div>
     <div class="bm-step"><strong>Step 2</strong>Open correct lead in AgencyZoom</div>
     <div class="bm-step"><strong>Step 3</strong>Click "🚀 Fill + Attach PDF" in AgencyZoom</div>
-    <div class="bm-step"><strong>Step 4</strong>PDF attaches and fields fill — review before saving</div>
+    <div class="bm-step"><strong>Step 4</strong>Check the filled fields and attached PDF before saving.</div>
   </div>
   <div style="margin-top:14px;padding:12px 16px;background:rgba(0,232,135,0.05);border:1px solid rgba(0,232,135,0.2);border-radius:10px;">
     <div style="color:var(--pass);font-size:12px;font-weight:700;margin-bottom:6px;">📦 Tampermonkey Setup (One Time Only)</div>
     <div style="color:var(--text2);font-size:12px;line-height:1.8;">
       1. Install <strong style="color:var(--text)">Tampermonkey</strong> from Chrome Web Store (free)<br>
       2. Click <strong style="color:var(--text)">"Get Tampermonkey Script"</strong> button below<br>
-      3. Copy the script → paste into Tampermonkey → Save<br>
-      4. Done forever! 🎉
+      3. Copy the script → replace your existing TritoX AgencyZoom script in Tampermonkey → Save<br>
+      4. Refresh Aaron QC and AgencyZoom, then select your PDF again.
     </div>
     <button onclick="showTMScript()" style="margin-top:10px;background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;">📜 Get Tampermonkey Script</button>
   </div>
@@ -380,7 +380,7 @@ function analyzeQuote(text,filename){
   // 1) Read only from the Auto quote details section.
   // 2) Stop before any Home quote summary/details section so Home EFT can never bleed into Auto.
   // 3) If Auto explicitly uses Monthly EFT, capture the installment amount.
-  // 4) If Auto is Paid in full / 1 Pay only, keep monthlyEFT=null and flag an error to use BW.
+  // 4) If Auto is Paid in full / 1 Pay only, keep monthlyEFT=null and show the BW warning.
   const autoSectionIdxEarly=t.search(/Auto\s+quote\s+details/i);
 
   // Find the FIRST Home section that occurs after Auto details (summary OR details).
@@ -803,10 +803,10 @@ function checkPureBristol(t,errors,warnings,vehicles){
   const discText=discMatch?discMatch[1]:'';
   // Paperless must be present
   if(!/Go\s+Paperless|Paperless/i.test(discText)) errors.push('Bristol West: Paperless discount is MISSING');
-  // Only flag manually added discounts (not defaults: EFT, Safe Driver,
-  // Preferred Driver, or Homeowner).
+  // Only flag manually added discounts (not defaults: EFT, Safe Driver, Preferred Driver)
   const forbidden=[
     {name:'Signal by Farmers',rx:/Signal\s+by\s+Farmers/i},
+    {name:'Homeowner',rx:/\bHomeowner\b/i},
     {name:'Auto\/Farmers Home',rx:/Auto\/Farmers\s+Home/i},
     {name:'Auto\/Home or Condo',rx:/Auto\/Home\s+or\s+Condo/i},
   ];
@@ -1021,7 +1021,7 @@ function buildDetails(r){
       premRow=ck(true,`Monthly EFT — No limit for ${r.vehicleCount} vehicles`,`$${r.monthlyEFT.toFixed(2)}/mo`);
     }
   } else {
-    premRow=`<div class="check-item"><span class="ci-icon ci-fail">✕</span><span class="ci-label">Monthly EFT not available — use BW</span></div>`;
+    premRow=`<div class="check-item"><span class="ci-icon ci-fail">✗</span><span class="ci-label">Monthly EFT auto not available — use BW</span></div>`;
   }
 
   return `<div class="row-details-grid">
@@ -1091,7 +1091,7 @@ function buildAZPanel(r){
   let html="<div class='az-panel'>"
     +"<h4>📋 AgencyZoom Main Page</h4>"
     +(az.vehicles?azRow("Vehicles on Policy",az.vehicles,"veh"):"<div class='az-row'><span class='az-label'>Vehicles on Policy</span><span class='az-manual'>Not detected</span></div>")
-    +(az.monthly?azRow("Monthly Auto","$"+az.monthly,"meft"):"<div class='az-row'><span class='az-label'>Monthly Auto</span><span class='az-manual'>✕ Monthly EFT auto not available — use BW</span></div>")
+    +(az.monthly?azRow("Monthly Auto","$"+az.monthly,"meft"):"<div class='az-row'><span class='az-label'>Monthly Auto</span><span class='ci-fail'>✗ Monthly EFT auto not available — use BW</span></div>")
     +(az.sixMonths?azRow("6 Months Auto","$"+az.sixMonths,"6mo"):"");
   if(r.homeData&&r.homeData.isBundle){
     html+=(az.homeAnnual?azRow("Home Annual Price","$"+az.homeAnnual,"hann"):"")
@@ -1141,6 +1141,7 @@ function buildAZData(r){
     auto5_ded:autoFields.auto5_ded||'',
     _name:r.name,
     _filename:r.filename,
+    _isBundle:!!(r.homeData && r.homeData.isBundle),
     _ts:Date.now()
   };
 }
@@ -1170,7 +1171,7 @@ function saveToLocalStorage(r){
     const bmReady=document.getElementById('bmReady');
     if(bmReady){
       bmReady.style.display='block';
-      bmReady.textContent='✅ '+r.name+' — data and PDF prepared. Open the correct AgencyZoom lead → click 🚀 Fill + Attach PDF.';
+      bmReady.textContent='✅ '+r.name+' — data saved! Tampermonkey will pick it up. Open the correct AgencyZoom lead → click 🚀 Fill + Attach PDF.';
     }
     const bmSec=document.getElementById('bmSection');
     if(bmSec) bmSec.style.display='block';
@@ -1327,469 +1328,7 @@ function initBookmarklet(){
 
 
 function showTMScript(){
-  const script = `// ==UserScript==
-// @name         TritoX AgencyZoom Auto-Fill
-// @namespace    http://tampermonkey.net/
-// @version      4.3-test
-// @description  One-click AgencyZoom field fill and quote PDF attachment from TritoX QC
-// @match        https://app.agencyzoom.com/*
-// @match        https://saravanatritox-cloud.github.io/aaron/*
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_deleteValue
-// @grant        GM_addStyle
-// @grant        unsafeWindow
-// ==/UserScript==
-
-(function(){
-  'use strict';
-
-  console.log('[TritoX TM] hostname:', window.location.hostname);
-  if(window.location.hostname === 'saravanatritox-cloud.github.io'){
-    console.log('[TritoX TM] Running on TritoX page');
-
-    function pdfStorageKey(name){
-      let h=2166136261;
-      const s=String(name||'quote.pdf').toLowerCase();
-      for(let i=0;i<s.length;i++){
-        h^=s.charCodeAt(i);
-        h=Math.imul(h,16777619);
-      }
-      return 'tritox_pdf_'+(h>>>0).toString(16);
-    }
-
-    function cachePdf(file){
-      if(!file || !/\.pdf$/i.test(file.name)) return;
-      if(file.size>20*1024*1024){
-        console.warn('[TritoX TM] PDF is larger than 20 MB and was not cached:',file.name);
-        return;
-      }
-      const reader=new FileReader();
-      reader.onload=function(){
-        try{
-          GM_setValue(pdfStorageKey(file.name),JSON.stringify({
-            name:file.name,
-            type:file.type||'application/pdf',
-            size:file.size,
-            lastModified:file.lastModified||Date.now(),
-            dataUrl:String(reader.result),
-            savedAt:Date.now()
-          }));
-          console.log('[TritoX TM] PDF cached for AgencyZoom:',file.name);
-        }catch(err){
-          console.error('[TritoX TM] Could not cache PDF:',err);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // Capture PDFs selected or dropped into Aaron QC. Each file is stored under
-    // its filename so bulk processing can still match the correct customer PDF.
-    document.addEventListener('change',function(e){
-      if(e.target && e.target.id==='fileInput' && e.target.files){
-        Array.from(e.target.files).forEach(cachePdf);
-      }
-    },true);
-    document.addEventListener('drop',function(e){
-      if(e.dataTransfer && e.dataTransfer.files && e.target.closest && e.target.closest('#uploadZone')){
-        Array.from(e.dataTransfer.files).forEach(cachePdf);
-      }
-    },true);
-
-    function checkTritoXData(){
-      try{
-        const raw = localStorage.getItem('tritox_az_data');
-        if(!raw) return;
-        const data = JSON.parse(raw);
-        if(!data || !data._name || !data._ts) return;
-        const gmRaw = GM_getValue('tritox_az_data','');
-        let gmTs = 0;
-        try{ gmTs = JSON.parse(gmRaw)._ts || 0; }catch(e){}
-        if(data._ts > gmTs){
-          GM_setValue('tritox_az_data', JSON.stringify(data));
-          console.log('[TritoX TM] Saved to GM for:', data._name);
-        }
-      }catch(e){ console.log('[TritoX TM] Error:', e); }
-    }
-    setInterval(checkTritoXData, 1000);
-    return;
-  }
-
-  console.log('[TritoX TM] Running on AgencyZoom page');
-  function addFillButton(){
-    const vehicleField = document.getElementById('customfields-cf30203');
-    const leadPanel = document.getElementById('referral-container');
-    if(!vehicleField && !leadPanel) return;
-    if(document.getElementById('tritox-fill-btn')) return;
-    const raw = GM_getValue('tritox_az_data','');
-    if(!raw) return;
-    let data;
-    try{ data = JSON.parse(raw); }catch(e){ return; }
-    if(!data || !data._name) return;
-    const buttonDataTs = data._ts || 0;
-
-    // Do not recreate a button that was already filled or expired.
-    if(buttonDataTs <= filledTs || buttonDataTs <= expiredTs) return;
-
-    const age = Date.now() - buttonDataTs;
-    if(age > 7200000) return;
-
-    const btn = document.createElement('div');
-    btn.id = 'tritox-fill-btn';
-    btn.style.cssText = 'position:fixed;top:80px;right:20px;z-index:99999;background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(0,212,255,0.4);font-family:sans-serif;text-align:center;min-width:160px;';
-    btn.innerHTML = '🚀 Fill + Attach PDF<br><span style="font-size:11px;font-weight:400;opacity:0.9;">' + data._name + '</span>';
-
-    // Initial Fill button is visible for a maximum of 7 seconds if untouched.
-    let autoHideTimer = null;
-
-    btn.addEventListener('click', function(){
-      // User interacted in time, so stop the idle 7-second timer.
-      if(autoHideTimer){
-        clearTimeout(autoHideTimer);
-        autoHideTimer = null;
-      }
-
-      // Show confirmation popup
-      const overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;';
-      const box = document.createElement('div');
-      box.style.cssText = 'background:#fff;border-radius:16px;padding:28px 32px;max-width:380px;width:90%;text-align:center;font-family:sans-serif;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
-      box.innerHTML = '<div style="font-size:32px;margin-bottom:12px;">⚠️</div>'
-        +'<div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:8px;">Confirm Fill + PDF Attachment</div>'
-        +'<div style="font-size:13px;color:#666;margin-bottom:6px;">You are about to fill and attach the quote PDF for:</div>'
-        +'<div style="font-size:15px;font-weight:700;color:#7b2fff;margin-bottom:20px;padding:10px;background:#f0e8ff;border-radius:8px;">'+data._name+'</div>'
-        +'<div style="font-size:12px;color:#999;margin-bottom:20px;">Make sure you are on the correct lead in AgencyZoom before confirming.</div>'
-        +'<div style="display:flex;gap:10px;justify-content:center;">'
-        +'<button id="tritox-cancel" style="flex:1;padding:10px;border:2px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#666;">❌ Cancel</button>'
-        +'<button id="tritox-confirm" style="flex:1;padding:10px;border:none;background:linear-gradient(135deg,#00d4ff,#7b2fff);border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;">✅ Fill + Attach</button>'
-        +'</div>';
-      overlay.appendChild(box);
-      document.body.appendChild(overlay);
-
-      // Cancel
-      document.getElementById('tritox-cancel').addEventListener('click', function(){
-        overlay.remove();
-        expiredTs = Math.max(expiredTs, buttonDataTs);
-        GM_setValue('tritox_expired_ts', expiredTs);
-        if(btn.isConnected) btn.remove();
-      });
-
-      // Confirm
-      document.getElementById('tritox-confirm').addEventListener('click', async function(){
-        overlay.remove();
-        btn.style.background='linear-gradient(135deg,#0085ff,#7b2fff)';
-        btn.innerHTML='⏳ Attaching PDF…<br><span style="font-size:11px;font-weight:400;opacity:0.9;">'+data._name+'</span>';
-
-        const attachResult=await attachPdfToLead(data);
-        await openLeadTab('Main');
-        await waitFor(function(){return document.getElementById('customfields-cf30203');},12000);
-        fillFields(data);
-        // Store timestamp of this fill to prevent reappearing
-        try{
-          const d = JSON.parse(GM_getValue('tritox_az_data','{}'));
-          filledTs = d._ts || Date.now();
-        }catch(e){ filledTs = Date.now(); }
-        GM_setValue('tritox_az_data','');
-        if(attachResult.ok && data._filename){
-          GM_deleteValue(pdfStorageKey(data._filename));
-        }
-
-        // Show done state with close button and countdown
-        let secs = 8;
-        btn.style.background = 'linear-gradient(135deg,#00e887,#00b359)';
-        btn.style.minWidth = '180px';
-
-        function updateBtn(){
-          btn.innerHTML = (attachResult.ok?'✅ Filled + PDF Attached':'⚠️ Fields Filled — Check PDF')+'<br>'
-            +'<span style="font-size:11px;font-weight:400;opacity:0.9;">' + data._name + '</span><br>'
-            +'<span style="font-size:10px;font-weight:400;opacity:0.9;">'+attachResult.message+'</span><br>'
-            +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;">'
-            +'<span style="font-size:10px;opacity:0.8;">Auto close in '+secs+'s</span>'
-            +'<button id="tritox-close-btn" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:700;">✕ Close</button>'
-            +'</div>';
-
-          // Attach close button listener after innerHTML update
-          const closeBtn = document.getElementById('tritox-close-btn');
-          if(closeBtn){
-            closeBtn.addEventListener('click', function(e){
-              e.stopPropagation();
-              btn.remove();
-            });
-          }
-        }
-
-        updateBtn();
-
-        // Countdown timer
-        const timer = setInterval(function(){
-          secs--;
-          if(secs <= 0){
-            clearInterval(timer);
-            btn.remove();
-          } else {
-            updateBtn();
-          }
-        }, 1000);
-      });
-
-      // Click outside to cancel
-      overlay.addEventListener('click', function(e){
-        if(e.target === overlay){
-          overlay.remove();
-          expiredTs = Math.max(expiredTs, buttonDataTs);
-          GM_setValue('tritox_expired_ts', expiredTs);
-          if(btn.isConnected) btn.remove();
-        }
-      });
-    });
-
-    document.body.appendChild(btn);
-
-    // If untouched, automatically remove the Fill button after 7 seconds.
-    // Save the expired timestamp so the 1.5-second checker cannot recreate it.
-    autoHideTimer = setTimeout(function(){
-      if(btn.isConnected){
-        btn.remove();
-      }
-      expiredTs = Math.max(expiredTs, buttonDataTs);
-      GM_setValue('tritox_expired_ts', expiredTs);
-    }, 7000);
-  }
-
-  function pdfStorageKey(name){
-    let h=2166136261;
-    const s=String(name||'quote.pdf').toLowerCase();
-    for(let i=0;i<s.length;i++){
-      h^=s.charCodeAt(i);
-      h=Math.imul(h,16777619);
-    }
-    return 'tritox_pdf_'+(h>>>0).toString(16);
-  }
-
-  function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}
-
-  async function waitFor(getter,timeout){
-    const start=Date.now();
-    while(Date.now()-start<timeout){
-      const value=getter();
-      if(value) return value;
-      await wait(250);
-    }
-    return null;
-  }
-
-  function findLeadTab(label){
-    const wanted=String(label).toLowerCase();
-    const match=Array.from(document.querySelectorAll('#referral-container a,#referral-container button,#referral-container [role="tab"],#referral-container li,#referral-container span,#referral-container div'))
-      .find(function(el){return (el.textContent||'').trim().toLowerCase()===wanted;})||null;
-    return match ? (match.closest('a,button,li,[role="tab"]')||match) : null;
-  }
-
-  async function openLeadTab(label){
-    const tab=findLeadTab(label);
-    if(!tab) return false;
-    tab.click();
-    await wait(900);
-    return true;
-  }
-
-  function payloadToFile(payload){
-    const parts=String(payload.dataUrl||'').split(',');
-    if(parts.length<2) throw new Error('Stored PDF data is incomplete');
-    const bytes=atob(parts[1]);
-    const array=new Uint8Array(bytes.length);
-    for(let i=0;i<bytes.length;i++) array[i]=bytes.charCodeAt(i);
-    return new File([array],payload.name,{
-      type:payload.type||'application/pdf',
-      lastModified:payload.lastModified||Date.now()
-    });
-  }
-
-  async function attachPdfToLead(data){
-    if(!data._filename) return {ok:false,message:'PDF filename was not transferred'};
-    const stored=GM_getValue(pdfStorageKey(data._filename),'');
-    if(!stored) return {ok:false,message:'PDF was not cached — select it again in Aaron QC'};
-
-    let payload;
-    try{payload=JSON.parse(stored);}catch(e){return {ok:false,message:'Stored PDF could not be read'};}
-    if(payload.name!==data._filename) return {ok:false,message:'PDF filename mismatch — attachment stopped'};
-
-    const file=payloadToFile(payload);
-    const transfer=new DataTransfer();
-    transfer.items.add(file);
-
-    // AgencyZoom can expose its uploader from the Main section. Use any uploader
-    // already present before navigating away from the fields being reviewed.
-    let input=await waitFor(function(){
-      return document.querySelector('input.agencydocupload_doc,.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
-    },1500);
-
-    // If the input is created only after pressing the Main-page attachment icon,
-    // activate that control and check again.
-    if(!input){
-      // The blue sidebar paperclip is outside #referral-container in the current
-      // AgencyZoom layout, so search the complete document.
-      const trigger=document.querySelector(
-        '[aria-label*="upload" i],[title*="upload" i],'+
-        '[aria-label*="attach" i],[title*="attach" i],'+
-        '.fa-paperclip,[class*="paperclip"],[data-icon="paperclip"]'
-      );
-      if(trigger){
-        (trigger.closest('button,a,[onclick],[role="button"]')||trigger).click();
-        input=await waitFor(function(){
-          return document.querySelector('input.agencydocupload_doc,.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
-        },3500);
-      }
-    }
-
-    // Older AgencyZoom layouts create the uploader only inside the Files tab.
-    if(!input){
-      await openLeadTab('Files');
-      input=await waitFor(function(){
-        return document.querySelector('input.agencydocupload_doc,.agencydocupload_doc input[type="file"],#agencyDocUploader input[type="file"],#referral-container input[type="file"]');
-      },5000);
-    }
-
-    try{
-      if(input){
-        const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;
-        const jq=pageWindow.jQuery;
-        // AgencyZoom initializes this input with the jQuery File Upload plugin.
-        // Calling its add method submits the reconstructed PDF through the
-        // existing AgencyZoom uploader, including the lead ID/form data.
-        if(jq && typeof jq(input).fileupload==='function'){
-          jq(input).fileupload('add',{files:[file]});
-        }else{
-          input.files=transfer.files;
-          input.dispatchEvent(new Event('input',{bubbles:true}));
-          input.dispatchEvent(new Event('change',{bubbles:true}));
-        }
-      }else{
-        const dropZone=document.getElementById('referral-container');
-        if(!dropZone) return {ok:false,message:'AgencyZoom upload area was not found'};
-        dropZone.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:transfer}));
-      }
-    }catch(err){
-      return {ok:false,message:'AgencyZoom rejected the automatic attachment'};
-    }
-
-    // Never report success from the Main page alone. Open Files and require the
-    // actual PDF filename to appear before showing "PDF Attached".
-    await wait(5000);
-    await openLeadTab('Files');
-    await wait(1500);
-    const pageText=(document.getElementById('referral-container')?.innerText||'').toLowerCase();
-    const visibleName=pageText.includes(String(file.name).toLowerCase());
-    return visibleName
-      ? {ok:true,message:'PDF verified in AgencyZoom Files — review before saving'}
-      : {ok:false,message:'PDF was not attached — please use the paperclip manually'};
-  }
-
-  function fillText(id, val){
-    if(!val && val !== 0) return;
-    const el = document.getElementById('customfields-' + id);
-    if(!el) return;
-    try{
-      el.focus();
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
-      setter.call(el, String(val));
-      el.dispatchEvent(new Event('focus',{bubbles:true}));
-      el.dispatchEvent(new Event('input',{bubbles:true}));
-      el.dispatchEvent(new Event('change',{bubbles:true}));
-      el.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true}));
-      el.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true}));
-      el.blur();
-      el.dispatchEvent(new Event('blur',{bubbles:true}));
-    }catch(e){}
-  }
-
-  function fillSelect(id, val){
-    if(!val) return;
-    const el = document.getElementById('customfields-' + id);
-    if(!el) return;
-    try{
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,'value').set;
-      setter.call(el, String(val));
-      el.dispatchEvent(new Event('change',{bubbles:true}));
-    }catch(e){}
-  }
-
-  function fillFields(d){
-    fillText('cf30203', d.vehicles_policy);
-    fillSelect('cf56698', d.bodily_injury);
-    fillText('cf47028', d.home_coverage_a);
-    fillText('cf37981', d.home_annual);
-    fillText('cf56654', d.auto1);
-    fillSelect('cf56655', d.auto1_ded);
-    fillText('cf56656', d.auto2);
-    fillSelect('cf56657', d.auto2_ded);
-    fillText('cf56692', d.auto3);
-    fillSelect('cf56693', d.auto3_ded);
-    fillText('cf56694', d.auto4);
-    fillSelect('cf56695', d.auto4_ded);
-    fillText('cf56696', d.auto5);
-    fillSelect('cf56697', d.auto5_ded);
-    function fillMoneyFields(attempt){
-      const mEl = document.querySelector('input[name="customFields[cf30197]"]');
-      const sEl = document.querySelector('input[name="customFields[cf30199]"]');
-      if(mEl){
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
-        setter.call(mEl, String(d.monthly_auto).replace(/[$,]/g,''));
-        mEl.dispatchEvent(new Event('input',{bubbles:true}));
-        mEl.dispatchEvent(new Event('change',{bubbles:true}));
-      }
-      if(sEl){
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
-        setter.call(sEl, String(d.auto_6months).replace(/[$,]/g,''));
-        sEl.dispatchEvent(new Event('input',{bubbles:true}));
-        sEl.dispatchEvent(new Event('change',{bubbles:true}));
-      }
-      if((!mEl || !sEl) && attempt < 30){
-        setTimeout(function(){ fillMoneyFields(attempt+1); }, 800);
-      }
-    }
-    fillMoneyFields(1);
-  }
-
-  let lastCheck = '';
-  let filledTs = 0; // timestamp of last fill action
-
-  // Timestamp of the last Fill button that expired/cancelled.
-  // Persisted so the same old PDF does not reappear after an AgencyZoom reload.
-  let expiredTs = Number(GM_getValue('tritox_expired_ts', 0)) || 0;
-  
-  setInterval(function(){
-    // Get current GM data
-    const gmRaw = GM_getValue('tritox_az_data','');
-    if(!gmRaw){
-      // No data — button should not show
-      return;
-    }
-    
-    let gmData;
-    try{ gmData = JSON.parse(gmRaw); }catch(e){ return; }
-    
-    // If GM data is newer than last fill → new PDF processed → show button
-    const gmTs = gmData._ts || 0;
-    if(gmTs <= filledTs || gmTs <= expiredTs){
-      // Same or older data — already filled, cancelled, or expired.
-      return;
-    }
-    
-    // New PDF data available — show button
-    const cur = window.location.href + (document.querySelector('.az-form-group') ? '1' : '0');
-    if(cur !== lastCheck){
-      lastCheck = cur;
-      const existing = document.getElementById('tritox-fill-btn');
-      if(existing) existing.remove();
-      setTimeout(addFillButton, 1200);
-    }
-    addFillButton();
-  }, 1500);
-
-  setTimeout(addFillButton, 2000);
-
-})();`;
+  const script = "// ==UserScript==\n// @name         TritoX AgencyZoom Auto-Fill\n// @namespace    http://tampermonkey.net/\n// @version      4.10-tags\n// @description  One-click AgencyZoom field fill and quote PDF attachment from TritoX QC\n// @match        https://app.agencyzoom.com/*\n// @match        https://tritoxtech.github.io/*\n// @grant        GM_setValue\n// @grant        GM_getValue\n// @grant        GM_deleteValue\n// @grant        GM_addStyle\n// @grant        unsafeWindow\n// ==/UserScript==\n\n(function(){\n  'use strict';\n\n  console.log('[TritoX TM] hostname:', window.location.hostname);\n  if(window.location.hostname === 'tritoxtech.github.io'){\n    console.log('[TritoX TM] Running on TritoX page');\n\n    // Aaron's current GitHub page omits the processed PDF filename from\n    // buildAZData(). Patch it at runtime so AgencyZoom can retrieve the exact\n    // cached PDF that belongs to the selected quote.\n    (function patchAaronFilenameTransfer(){\n      const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;\n      let attempts=0;\n      const timer=setInterval(function(){\n        attempts++;\n        const original=pageWindow.buildAZData;\n        if(typeof original==='function' && !original.__tritoxFilenamePatched){\n          const patched=function(result){\n            const data=original.apply(this,arguments);\n            if(data && result && result.filename) data._filename=result.filename;\n            return data;\n          };\n          patched.__tritoxFilenamePatched=true;\n          pageWindow.buildAZData=patched;\n          clearInterval(timer);\n          console.log('[TritoX TM] Aaron filename transfer patch installed');\n        }else if(original && original.__tritoxFilenamePatched){\n          clearInterval(timer);\n        }else if(attempts>=80){\n          clearInterval(timer);\n          console.warn('[TritoX TM] Aaron buildAZData was not found');\n        }\n      },250);\n    })();\n\n    function pdfStorageKey(name){\n      let h=2166136261;\n      const s=String(name||'quote.pdf').toLowerCase();\n      for(let i=0;i\u003cs.length;i++){\n        h^=s.charCodeAt(i);\n        h=Math.imul(h,16777619);\n      }\n      return 'tritox_pdf_'+(h>>>0).toString(16);\n    }\n\n    function cachePdf(file){\n      if(!file || !/.pdf$/i.test(file.name)) return;\n      if(file.size>20*1024*1024){\n        console.warn('[TritoX TM] PDF is larger than 20 MB and was not cached:',file.name);\n        return;\n      }\n      const reader=new FileReader();\n      reader.onload=function(){\n        try{\n          GM_setValue(pdfStorageKey(file.name),JSON.stringify({\n            name:file.name,\n            type:file.type||'application/pdf',\n            size:file.size,\n            lastModified:file.lastModified||Date.now(),\n            dataUrl:String(reader.result),\n            savedAt:Date.now()\n          }));\n          console.log('[TritoX TM] PDF cached for AgencyZoom:',file.name);\n        }catch(err){\n          console.error('[TritoX TM] Could not cache PDF:',err);\n        }\n      };\n      reader.readAsDataURL(file);\n    }\n\n    // Capture PDFs selected or dropped into Aaron QC. Each file is stored under\n    // its filename so bulk processing can still match the correct customer PDF.\n    document.addEventListener('change',function(e){\n      if(e.target && e.target.id==='fileInput' && e.target.files){\n        Array.from(e.target.files).forEach(cachePdf);\n      }\n    },true);\n    document.addEventListener('drop',function(e){\n      if(e.dataTransfer && e.dataTransfer.files && e.target.closest && e.target.closest('#uploadZone')){\n        Array.from(e.dataTransfer.files).forEach(cachePdf);\n      }\n    },true);\n\n    function checkTritoXData(){\n      try{\n        const raw = localStorage.getItem('tritox_az_data');\n        if(!raw) return;\n        const data = JSON.parse(raw);\n        if(!data || !data._name || !data._ts) return;\n        const gmRaw = GM_getValue('tritox_az_data','');\n        let gmTs = 0;\n        try{ gmTs = JSON.parse(gmRaw)._ts || 0; }catch(e){}\n        if(data._ts > gmTs){\n          GM_setValue('tritox_az_data', JSON.stringify(data));\n          console.log('[TritoX TM] Saved to GM for:', data._name);\n        }\n      }catch(e){ console.log('[TritoX TM] Error:', e); }\n    }\n    setInterval(checkTritoXData, 1000);\n    return;\n  }\n\n  console.log('[TritoX TM] Running on AgencyZoom page');\n  function addFillButton(){\n    const vehicleField = document.getElementById('customfields-cf30203');\n    const leadPanel = document.getElementById('referral-container');\n    if(!vehicleField && !leadPanel) return;\n    if(document.getElementById('tritox-fill-btn')) return;\n    const raw = GM_getValue('tritox_az_data','');\n    if(!raw) return;\n    let data;\n    try{ data = JSON.parse(raw); }catch(e){ return; }\n    if(!data || !data._name) return;\n    const buttonDataTs = data._ts || 0;\n\n    // Do not recreate a button that was already filled or expired.\n    if(buttonDataTs \u003c= filledTs || buttonDataTs \u003c= expiredTs) return;\n\n    const age = Date.now() - buttonDataTs;\n    if(age > 7200000) return;\n\n    const btn = document.createElement('div');\n    btn.id = 'tritox-fill-btn';\n    btn.style.cssText = 'position:fixed;top:80px;right:20px;z-index:99999;background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(0,212,255,0.4);font-family:sans-serif;text-align:center;min-width:160px;';\n    btn.innerHTML = '🚀 Fill + Attach PDF\u003cbr>\u003cspan style=\"font-size:11px;font-weight:400;opacity:0.9;\">' + data._name + '\u003c/span>';\n\n    // Initial Fill button is visible for a maximum of 7 seconds if untouched.\n    let autoHideTimer = null;\n\n    btn.addEventListener('click', function(){\n      // User interacted in time, so stop the idle 7-second timer.\n      if(autoHideTimer){\n        clearTimeout(autoHideTimer);\n        autoHideTimer = null;\n      }\n\n      // Show confirmation popup\n      const overlay = document.createElement('div');\n      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;';\n      const box = document.createElement('div');\n      box.style.cssText = 'background:#fff;border-radius:16px;padding:28px 32px;max-width:380px;width:90%;text-align:center;font-family:sans-serif;box-shadow:0 20px 60px rgba(0,0,0,0.3);';\n      box.innerHTML = '\u003cdiv style=\"font-size:32px;margin-bottom:12px;\">⚠️\u003c/div>'\n        +'\u003cdiv style=\"font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:8px;\">Confirm Fill + PDF Attachment\u003c/div>'\n        +'\u003cdiv style=\"font-size:13px;color:#666;margin-bottom:6px;\">You are about to fill and attach the quote PDF for:\u003c/div>'\n        +'\u003cdiv style=\"font-size:15px;font-weight:700;color:#7b2fff;margin-bottom:20px;padding:10px;background:#f0e8ff;border-radius:8px;\">'+data._name+'\u003c/div>'\n        +'\u003cdiv style=\"font-size:12px;color:#999;margin-bottom:20px;\">Make sure you are on the correct lead in AgencyZoom before confirming.\u003c/div>'\n        +'\u003cdiv style=\"display:flex;gap:10px;justify-content:center;\">'\n        +'\u003cbutton id=\"tritox-cancel\" style=\"flex:1;padding:10px;border:2px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#666;\">❌ Cancel\u003c/button>'\n        +'\u003cbutton id=\"tritox-confirm\" style=\"flex:1;padding:10px;border:none;background:linear-gradient(135deg,#00d4ff,#7b2fff);border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;\">✅ Fill + Attach\u003c/button>'\n        +'\u003c/div>';\n      overlay.appendChild(box);\n      document.body.appendChild(overlay);\n\n      // Cancel\n      document.getElementById('tritox-cancel').addEventListener('click', function(){\n        overlay.remove();\n        expiredTs = Math.max(expiredTs, buttonDataTs);\n        GM_setValue('tritox_expired_ts', expiredTs);\n        if(btn.isConnected) btn.remove();\n      });\n\n      // Confirm\n      document.getElementById('tritox-confirm').addEventListener('click', async function(){\n        overlay.remove();\n        btn.style.background='linear-gradient(135deg,#0085ff,#7b2fff)';\n        btn.innerHTML='⏳ Attaching PDF…\u003cbr>\u003cspan style=\"font-size:11px;font-weight:400;opacity:0.9;\">'+data._name+'\u003c/span>';\n\n        const attachResult=await attachPdfToLead(data);\n        await openLeadTab('Main');\n        await waitFor(function(){return document.getElementById('customfields-cf30203');},12000);\n        fillFields(data);\n        const tagResult=await applyQuoteTags(data);\n        // Store timestamp of this fill to prevent reappearing\n        try{\n          const d = JSON.parse(GM_getValue('tritox_az_data','{}'));\n          filledTs = d._ts || Date.now();\n        }catch(e){ filledTs = Date.now(); }\n        GM_setValue('tritox_az_data','');\n        if(attachResult.ok && data._filename){\n          GM_deleteValue(pdfStorageKey(data._filename));\n        }\n\n        // Show done state with close button and countdown\n        let secs = 8;\n        btn.style.background = attachResult.ok && tagResult.ok ? 'linear-gradient(135deg,#00e887,#00b359)' : '#a65b00';\n        btn.style.minWidth = '180px';\n\n        function updateBtn(){\n          btn.innerHTML = (attachResult.ok && tagResult.ok?'✅ Filled + PDF + Tags':'⚠️ Filled — Review PDF / Tags')+'\u003cbr>'\n            +'\u003cspan style=\"font-size:11px;font-weight:400;opacity:0.9;\">' + data._name + '\u003c/span>\u003cbr>'\n            +'\u003cspan style=\"font-size:10px;font-weight:400;opacity:0.9;\">'+attachResult.message+'\u003c/span>\u003cbr>'\n            +'\u003cspan style=\"font-size:10px;font-weight:400;opacity:0.9;\">'+tagResult.message+'\u003c/span>\u003cbr>'\n            +'\u003cdiv style=\"display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;\">'\n            +'\u003cspan style=\"font-size:10px;opacity:0.8;\">Auto close in '+secs+'s\u003c/span>'\n            +'\u003cbutton id=\"tritox-close-btn\" style=\"background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:700;\">✕ Close\u003c/button>'\n            +'\u003c/div>';\n\n          // Attach close button listener after innerHTML update\n          const closeBtn = document.getElementById('tritox-close-btn');\n          if(closeBtn){\n            closeBtn.addEventListener('click', function(e){\n              e.stopPropagation();\n              btn.remove();\n            });\n          }\n        }\n\n        updateBtn();\n\n        // Countdown timer\n        const timer = setInterval(function(){\n          secs--;\n          if(secs \u003c= 0){\n            clearInterval(timer);\n            btn.remove();\n          } else {\n            updateBtn();\n          }\n        }, 1000);\n      });\n\n      // Click outside to cancel\n      overlay.addEventListener('click', function(e){\n        if(e.target === overlay){\n          overlay.remove();\n          expiredTs = Math.max(expiredTs, buttonDataTs);\n          GM_setValue('tritox_expired_ts', expiredTs);\n          if(btn.isConnected) btn.remove();\n        }\n      });\n    });\n\n    document.body.appendChild(btn);\n\n    // If untouched, automatically remove the Fill button after 7 seconds.\n    // Save the expired timestamp so the 1.5-second checker cannot recreate it.\n    autoHideTimer = setTimeout(function(){\n      if(btn.isConnected){\n        btn.remove();\n      }\n      expiredTs = Math.max(expiredTs, buttonDataTs);\n      GM_setValue('tritox_expired_ts', expiredTs);\n    }, 7000);\n  }\n\n  function pdfStorageKey(name){\n    let h=2166136261;\n    const s=String(name||'quote.pdf').toLowerCase();\n    for(let i=0;i\u003cs.length;i++){\n      h^=s.charCodeAt(i);\n      h=Math.imul(h,16777619);\n    }\n    return 'tritox_pdf_'+(h>>>0).toString(16);\n  }\n\n  function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}\n\n  async function waitFor(getter,timeout){\n    const start=Date.now();\n    while(Date.now()-start\u003ctimeout){\n      const value=getter();\n      if(value) return value;\n      await wait(250);\n    }\n    return null;\n  }\n\n  function findLeadTab(label){\n    const wanted=String(label).toLowerCase();\n    const match=Array.from(document.querySelectorAll('#referral-container a,#referral-container button,#referral-container [role=\"tab\"],#referral-container li,#referral-container span,#referral-container div'))\n      .find(function(el){return (el.textContent||'').trim().toLowerCase()===wanted;})||null;\n    return match ? (match.closest('a,button,li,[role=\"tab\"]')||match) : null;\n  }\n\n  async function openLeadTab(label){\n    const tab=findLeadTab(label);\n    if(!tab) return false;\n    tab.click();\n    await wait(900);\n    return true;\n  }\n\n  function payloadToFile(payload){\n    const parts=String(payload.dataUrl||'').split(',');\n    if(parts.length\u003c2) throw new Error('Stored PDF data is incomplete');\n    const bytes=atob(parts[1]);\n    const array=new Uint8Array(bytes.length);\n    for(let i=0;i\u003cbytes.length;i++) array[i]=bytes.charCodeAt(i);\n    return new File([array],payload.name,{\n      type:payload.type||'application/pdf',\n      lastModified:payload.lastModified||Date.now()\n    });\n  }\n\n  function findAgencyZoomFileInput(){\n    const selectors=[\n      '#referral-container input[type=\"file\"]',\n      '.agencydocupload_doc input[type=\"file\"]',\n      '#agencyDocUploader input[type=\"file\"]',\n      'input.agencydocupload_doc[type=\"file\"]',\n      'input[type=\"file\"][multiple]',\n      'input[type=\"file\"]'\n    ];\n    for(const selector of selectors){\n      const inputs=Array.from(document.querySelectorAll(selector));\n      if(inputs.length) return inputs[inputs.length-1];\n    }\n    return null;\n  }\n\n  function pdfNameIsVisible(fileName){\n    const wanted=String(fileName||'').toLowerCase();\n    const panel=document.getElementById('referral-container');\n    if(!panel || !wanted) return false;\n    if((panel.innerText||'').toLowerCase().includes(wanted)) return true;\n    return Array.from(panel.querySelectorAll('[title],[data-name],[data-file-name],a'))\n      .some(function(el){\n        return [el.getAttribute('title'),el.getAttribute('data-name'),el.getAttribute('data-file-name'),el.textContent]\n          .some(function(value){return String(value||'').toLowerCase().includes(wanted);});\n      });\n  }\n\n  function getCurrentLeadId(){\n    // The visible \"ID: 12345678\" is in AgencyZoom's lead header, outside\n    // #referral-container. Search the complete rendered page first.\n    const texts=[\n      document.body&&document.body.innerText,\n      document.documentElement&&document.documentElement.innerText,\n      document.getElementById('referral-container')&&document.getElementById('referral-container').innerText\n    ];\n    for(const text of texts){\n      const match=String(text||'').match(/\\bID\\s*:\\s*(\\d{5,})\\b/i);\n      if(match) return match[1];\n    }\n\n    const selectors=[\n      '[data-entity-id]','[data-entityid]','[data-lead-id]','[data-leadid]',\n      'input[name=\"entityId\"]','input[name=\"leadId\"]'\n    ];\n    for(const selector of selectors){\n      const el=document.querySelector(selector);\n      if(!el) continue;\n      const value=el.value||el.getAttribute('data-entity-id')||el.getAttribute('data-entityid')||\n        el.getAttribute('data-lead-id')||el.getAttribute('data-leadid');\n      if(/^\\d{5,}$/.test(String(value||''))) return String(value);\n    }\n\n    // Final fallback: AgencyZoom often embeds the active lead ID in its\n    // uploader configuration even when the header has not finished rendering.\n    const html=document.documentElement&&document.documentElement.innerHTML||'';\n    const configMatch=html.match(/(?:entityId|leadId)[\"']?\\s*[:=]\\s*[\"']?(\\d{5,})/i);\n    if(configMatch) return configMatch[1];\n    return '';\n  }\n\n  async function uploadPdfDirect(file,leadId){\n    const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;\n    const jq=pageWindow.jQuery;\n    if(!jq || typeof jq.ajax!=='function') throw new Error('AgencyZoom uploader session was not ready');\n\n    const query=new URLSearchParams({\n      docType:'undefined',\n      fileName:file.name,\n      docuSign:'0'\n    });\n    // Create the file and FormData in AgencyZoom's own page context. This lets\n    // its jQuery AJAX configuration apply the same session/security handling\n    // used by the successful manual uploader.\n    const bytes=await file.arrayBuffer();\n    const pageFile=new pageWindow.File([bytes],file.name,{\n      type:file.type||'application/pdf',\n      lastModified:file.lastModified||Date.now()\n    });\n    const form=new pageWindow.FormData();\n    form.append('contacts','[]');\n    form.append('emailSubject','');\n    form.append('emailBody','');\n    form.append('entityId',String(leadId));\n    form.append('linkToType','lead');\n    form.append('files[]',pageFile,pageFile.name);\n\n    return new Promise(function(resolve,reject){\n      jq.ajax({\n        url:'/lead/doc?'+query.toString(),\n        type:'POST',\n        data:form,\n        processData:false,\n        contentType:false,\n        cache:false,\n        success:function(result){\n          if(result && result.docName && String(result.docName)!==file.name){\n            reject(new Error('AgencyZoom returned a different filename'));\n            return;\n          }\n          resolve(result);\n        },\n        error:function(xhr){\n          let detail='HTTP '+(xhr&&xhr.status||'error');\n          try{\n            const body=xhr.responseJSON||JSON.parse(xhr.responseText||'{}');\n            detail=body.message||body.error||detail;\n          }catch(e){}\n          reject(new Error(detail));\n        }\n      });\n    });\n  }\n\n  async function attachPdfToLead(data){\n    if(!data._filename) return {ok:false,message:'PDF filename was not transferred'};\n    const stored=GM_getValue(pdfStorageKey(data._filename),'');\n    if(!stored) return {ok:false,message:'PDF was not cached — select it again in Aaron QC'};\n\n    let payload;\n    try{payload=JSON.parse(stored);}catch(e){return {ok:false,message:'Stored PDF could not be read'};}\n    if(payload.name!==data._filename) return {ok:false,message:'PDF filename mismatch — attachment stopped'};\n\n    const file=payloadToFile(payload);\n    const leadId=getCurrentLeadId();\n    if(!leadId) return {ok:false,message:'AgencyZoom lead ID was not found'};\n\n    // Use the same multipart request captured from AgencyZoom's manual uploader.\n    await openLeadTab('Files');\n    await waitFor(function(){return document.getElementById('referral-container');},5000);\n\n    let uploadResult;\n    try{\n      uploadResult=await uploadPdfDirect(file,leadId);\n    }catch(err){\n      console.error('[TritoX TM] Direct PDF upload failed:',err);\n      return {ok:false,message:'AgencyZoom rejected PDF upload: '+String(err.message||err)};\n    }\n\n    // AgencyZoom returns the saved document object immediately. Its Files list\n    // can take several seconds to refresh, so do not show a false error or hold\n    // up field filling while waiting for the UI.\n    if(uploadResult && (uploadResult.id || uploadResult.docName || uploadResult.dest)){\n      await wait(500);\n      return {ok:true,message:'PDF uploaded successfully to AgencyZoom'};\n    }\n    // Some accounts return an empty 200 response. A quick visible-name check is\n    // enough; never run the previous long refresh/retry sequence.\n    await wait(900);\n    return pdfNameIsVisible(file.name)\n      ? {ok:true,message:'PDF uploaded successfully to AgencyZoom'}\n      : {ok:true,message:'AgencyZoom accepted the PDF upload'};\n  }\n\n  function fillText(id, val){\n    if(!val && val !== 0) return;\n    const el = document.getElementById('customfields-' + id);\n    if(!el) return;\n    try{\n      el.focus();\n      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;\n      setter.call(el, String(val));\n      el.dispatchEvent(new Event('focus',{bubbles:true}));\n      el.dispatchEvent(new Event('input',{bubbles:true}));\n      el.dispatchEvent(new Event('change',{bubbles:true}));\n      el.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true}));\n      el.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true}));\n      el.blur();\n      el.dispatchEvent(new Event('blur',{bubbles:true}));\n    }catch(e){}\n  }\n\n  function fillSelect(id, val){\n    if(!val) return;\n    const el = document.getElementById('customfields-' + id);\n    if(!el) return;\n    try{\n      const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,'value').set;\n      setter.call(el, String(val));\n      el.dispatchEvent(new Event('change',{bubbles:true}));\n    }catch(e){}\n  }\n\n  function quoteTagNames(data){\n    if(typeof data._isBundle !== 'boolean') throw new Error('Reprocess the PDF in the updated Aaron QC to transfer quote type');\n    return data._isBundle ? ['Ready to send','Home is quoted'] : ['Ready to send'];\n  }\n\n  async function applyQuoteTags(data){\n    let toggle=null;\n    let opened=false;\n    try{\n      const names=quoteTagNames(data);\n      const candidates=Array.from(document.querySelectorAll('select[name=\"tags[]\"][multiple]'))\n        .filter(function(select){\n          const wrapper=select.closest('.bootstrap-select');\n          return wrapper && wrapper.getClientRects().length &&\n            names.every(function(name){return Array.from(select.options).some(function(o){return o.textContent.trim()===name;});});\n        });\n      if(candidates.length!==1) throw new Error('Open the lead tag selector and add the quote tags manually; no unique visible selector found');\n      const select=candidates[0];\n      const wrapper=select.closest('.bootstrap-select');\n      toggle=wrapper.querySelector('button.dropdown-toggle');\n      if(!toggle) throw new Error('Lead tag dropdown button not found');\n      const before=Array.from(select.selectedOptions).map(function(o){return o.value;});\n      if(toggle.getAttribute('aria-expanded')!=='true'){\n        toggle.click();\n        opened=true;\n        await wait(200);\n      }\n      // Resolve generated list IDs from this lead's own button, never page filters.\n      const listId=toggle.getAttribute('aria-owns')||toggle.getAttribute('aria-controls');\n      const list=(listId && document.getElementById(listId))||wrapper;\n      for(const name of names){\n        const option=Array.from(select.options).find(function(o){return o.textContent.trim()===name;});\n        if(option.selected) continue;\n        const item=Array.from(list.querySelectorAll('a[role=\"option\"]')).find(function(el){return el.textContent.trim()===name;});\n        if(!item || option.disabled || item.getAttribute('aria-disabled')==='true') throw new Error('Tag unavailable: '+name);\n        // A real option click invokes AgencyZoom's normal selection/save handlers.\n        item.click();\n        await wait(350);\n        if(!option.selected) throw new Error('Tag selection was not confirmed: '+name);\n      }\n      if(!before.every(function(value){return Array.from(select.selectedOptions).some(function(o){return o.value===value;});})){\n        throw new Error('Existing tags changed; review the lead tags');\n      }\n      return {ok:true,message:'Tags selected: '+names.join(' + ')};\n    }catch(error){\n      console.error('[TritoX TM] Quote tags:',error);\n      return {ok:false,message:String(error.message||error)};\n    }finally{\n      if(opened && toggle && toggle.getAttribute('aria-expanded')==='true') toggle.click();\n    }\n  }\n\n  function fillFields(d){\n    fillText('cf30203', d.vehicles_policy);\n    fillSelect('cf56698', d.bodily_injury);\n    fillText('cf47028', d.home_coverage_a);\n    fillText('cf37981', d.home_annual);\n    fillText('cf56654', d.auto1);\n    fillSelect('cf56655', d.auto1_ded);\n    fillText('cf56656', d.auto2);\n    fillSelect('cf56657', d.auto2_ded);\n    fillText('cf56692', d.auto3);\n    fillSelect('cf56693', d.auto3_ded);\n    fillText('cf56694', d.auto4);\n    fillSelect('cf56695', d.auto4_ded);\n    fillText('cf56696', d.auto5);\n    fillSelect('cf56697', d.auto5_ded);\n    function fillMoneyFields(attempt){\n      const mEl = document.querySelector('input[name=\"customFields[cf30197]\"]');\n      const sEl = document.querySelector('input[name=\"customFields[cf30199]\"]');\n      if(mEl){\n        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;\n        setter.call(mEl, String(d.monthly_auto).replace(/[$,]/g,''));\n        mEl.dispatchEvent(new Event('input',{bubbles:true}));\n        mEl.dispatchEvent(new Event('change',{bubbles:true}));\n      }\n      if(sEl){\n        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;\n        setter.call(sEl, String(d.auto_6months).replace(/[$,]/g,''));\n        sEl.dispatchEvent(new Event('input',{bubbles:true}));\n        sEl.dispatchEvent(new Event('change',{bubbles:true}));\n      }\n      if((!mEl || !sEl) && attempt \u003c 30){\n        setTimeout(function(){ fillMoneyFields(attempt+1); }, 800);\n      }\n    }\n    fillMoneyFields(1);\n  }\n\n  let lastCheck = '';\n  let filledTs = 0; // timestamp of last fill action\n\n  // Timestamp of the last Fill button that expired/cancelled.\n  // Persisted so the same old PDF does not reappear after an AgencyZoom reload.\n  let expiredTs = Number(GM_getValue('tritox_expired_ts', 0)) || 0;\n  \n  setInterval(function(){\n    // Get current GM data\n    const gmRaw = GM_getValue('tritox_az_data','');\n    if(!gmRaw){\n      // No data — button should not show\n      return;\n    }\n    \n    let gmData;\n    try{ gmData = JSON.parse(gmRaw); }catch(e){ return; }\n    \n    // If GM data is newer than last fill → new PDF processed → show button\n    const gmTs = gmData._ts || 0;\n    if(gmTs \u003c= filledTs || gmTs \u003c= expiredTs){\n      // Same or older data — already filled, cancelled, or expired.\n      return;\n    }\n    \n    // New PDF data available — show button\n    const cur = window.location.href + (document.querySelector('.az-form-group') ? '1' : '0');\n    if(cur !== lastCheck){\n      lastCheck = cur;\n      const existing = document.getElementById('tritox-fill-btn');\n      if(existing) existing.remove();\n      setTimeout(addFillButton, 1200);\n    }\n    addFillButton();\n  }, 1500);\n\n  setTimeout(addFillButton, 2000);\n\n})();\n";
 
   // Show modal with script
   const modal = document.createElement('div');
@@ -1803,10 +1342,10 @@ function showTMScript(){
     +'<div style="color:#8a97bb;font-size:12px;margin-bottom:12px;line-height:1.7;">'
     +'<strong style="color:#dce4f5;">Setup Steps:</strong><br>'
     +'1. Install <a href="https://www.tampermonkey.net/" target="_blank" style="color:#00d4ff;">Tampermonkey</a> from Chrome Web Store (free)<br>'
-    +'2. Click Tampermonkey icon → Dashboard → + (New Script)<br>'
+    +'2. Open Tampermonkey Dashboard → edit TritoX AgencyZoom Auto-Fill (or create a new script if not installed)<br>'
     +'3. Select all existing code → Delete<br>'
     +'4. Copy script below → Paste → Ctrl+S to Save<br>'
-    +'5. Done! 🚀 Button will appear in AgencyZoom automatically'
+    +'5. Refresh Aaron QC and AgencyZoom, then select your PDF again. On the correct lead, click 🚀 Fill + Attach PDF.'
     +'</div>'
     +'<button id="tmCopyBtn" style="background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px;">📋 Copy Script</button>'
     +'<pre id="tmScriptPre" style="background:#080a0f;border:1px solid #252d45;border-radius:8px;padding:14px;font-size:11px;color:#dce4f5;white-space:pre-wrap;overflow-x:auto;max-height:350px;overflow-y:auto;"></pre>';
