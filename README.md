@@ -141,6 +141,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .processing-row td{padding:16px 14px;color:var(--text2);font-size:13px;border-bottom:1px solid var(--border);}
+.sheet-sync{margin:14px 0 18px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.sheet-sync strong{font-size:13px;color:var(--text);}
+.sheet-sync input[type="url"]{flex:1;min-width:280px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 11px;font-size:12px;}
+.sheet-sync button{background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+.sheet-sync .sheet-state{width:100%;font-size:11px;color:var(--muted);}
+.sheet-sync .sheet-state.ok{color:var(--pass);}.sheet-sync .sheet-state.bad{color:var(--fail);}.sheet-sync .sheet-state.busy{color:var(--warn);}
 
 /* AgencyZoom Checklist */
 .az-panel{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:4px;}
@@ -201,7 +207,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </nav>
       <div class="status-links">
         <span class="brand-badge"><span class="live-dot"></span>Live</span>
-        <span class="brand-badge">v4.34 STABLE</span>
+        <span class="brand-badge">v4.46.8 + Sheet Sync</span>
       </div>
     </div>
   </div>
@@ -212,6 +218,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <h2>Drop Quote PDFs Here</h2>
     <p>Farmers · Farmer-Bristol · Bristol West · Bulk upload up to 20 PDFs</p>
     <button class="btn-upload" onclick="document.getElementById('fileInput').click()">Select PDF Files</button>
+  </div>
+
+  <div class="sheet-sync" id="sheetSyncPanel">
+    <strong>Google Sheet Auto-Fill</strong>
+    <input id="sheetWebAppUrl" type="url" placeholder="Paste the deployed Google Apps Script Web App URL" autocomplete="off"/>
+    <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;"><input id="sheetSyncEnabled" type="checkbox" checked/> Auto-sync G:H</label>
+    <button type="button" onclick="saveSheetSyncSettings()">Save Connection</button>
+    <div class="sheet-state" id="sheetSyncStatus">Not connected. Processed PDFs are still checked normally.</div>
   </div>
 
   <div class="progress-wrap" id="progressWrap">
@@ -279,6 +293,84 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 let allResults=[];
 let activeFilter='all';
+const SHEET_SYNC_URL_KEY='tritox_aaron_sheet_web_app_url';
+const SHEET_SYNC_ENABLED_KEY='tritox_aaron_sheet_sync_enabled';
+const sheetSyncCallbacks=new Map();
+
+function initSheetSync(){
+  const url=localStorage.getItem(SHEET_SYNC_URL_KEY)||'';
+  const enabled=localStorage.getItem(SHEET_SYNC_ENABLED_KEY)!=='false';
+  document.getElementById('sheetWebAppUrl').value=url;
+  document.getElementById('sheetSyncEnabled').checked=enabled;
+  setSheetSyncStatus(url&&enabled?'Connected — ready to update Status and Quote Type.':'Not connected. Processed PDFs are still checked normally.',url&&enabled?'ok':'');
+}
+
+function setSheetSyncStatus(message,state=''){
+  const el=document.getElementById('sheetSyncStatus');
+  if(!el)return;
+  el.textContent=message;
+  el.className='sheet-state'+(state?' '+state:'');
+}
+
+function saveSheetSyncSettings(){
+  const url=document.getElementById('sheetWebAppUrl').value.trim();
+  const enabled=document.getElementById('sheetSyncEnabled').checked;
+  if(url&&!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:[?#].*)?$/i.test(url)){
+    setSheetSyncStatus('Use the deployed Web App URL ending in /exec.','bad');
+    return;
+  }
+  localStorage.setItem(SHEET_SYNC_URL_KEY,url);
+  localStorage.setItem(SHEET_SYNC_ENABLED_KEY,String(enabled));
+  setSheetSyncStatus(url&&enabled?'Connection saved — the next PDF will update G:H automatically.':'Sheet auto-sync is off.',url&&enabled?'ok':'');
+}
+
+function sheetValueForResult(r){
+  return{
+    status:r.putInStop?'High Price':'Eligible',
+    quoteType:r.homeData&&r.homeData.isBundle?'Bundle':'Auto'
+  };
+}
+
+function syncResultToSheet(r){
+  const url=localStorage.getItem(SHEET_SYNC_URL_KEY)||'';
+  const enabled=localStorage.getItem(SHEET_SYNC_ENABLED_KEY)!=='false';
+  if(!url||!enabled)return Promise.resolve({ok:false,skipped:true});
+  const values=sheetValueForResult(r);
+  const callback='tritoxSheetCb_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+  const params=new URLSearchParams({
+    callback,
+    leadName:r.name,
+    status:values.status,
+    quoteType:values.quoteType,
+    filename:r.filename,
+    processedDate:new Date().toLocaleDateString('en-US'),
+    requestId:String(Date.now())+'-'+Math.random().toString(36).slice(2)
+  });
+  setSheetSyncStatus(`Updating ${r.name}: ${values.status} / ${values.quoteType}…`,'busy');
+  return new Promise(resolve=>{
+    const script=document.createElement('script');
+    let finished=false;
+    const finish=result=>{
+      if(finished)return;
+      finished=true;
+      clearTimeout(timer);
+      delete window[callback];
+      script.remove();
+      if(result&&result.ok){
+        setSheetSyncStatus(`✓ ${r.name} updated in row ${result.row}: ${values.status} / ${values.quoteType}`,'ok');
+      }else{
+        const reason=result&&result.message?result.message:'No response from the Sheet connection';
+        setSheetSyncStatus(`Sheet not updated for ${r.name}: ${reason}`,'bad');
+      }
+      resolve(result||{ok:false,message:'No response'});
+    };
+    window[callback]=finish;
+    script.onerror=()=>finish({ok:false,message:'Could not reach the Google Sheet Web App'});
+    const timer=setTimeout(()=>finish({ok:false,message:'Sheet update timed out'}),20000);
+    script.src=url+(url.includes('?')?'&':'?')+params.toString();
+    document.head.appendChild(script);
+  });
+}
 
 const zone=document.getElementById('uploadZone');
 zone.addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')document.getElementById('fileInput').click();});
@@ -318,6 +410,7 @@ async function handleFiles(files){
       result._rawText=text;
       allResults.push(result);
       saveToLocalStorage(result);
+      syncResultToSheet(result).catch(e=>console.warn('[TritoX] Sheet sync failed:',e));
     }catch(e){
       allResults.push({filename:pdfs[i].name,name:pdfs[i].name.replace('.pdf','').replace(/_/g,' '),
         quoteType:'Unknown',errors:['Could not read PDF'],warnings:[],vehicles:[],drivers:[],
@@ -1410,6 +1503,7 @@ function clearAll(){
   document.getElementById('resultsWrap').style.display='none';
   updateSummary();
 }
+initSheetSync();
 </script>
 </body>
 </html>
