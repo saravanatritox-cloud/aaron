@@ -207,7 +207,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </nav>
       <div class="status-links">
         <span class="brand-badge"><span class="live-dot"></span>Live</span>
-        <span class="brand-badge">v4.46.20 + Lead ID Sheet Sync</span>
+        <span class="brand-badge">v4.46.21 + PDF Lead ID Sync</span>
       </div>
     </div>
   </div>
@@ -324,6 +324,26 @@ function saveSheetSyncSettings(){
   setSheetSyncStatus(url&&enabled?'Connection saved — the next PDF will update G:H automatically.':'Sheet auto-sync is off.',url&&enabled?'ok':'');
 }
 
+
+function extractLeadIdFromPdfText(text){
+  const s=String(text||'');
+
+  // Only use an explicitly labelled Lead ID. Do NOT treat quote numbers,
+  // policy numbers, ALTA IDs, phone numbers, etc. as a lead ID.
+  const patterns=[
+    /\bAgency\s*Zoom\s+Lead\s*(?:ID|Id|#)\s*[:#\-]?\s*(\d{5,})\b/i,
+    /\bAgencyZoom\s+Lead\s*(?:ID|Id|#)\s*[:#\-]?\s*(\d{5,})\b/i,
+    /\bLead\s*(?:ID|Id)\s*[:#\-]?\s*(\d{5,})\b/i,
+    /\bLead\s*#\s*[:#\-]?\s*(\d{5,})\b/i
+  ];
+
+  for(const rx of patterns){
+    const m=rx.exec(s);
+    if(m && /^\d{5,}$/.test(String(m[1]||''))) return String(m[1]);
+  }
+  return '';
+}
+
 function sheetValueForResult(r){
   return{
     status:r.putInStop?'High Price':'Eligible',
@@ -411,7 +431,7 @@ function syncResultToSheet(r){
   // AgencyZoom Lead ID into this QC page.
   return new Promise(resolve=>{
     setTimeout(()=>{
-      const leadId=sheetLeadIdForResult(r);
+      const leadId=String(r&&r.leadId||'').trim() || sheetLeadIdForResult(r);
       const callback='tritoxSheetCb_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
       const params=new URLSearchParams({
         callback,
@@ -528,6 +548,7 @@ async function extractPDFText(file){
 // ── MAIN ANALYSIS ──
 function analyzeQuote(text,filename){
   const t=text;
+  const leadId=extractLeadIdFromPdfText(t);
   const errors=[];
   const warnings=[];
 
@@ -855,7 +876,7 @@ function analyzeQuote(text,filename){
     homeAnnual:azHomeAnnual,coverageA:azCoverageA,eftAutoMissing:eftAutoMissing};
 
   const status=errors.length>0?'fail':warnings.length>0?'warn':'pass';
-  return{filename,name,quoteType,monthlyEFT,vehicleCount,vehicles,drivers,
+  return{filename,name,leadId,quoteType,monthlyEFT,vehicleCount,vehicles,drivers,
     errors,warnings,status,putInStop,homeData,azChecklist,
     checks:{dateOk,dateDiff,prepDateStr,startDateStr,premiumOk}};
 }
@@ -1204,7 +1225,7 @@ function renderTable(){
       ${stopBanner}
       <div class="row-main" onclick="toggleDetail('${uid}')">
         <span class="row-expand" id="exp_${uid}">▶</span>
-        <div class="col-name"><div class="cname">${r.name}</div><div class="fname">${r.filename}</div></div>
+        <div class="col-name"><div class="cname">${r.name}</div><div class="fname">${r.filename}${r.leadId?` · Lead ID: ${r.leadId}`:''}</div></div>
         <div>${typeChip}</div>
         <div style="font-size:13px;color:var(--text2);">${r.vehicleCount} vehicle${r.vehicleCount!==1?'s':''}</div>
         <div style="font-size:13px;">${eft}</div>
@@ -1404,6 +1425,7 @@ function buildAZData(r){
     auto5_ded:autoFields.auto5_ded||'',
     _name:r.name,
     _filename:r.filename,
+    _leadId:String(r.leadId||'').trim(),
     _isBundle:!!(r.homeData && r.homeData.isBundle),
     _highPrice:!!r.putInStop,
     _ts:Date.now()
