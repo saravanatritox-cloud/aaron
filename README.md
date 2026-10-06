@@ -1,1701 +1,3707 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Aaron FIQ · TritoX Quality Check</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TritoX Tampermonkey v4.46.19 - PIP Driver Under 65</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-:root{
-  --bg:#080a0f;--surface:#111520;--surface2:#171c2c;--surface3:#1e2438;
-  --border:#252d45;--border2:#2e3850;
-  --accent:#00d4ff;--accent2:#0085ff;--accent3:#7b2fff;
-  --pass:#00e887;--pass-bg:rgba(0,232,135,0.07);
-  --fail:#ff4d6a;--fail-bg:rgba(255,77,106,0.07);
-  --warn:#ffb347;--warn-bg:rgba(255,179,71,0.07);
-  --stop:#ff2d55;--stop-bg:rgba(255,45,85,0.12);
-  --text:#dce4f5;--text2:#8a97bb;--muted:#424d6b;
-  --sans:'DM Sans',sans-serif;--brand:'Orbitron',sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;
-  background-image:radial-gradient(ellipse 80% 40% at 50% -10%,rgba(0,133,255,0.08) 0%,transparent 70%),
-  radial-gradient(ellipse 40% 30% at 90% 10%,rgba(123,47,255,0.06) 0%,transparent 60%);}
-.app{max-width:1200px;margin:0 auto;padding:36px 24px 80px;}
-/* Header */
-.brand-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px;padding-bottom:28px;border-bottom:1px solid var(--border);}
-.brand-left{display:flex;align-items:center;gap:16px;}
-.back-link{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;text-decoration:none;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:24px;transition:all .2s;}
-.back-link:hover{border-color:var(--accent);color:var(--accent);transform:translateX(-2px);}
-.brand-logo{width:64px;height:56px;border-radius:0;flex-shrink:0;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:none;position:relative;overflow:hidden;}
-.brand-logo img{width:100%;height:100%;object-fit:contain;display:block;}
-.brand-logo::after{content:none;}
-.brand-name{font-family:var(--brand);font-size:22px;font-weight:900;letter-spacing:3px;text-transform:uppercase;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.brand-sub{font-size:12px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
-.brand-right{display:flex;align-items:center;gap:16px;}
-.resource-links{display:flex;align-items:center;gap:10px;}
-.resource-link{height:40px;display:inline-flex;align-items:center;gap:9px;padding:0 15px;border:1px solid var(--border2);border-radius:10px;background:var(--surface2);color:var(--text);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;transition:all .2s;}
-.resource-link:hover{border-color:var(--accent);background:rgba(0,133,255,.08);transform:translateY(-1px);}
-.resource-icon{width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900;}
-.resource-icon.sheet{background:#188038;}
-.resource-icon.doc{background:#1a73e8;}
-.status-links{display:flex;align-items:center;gap:10px;}
-.brand-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;}
-
-.debug-btn{background:#1e2438;border:1px solid #2e3850;color:#8a97bb;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;transition:all 0.15s;}
-.debug-btn:hover{border-color:#00d4ff;color:#00d4ff;}
-
-.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--pass);margin-right:5px;animation:pulse 1.8s ease-in-out infinite;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
-@media(max-width:900px){
-  .brand-header{align-items:flex-start;flex-direction:column;}
-  .brand-right{width:100%;justify-content:space-between;flex-wrap:wrap;}
-}
-@media(max-width:560px){
-  .resource-links{width:100%;}
-  .resource-link{flex:1;justify-content:center;padding:0 10px;}
-}
-/* Upload */
-.upload-zone{border:2px dashed var(--border2);border-radius:20px;padding:56px 32px;text-align:center;cursor:pointer;transition:all 0.25s;background:var(--surface);margin-bottom:32px;position:relative;overflow:hidden;}
-.upload-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 100%,rgba(0,133,255,0.04) 0%,transparent 70%);pointer-events:none;}
-.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent2);background:rgba(0,133,255,0.04);}
-.upload-zone input{display:none;}
-.upload-icon{font-size:42px;margin-bottom:16px;display:block;}
-.upload-zone h2{font-size:18px;font-weight:700;margin-bottom:8px;font-family:var(--brand);letter-spacing:1px;}
-.upload-zone p{font-size:13px;color:var(--text2);line-height:1.7;}
-.btn-upload{display:inline-block;margin-top:20px;padding:12px 32px;background:linear-gradient(135deg,var(--accent2),var(--accent3));color:#fff;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;font-family:var(--sans);letter-spacing:0.5px;box-shadow:0 4px 20px rgba(0,133,255,0.25);}
-.btn-upload:hover{transform:translateY(-1px);}
-/* Progress */
-.progress-wrap{display:none;margin-bottom:28px;}
-.progress-label{font-size:12px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.progress-track{height:4px;background:var(--surface2);border-radius:4px;overflow:hidden;}
-.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent),var(--accent3));border-radius:4px;transition:width 0.3s;}
-/* Summary */
-.summary-bar{display:none;gap:14px;margin-bottom:28px;flex-wrap:wrap;}
-.summary-card{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
-.sc-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;font-weight:600;}
-.sc-val{font-family:var(--brand);font-size:30px;font-weight:700;}
-.sc-total .sc-val{color:var(--text);}
-.sc-pass .sc-val{color:var(--pass);}
-.sc-fail .sc-val{color:var(--fail);}
-.sc-warn .sc-val{color:var(--warn);}
-/* Toolbar */
-.toolbar{display:none;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
-.filter-btn{padding:7px 18px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:13px;cursor:pointer;transition:all 0.15s;font-family:var(--sans);font-weight:500;}
-.filter-btn:hover{border-color:var(--accent2);color:var(--text);}
-.filter-btn.active{background:linear-gradient(135deg,var(--accent2),var(--accent3));border-color:transparent;color:#fff;}
-.search-box{margin-left:auto;padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;width:210px;font-family:var(--sans);outline:none;transition:border-color 0.2s;}
-.search-box:focus{border-color:var(--accent2);}
-.search-box::placeholder{color:var(--muted);}
-.btn-action{padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer;transition:all 0.15s;font-family:var(--sans);font-weight:500;}
-.btn-action:hover{border-color:var(--accent2);color:var(--text);}
-.btn-stop{border-color:rgba(255,45,85,0.4);color:var(--stop);}
-.btn-stop:hover{border-color:var(--stop);background:var(--stop-bg);}
-.btn-danger:hover{border-color:var(--fail);color:var(--fail);}
-/* Table */
-.results-wrap{display:none;}
-.results-table{width:100%;border-collapse:collapse;}
-.results-table thead tr{border-bottom:1px solid var(--border);}
-.results-table th{text-align:left;padding:10px 14px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;white-space:nowrap;}
-.row-card{border-bottom:1px solid var(--border);transition:background 0.15s;}
-.row-card:hover{background:rgba(255,255,255,0.015);}
-/* STOP banner */
-.stop-banner{background:var(--stop-bg);border-left:3px solid var(--stop);padding:8px 14px;font-size:12px;font-weight:700;color:var(--stop);letter-spacing:0.5px;}
-.row-main{display:grid;grid-template-columns:32px 200px 140px 90px 110px 105px 1fr;align-items:center;gap:0;cursor:pointer;padding:15px 14px;}
-.row-expand{color:var(--muted);font-size:10px;transition:transform 0.2s;user-select:none;}
-.row-expand.open{transform:rotate(90deg);color:var(--accent);}
-.col-name .cname{font-weight:600;font-size:14px;color:var(--text);}
-.col-name .fname{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px;}
-.chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
-.chip-farmers{background:rgba(255,179,71,0.12);color:var(--warn);border:1px solid rgba(255,179,71,0.2);}
-.chip-farmer-bristol{background:rgba(123,47,255,0.12);color:#a78bfa;border:1px solid rgba(123,47,255,0.2);}
-.chip-bristol{background:rgba(0,133,255,0.12);color:var(--accent);border:1px solid rgba(0,133,255,0.2);}
-.chip-unknown{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
-.status-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:700;}
-.status-pass{background:var(--pass-bg);color:var(--pass);border:1px solid rgba(0,232,135,0.2);}
-.status-fail{background:var(--fail-bg);color:var(--fail);border:1px solid rgba(255,77,106,0.2);}
-.status-warn{background:var(--warn-bg);color:var(--warn);border:1px solid rgba(255,179,71,0.2);}
-.err-pill{display:inline-block;background:var(--fail-bg);color:var(--fail);border:1px solid rgba(255,77,106,0.2);border-radius:5px;padding:2px 9px;margin:2px 3px 2px 0;font-size:11px;}
-.warn-pill{display:inline-block;background:var(--warn-bg);color:var(--warn);border:1px solid rgba(255,179,71,0.2);border-radius:5px;padding:2px 9px;margin:2px 3px 2px 0;font-size:11px;}
-.ok-text{color:var(--pass);font-size:12px;font-weight:600;}
-/* Details */
-.row-details{display:none;padding:4px 14px 22px 46px;gap:10px;}.row-details.open{display:flex;flex-direction:column;}.row-details-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
-
-.detail-group{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;}
-.detail-group h4{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;font-weight:700;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.check-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:13px;line-height:1.4;}
-.check-item:last-child{margin-bottom:0;}
-.ci-icon{flex-shrink:0;margin-top:1px;}
-.ci-ok{color:var(--pass);}.ci-fail{color:var(--fail);}.ci-warn{color:var(--warn);}.ci-info{color:var(--accent);}
-.ci-label{color:var(--text2);flex:1;}
-.ci-val{font-size:12px;font-weight:600;white-space:nowrap;}
-.ci-val.bad{color:var(--fail);}.ci-val.ok{color:var(--pass);}.ci-val.neutral{color:var(--text2);}
-.vehicle-item{background:var(--surface3);border-radius:8px;padding:11px 13px;margin-bottom:7px;}
-.vehicle-item:last-child{margin-bottom:0;}
-.v-name{font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text);}
-.v-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;}
-.v-ok{background:var(--pass-bg);color:var(--pass);padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600;}
-.v-fail{background:var(--fail-bg);color:var(--fail);padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600;}
-.v-info{background:rgba(0,133,255,0.1);color:var(--accent);padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600;}
-.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.processing-row td{padding:16px 14px;color:var(--text2);font-size:13px;border-bottom:1px solid var(--border);}
-.sheet-sync{margin:14px 0 18px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
-.sheet-sync strong{font-size:13px;color:var(--text);}
-.sheet-sync input[type="url"]{flex:1;min-width:280px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 11px;font-size:12px;}
-.sheet-sync button{background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;}
-.sheet-sync .sheet-state{width:100%;font-size:11px;color:var(--muted);}
-.sheet-sync .sheet-state.ok{color:var(--pass);}.sheet-sync .sheet-state.bad{color:var(--fail);}.sheet-sync .sheet-state.busy{color:var(--warn);}
-
-/* AgencyZoom Checklist */
-.az-panel{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:4px;}
-.az-panel h4{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:12px;font-weight:700;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
-.az-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:13px;}
-.az-row:last-child{margin-bottom:0;}
-.az-label{color:var(--text2);flex:1;min-width:120px;font-size:12px;}
-.az-val{color:var(--text);font-weight:600;flex:2;font-size:13px;}
-.az-copy{background:var(--surface3);border:1px solid var(--border2);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all 0.15s;white-space:nowrap;font-family:var(--sans);}
-.az-copy:hover{background:rgba(0,212,255,0.1);border-color:var(--accent);}
-.az-copy.copied{background:rgba(0,232,135,0.1);border-color:var(--pass);color:var(--pass);}
-.az-manual{color:var(--warn);font-size:11px;font-style:italic;}
-/* Home QC group */
-.home-group{border-color:rgba(123,47,255,0.3);}
-.home-group h4{color:#a78bfa;}
-
-
-/* Bookmarklet Section */
-.bm-section{background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(123,47,255,0.05));border:1px solid rgba(0,212,255,0.2);border-radius:16px;padding:20px 24px;margin:24px 0 8px 0;}
-.bm-section h3{font-family:var(--mono);color:var(--accent);font-size:13px;margin-bottom:6px;letter-spacing:1px;}
-.bm-section p{color:var(--text2);font-size:12px;margin-bottom:14px;line-height:1.6;}
-.bm-steps{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
-.bm-step{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--text2);flex:1;min-width:140px;}
-.bm-step strong{display:block;color:var(--text);margin-bottom:3px;font-size:13px;}
-.bm-drag-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.bm-drag-btn{display:inline-block;background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;font-weight:700;font-size:13px;padding:10px 20px;border-radius:10px;text-decoration:none;cursor:grab;white-space:nowrap;box-shadow:0 4px 15px rgba(0,212,255,0.3);}
-.bm-drag-btn:hover{opacity:0.9;}
-.bm-drag-hint{color:var(--text2);font-size:12px;}
-.bm-status{margin-top:10px;font-size:12px;padding:8px 12px;border-radius:8px;display:none;}
-.bm-status.ready{display:block;background:rgba(0,232,135,0.1);border:1px solid var(--pass);color:var(--pass);}
-
-.footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-.footer-brand{font-family:var(--brand);font-size:13px;letter-spacing:2px;background:linear-gradient(90deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.footer-note{font-size:12px;color:var(--muted);}
+  body{font-family:Arial,sans-serif;margin:0;background:#f6f7fb;color:#172033}
+  .wrap{max-width:1200px;margin:28px auto;padding:0 18px}
+  .card{background:#fff;border:1px solid #dfe3eb;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.06);overflow:hidden}
+  .head{padding:20px 22px;border-bottom:1px solid #e8ebf1}
+  h1{margin:0 0 6px;font-size:22px}
+  p{margin:0;color:#667085;line-height:1.5}
+  .actions{padding:14px 22px;border-bottom:1px solid #e8ebf1;display:flex;gap:10px;align-items:center}
+  button{border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;background:#6d3cff;color:#fff}
+  pre{margin:0;padding:22px;overflow:auto;white-space:pre;tab-size:2;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.5}
+  .note{font-size:12px;color:#667085}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="brand-header">
-    <div class="brand-left">
-      <a class="back-link" href="https://saravanatritox-cloud.github.io/" aria-label="Back to Saravanan home" title="Back to Saravanan home">&#8592;</a>
-      <div class="brand-logo"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQDw8OEBAVEBAWEBIaEBUWDQ8QEBARIBciIiAdHxkaKDQgJCYxIBgZJDIkMSstMC8vIys0Pz8uNzQtLy0BCgoKDg0OGhAQGjceHx0tLS0rKy03LTMtMCstLS0tLy0tLjctLTc3NzU2NjAtNTMtMi8tNy03Ky0rKzc0LSs3K//AABEIAMgAyAMBIgACEQEDEQH/xAAbAAEAAgMBAQAAAAAAAAAAAAAABQYBBAcCA//EAD0QAAICAAMFAwkGBQQDAAAAAAABAgMEBRESITFBUQYTcQciMkJhgZGhsRQzUqLB0RUjcpKyQ2KC4RYkU//EABoBAQADAQEBAAAAAAAAAAAAAAADBAUCBgH/xAAkEQEAAgEEAQQDAQAAAAAAAAAAAQIDBBESMSEFE0FRImFxMv/aAAwDAQACEQMRAD8A7iAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMFI7YZjbRi47EnsOqLa2mk3tNfoXcoflGh/Nol1hJfB/9kOf/Dm/T1g84lYtY2z15pzlqjaWYXf/AEl/cyjwm4tNPRrg0WXLrZygnNaPl7V1M202r1KDeUss0vX+o/kelm9/4/yw/Y0UR+d5vTg6ZX3S0ivRS02py5JLqfIyZJnaJk5Sks47XvCUyvusSiuHmx2py5JLmx5N+1+IzGNzxNMad+1h9G9Z1cN6fTdv568OvLMNRdmlyxuLWzQn/wCvTv2dOr/fn4HQOy+I7vFU8k3sv37l89Dd02jvGKb3nyinVRW8Ujz9ulgAjXgAAAAAAAAAAAAAAAAAAAABgpnlHh5uGl7bF8dP2LmVntNZXa4V6bWxPX2a6aaEGe0RSd3N+lSyvLddLLFu9VdfayZRkjO0GeU4Kl3XP2QitNuyXRGX5vO0K/b1nuc04KmV90tFwjFabdkuiRz7B4a7M71jsYtKF9xTv2dn9vbz8DzgcJdmdyx2N3VL7irfs7Ph0+vgW5LTcuB6H0/0+KRzv2q6jUcfxr2JacNyPcJuLTW5p6rxPDkuGu/l7TKNrbxsz9/l1nC3KyuFi4SjFr3o+pB9jsTt4WK5wlKL+q+TJ0wb142mHocduVYt9gAOXYAAAAAAAAAAAAAAADAMkDnGa8a63/VJfREeTJFI3l8mdmc4zXTWut7/AFpLl7EQQIftL2hpwNPeWPWb1Vdaa2rJft1Zl3vbLZXmZtL32jz6nA0u216t7q4Jrbsl0X6vkc+y7A35ld9vx33f+jVv2dnlu/D9TzlmXXZhf/EMdvg/uq9+zs8t3KP1+tySN/0/0+KRzv2qajUcfxp2JbtFuNPNszrw1Tttei9VetOXRDNszrwtTttei9VL0py6IjOznZ+zMLY5hjo6VLfh6HrsuPJtdP8ALwLur1dcFf2j0mktnt+lfrxuLWNwWMxMXXVdKUaYt7lW9Fw/5J68/gdAI3yrYJywULorfTdF6rlF7vrsGzl2JVtNVq9eEX4NreQ+m6ictZme0/qWnjFMbdLn2DxOlltT5xUl4rc/qvgXQ5l2exPd4qmXLa0fg936nTTjWV2yb/aTRX3x7fTIAKi6AAAAAAAAAAAAAMAFZzPtDVOdmGptjKcJONqVkXOLXFacUR5LxSu8vkztDZzjNeNdb/qkvoiDBgycmSck7yr2tMobtT2jqwFPeT86x6qqtPfN/ourOb5LV/EsTLGYy2MnteZVtrlwWzyiunP69dxGHhZHZshGyPNSipR+DK5mHYLL7m2qnTLrVNw/Lvj8i1pM+PFO9o3fJ81mInZ6SMWTUU2+CIi3sVjqd+Ex7kuULotpezXevkjUxF+bUpwvwPfJrSMqnte9pa/oegx+pYbx3soTo7b+J3aeQzw+OzG2eMsTVUmsNS09iaT4vrw105+COpQkmk001y04HGMm7C466alqqNHq5ym9qL93Mv8A5P8AOZ4im2m5JXUWbE9PW46P4qXwMDWT7lpvFt3odHatY4Qm89wP2jC4ijnOqaj/AFabvnoUXsBitvCd2+Nc5R09j3r6v4HSDmWUQ+zZtj8JwjN7cF+ZL4TfwLPpGXjk4/aD1XHyxb/S1p6bzquXYjvaq7PxQi346bzlJJ4PtddhYwq7uNlST011jNb+v/Rt6zHN6xMfDG0WWKWmJ+XTAVHBdvsLPRWRnS+b024fFb/kWDBZth7vuroTfRTW1/bxMyazHcNWMlbdS3gAcuwAAAAAAAAAAYOWdsvJzhLMTZiI95TbZOU9uFj32N6t6PXm+Wh1M0s2wve1NJect8fHoRZazNfx7d45jl56cY/gmc4XfhsasVBcIW+k/Z52v+SMf+b4vDbswy+da52V6uHz3fmL2zDRme7E/wCo3Wb6Sluleyzttl9+ml6rl+G1Op/F7vmWGqxSSlFqSfBpppkLmfZTA4jXvMPBS/FBOufxjpr7yv2+T6dLcsBjbcO/wuTcX746fRjbHbqdlW2jtHS+AoCxefYT7yqGNrXOKTn7tnR/lZ98J5SaNru8VRbhZ89YucV9JfIezbuPP8V7Yr17heChZWvsmf4ml7oYmvbh7Z+l9VYWzLs9wuI07nEV2N+qppT/ALXvKn5RV3GKy7MVuULdmx/7ddUvhtn3FE7zWfmHWG3G8SvZzvt7D7PmeAxi3Rmtib8Ho3/bZ8joieu9cCo+VHA95l8rEvOqshJddH5r/wAtfcdaW/DLEtPUU545htmrmENYp9GeMmxffYem7nKuLf8AVz+eptyimtHvR7P/AFX+vHbcbfxEV1SlwWpLZRkruthXrrJvfx0iubPSWm5bi/8AZLKe5q72S/mTXvjDkv1Kubjipv8AKzgi2W+3wm8LQq4RrjrpFJLV6s+wBltmAAAAAAAAAAAAABVM8wnd2OS9GW9ex80Rxb81wne1OPrLfHxKfY9E/YjK1OPhfeOpX8F+Vf4xCxPg0/BpnoqcZNPVPR+83cJjb3JQhrOTekY7O02V4jdNunz4YvB1XLZtrhZHpOEZr5k1hshudalNxjZzjxS958L8ruhxg2usfOJZxZK+dkfuUnxuomZeTrAW6ygp0S/2Tbjr4S1+WhA5x2GzJ19zXi/tNCknGuc5Raa4aJ6pceqOmtdTB9rnvX9vlsNJ+Gh2fVqwmHjdFwtjVGM02m9pbtd3XTX3n2zTBq+i6h8J1zj4aribJki5fluk28bOaeT/ABTlh50vdKqxrTonv+u0WgquFh9lzrGYfhG3Wcfa3536zRb8Jh5W2QrgtZSeiPZaTLFsMWeR1mKa5piPlL9lMp7+3bkv5cGm+kpckdCNTK8DHD1Rqjy4vnKXNm4Z+fL7lt/hp6fD7dNvkABCnAAAAAAAAAAAAAGCr9o8tlGNt0FrFxk2lxi9N5aAR5McXjaXdLzSd4cjyvLLcTPYqjr+KT9CK9rOi5FkNWFjqlt2P0ptb/BdESdNEIJqEVBNtvZio6vruPoR4tPWnnuXWTLNv4yACwifG7DQn6UVLxSI+/Iapei3B+Oq+ZKmTi2Otu4dRe0dSrF+RWx9Fqa8dl/Mj7sPOHpRcfFMu55a13Fe2jrPXhNXU2jtwHyjQ7jHYDHLhrsT8E9fpOXwOsdjcp2IfaZrz5rzPZDr7yWxOSYWyddllEJyrntV6wTUZ6aa6cNd5IlvDa2PF7arlpW+T3GQAHQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/2Q==" alt="TritoX logo"/></div>
-      <div>
-        <div class="brand-name">TritoX</div>
-        <div class="brand-sub">Aaron FIQ · Quality Check System · Auto &amp; Bundle</div>
-      </div>
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <h1>TritoX Tampermonkey v4.46.19</h1>
+      <p>PIP Driver Under 65 helper — accepted drivers only, main driver first, otherwise one accepted driver under age 65.</p>
     </div>
-    <div class="brand-right">
-      <nav class="resource-links" aria-label="Project resources">
-        <a class="resource-link" href="https://docs.google.com/spreadsheets/d/1q-d_-eAQcNXTOkqlLUoG2kv6AoE2MUb76PPY2ScvC6Q/edit?usp=drivesdk" target="_blank" rel="noopener noreferrer">
-          <span class="resource-icon sheet" aria-hidden="true">▦</span>
-          <span>Open Worksheet</span>
-        </a>
-        <a class="resource-link" href="https://docs.google.com/document/d/15ZswbwNtzZBtdaD3tD5PUD7BSwdddlOtU78LtX509gM/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
-          <span class="resource-icon doc" aria-hidden="true">≡</span>
-          <span>View Instructions</span>
-        </a>
-      </nav>
-      <div class="status-links">
-        <span class="brand-badge"><span class="live-dot"></span>Live</span>
-        <span class="brand-badge">v4.46.21 + PDF Lead ID Sync</span>
-      </div>
+    <div class="actions">
+      <button onclick="navigator.clipboard.writeText(document.getElementById('code').innerText).then(()=>this.textContent='Copied ✓')">Copy Tampermonkey Script</button>
+      <span class="note">Copy the script below into Tampermonkey.</span>
     </div>
-  </div>
+    <pre id="code">// ==UserScript==
+// @name         TritoX AgencyZoom Auto-Fill
+// @namespace    http://tampermonkey.net/
+// @version      4.46.19-pip-driver-under65
+// @description  Stable rollback: original QC field fill + PDF + working automatic tag save
+// @match        https://app.agencyzoom.com/*
+// @match        https://alta.farmers.com/*
+// @match        https://tritoxtech.github.io/*
+// @match        https://saravanatritox-cloud.github.io/aaron/*
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_deleteValue
+// @grant        GM_addStyle
+// @grant        unsafeWindow
+// ==/UserScript==
 
-  <div class="upload-zone" id="uploadZone">
-    <input type="file" id="fileInput" multiple accept=".pdf"/>
-    <span class="upload-icon">📂</span>
-    <h2>Drop Quote PDFs Here</h2>
-    <p>Farmers · Farmer-Bristol · Bristol West · Bulk upload up to 20 PDFs</p>
-    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">Select PDF Files</button>
-  </div>
+(function(){
+  &#x27;use strict&#x27;;
 
-  <div class="sheet-sync" id="sheetSyncPanel">
-    <strong>Google Sheet Auto-Fill</strong>
-    <input id="sheetWebAppUrl" type="url" placeholder="Paste the deployed Google Apps Script Web App URL" autocomplete="off"/>
-    <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;"><input id="sheetSyncEnabled" type="checkbox" checked/> Auto-sync G:H</label>
-    <button type="button" onclick="saveSheetSyncSettings()">Save Connection</button>
-    <div class="sheet-state" id="sheetSyncStatus">Not connected. Processed PDFs are still checked normally.</div>
-  </div>
-
-  <div class="progress-wrap" id="progressWrap">
-    <div class="progress-label"><span class="spinner"></span><span id="progressLabel">Processing...</span></div>
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-  </div>
-
-  <div class="summary-bar" id="summaryBar">
-    <div class="summary-card sc-total"><div class="sc-label">Total</div><div class="sc-val" id="scTotal">0</div></div>
-    <div class="summary-card sc-pass"><div class="sc-label">✓ Passed</div><div class="sc-val" id="scPass">0</div></div>
-    <div class="summary-card sc-fail"><div class="sc-label">✗ Flagged</div><div class="sc-val" id="scFail">0</div></div>
-    <div class="summary-card sc-warn"><div class="sc-label">⚠ Warnings</div><div class="sc-val" id="scWarn">0</div></div>
-  </div>
-
-  <div class="toolbar" id="toolbar">
-    <button class="filter-btn active" data-filter="all">All</button>
-    <button class="filter-btn" data-filter="fail">Flagged</button>
-    <button class="filter-btn" data-filter="warn">Warnings</button>
-    <button class="filter-btn" data-filter="pass">Passed</button>
-    <input class="search-box" id="searchBox" type="text" placeholder="🔍  Search customer name..."/>
-    <button class="btn-action" onclick="exportCSV('all')">⬇ Export All</button>
-    <button class="btn-action btn-stop" onclick="exportCSV('flagged')">⬇ Export Flagged</button>
-    <button class="btn-action btn-danger" onclick="clearAll()">🗑 Clear All</button>
-  </div>
-
-  <div class="results-wrap" id="resultsWrap">
-    <table class="results-table">
-      <thead>
-        <tr>
-          <th></th><th>Customer</th><th>Type</th><th>Vehicles</th>
-          <th>Monthly EFT</th><th>Status</th><th>Flags / Notes</th>
-        </tr>
-      </thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
-  </div>
-
-  <div id="bmSection" class="bm-section" style="display:none;">
-  <h3>📋 AgencyZoom Fill + Attach PDF — <span id="bmName">Processing...</span></h3>
-  <div id="bmReady" class="bm-status ready" style="display:none;"></div>
-  <div class="bm-steps" style="margin-top:12px;">
-    <div class="bm-step"><strong>Step 1</strong>Process PDF in TritoX ✅</div>
-    <div class="bm-step"><strong>Step 2</strong>Open correct lead in AgencyZoom</div>
-    <div class="bm-step"><strong>Step 3</strong>Click "🚀 Fill + Attach PDF" in AgencyZoom</div>
-    <div class="bm-step"><strong>Step 4</strong>Check the filled fields and attached PDF before saving.</div>
-  </div>
-  <div style="margin-top:14px;padding:12px 16px;background:rgba(0,232,135,0.05);border:1px solid rgba(0,232,135,0.2);border-radius:10px;">
-    <div style="color:var(--pass);font-size:12px;font-weight:700;margin-bottom:6px;">📦 Tampermonkey Setup (One Time Only)</div>
-    <div style="color:var(--text2);font-size:12px;line-height:1.8;">
-      1. Install <strong style="color:var(--text)">Tampermonkey</strong> from Chrome Web Store (free)<br>
-      2. Click <strong style="color:var(--text)">"Get Tampermonkey Script"</strong> button below<br>
-      3. Copy the script → replace your existing TritoX AgencyZoom script in Tampermonkey → Save<br>
-      4. Refresh Aaron QC and AgencyZoom, then select your PDF again.
-    </div>
-    <button onclick="showTMScript()" style="margin-top:10px;background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;">📜 Get Tampermonkey Script</button>
-  </div>
-</div>
-<div class="footer">
-    <span class="footer-brand">TRITOX QC</span>
-    <span class="footer-note">All checks run locally · No data uploaded · Free to use forever</span>
-  </div>
-</div>
-
-<script>
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-let allResults=[];
-let activeFilter='all';
-const SHEET_SYNC_URL_KEY='tritox_aaron_sheet_web_app_url';
-const SHEET_SYNC_ENABLED_KEY='tritox_aaron_sheet_sync_enabled';
-const sheetSyncCallbacks=new Map();
-
-function initSheetSync(){
-  const url=localStorage.getItem(SHEET_SYNC_URL_KEY)||'';
-  const enabled=localStorage.getItem(SHEET_SYNC_ENABLED_KEY)!=='false';
-  document.getElementById('sheetWebAppUrl').value=url;
-  document.getElementById('sheetSyncEnabled').checked=enabled;
-  setSheetSyncStatus(url&&enabled?'Connected — ready to update Status and Quote Type.':'Not connected. Processed PDFs are still checked normally.',url&&enabled?'ok':'');
-}
-
-function setSheetSyncStatus(message,state=''){
-  const el=document.getElementById('sheetSyncStatus');
-  if(!el)return;
-  el.textContent=message;
-  el.className='sheet-state'+(state?' '+state:'');
-}
-
-function saveSheetSyncSettings(){
-  const url=document.getElementById('sheetWebAppUrl').value.trim();
-  const enabled=document.getElementById('sheetSyncEnabled').checked;
-  if(url&&!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:[?#].*)?$/i.test(url)){
-    setSheetSyncStatus('Use the deployed Web App URL ending in /exec.','bad');
-    return;
-  }
-  localStorage.setItem(SHEET_SYNC_URL_KEY,url);
-  localStorage.setItem(SHEET_SYNC_ENABLED_KEY,String(enabled));
-  setSheetSyncStatus(url&&enabled?'Connection saved — the next PDF will update G:H automatically.':'Sheet auto-sync is off.',url&&enabled?'ok':'');
-}
+  console.log(&#x27;[TritoX TM] v4.46.19 PIP driver under-65 hostname:&#x27;, window.location.hostname);
 
 
-function extractLeadIdFromPdfText(text){
-  const s=String(text||'');
+  // ────────────────────────────────────────────────────────────────────────────
+  // ALTA — capture extra lead metadata once and keep it while navigating pages.
+  // Customer name + ALTA ID are read automatically; the user only confirms the
+  // carrier, renewal date and Star/BW value.
+  // ────────────────────────────────────────────────────────────────────────────
+  if(window.location.hostname === &#x27;alta.farmers.com&#x27;){
+    const CARRIERS=[
+      &#x27;AAA&#x27;,&#x27;Allstate&#x27;,&#x27;Auto-Owners Insurance&#x27;,&#x27;Bristol West&#x27;,&#x27;Farm Bureau&#x27;,&#x27;GEICO&#x27;,
+      &#x27;Liberty Mutual&#x27;,&#x27;Nationwide&#x27;,&#x27;Progressive&#x27;,&#x27;State Farm&#x27;,&#x27;Travelers&#x27;,&#x27;USAA&#x27;
+    ];
 
-  // Only use an explicitly labelled Lead ID. Do NOT treat quote numbers,
-  // policy numbers, ALTA IDs, phone numbers, etc. as a lead ID.
-  const patterns=[
-    /\bAgency\s*Zoom\s+Lead\s*(?:ID|Id|#)\s*[:#\-]?\s*(\d{5,})\b/i,
-    /\bAgencyZoom\s+Lead\s*(?:ID|Id|#)\s*[:#\-]?\s*(\d{5,})\b/i,
-    /\bLead\s*(?:ID|Id)\s*[:#\-]?\s*(\d{5,})\b/i,
-    /\bLead\s*#\s*[:#\-]?\s*(\d{5,})\b/i
-  ];
+    function cleanText(v){ return String(v||&#x27;&#x27;).replace(/\s+/g,&#x27; &#x27;).trim(); }
+    function normName(v){ return cleanText(v).toLowerCase().replace(/[^a-z0-9]+/g,&#x27; &#x27;).trim(); }
 
-  for(const rx of patterns){
-    const m=rx.exec(s);
-    if(m && /^\d{5,}$/.test(String(m[1]||''))) return String(m[1]);
-  }
-  return '';
-}
+    function altaIdentity(){
+      const text=document.body ? document.body.innerText : &#x27;&#x27;;
+      const idm=text.match(/Alta\s*#\s*(\d{8,})/i);
+      const id=idm?idm[1]:&#x27;&#x27;;
+      let name=&#x27;&#x27;;
+      const nm=text.match(/(?:^|\n)\s*([^\n]{2,80}?)\s*-\s*Auto\s*(?:\n|$)/i);
+      if(nm) name=cleanText(nm[1]);
+      if(!name){
+        const nm2=text.match(/([A-Za-z][A-Za-z .&#x27;-]{2,70})\s*-\s*Auto\s+Alta\s*#/i);
+        if(nm2) name=cleanText(nm2[1]);
+      }
+      return {name,id};
+    }
 
-function sheetValueForResult(r){
-  return{
-    status:r.putInStop?'High Price':'Eligible',
-    quoteType:r.homeData&&r.homeData.isBundle?'Bundle':'Auto'
-  };
-}
+    const ALTA_META_TTL=7200000; // same 2-hour validity window as Aaron autofill popup
 
-function sheetNormName(v){
-  let s=String(v||'').toLowerCase();
-  try{s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}catch(e){}
-  return s.replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
-}
+    function priorInsuranceSnapshot(){
+      const text=document.body ? document.body.innerText : &#x27;&#x27;;
+      const start=text.search(/Prior insurance information/i);
+      if(start&lt;0) return {visible:false,inEffect:false,company:&#x27;&#x27;,renewalDate:&#x27;&#x27;};
+      const chunk=text.slice(start,start+3000);
 
-function sheetNameTokens(v){
-  return sheetNormName(v).split(' ').filter(Boolean);
-}
+      // ALTA can show several prior policies. Always use the TOP/FIRST policy
+      // that is explicitly marked &quot;In Effect&quot;. Do not choose a carrier merely
+      // because its name appears somewhere later in the prior-insurance list.
+      const lines=chunk.split(/\n+/).map(function(v){return cleanText(v);}).filter(Boolean);
+      let company=&#x27;&#x27;;
+      let renewalDate=&#x27;&#x27;;
+      let foundInEffect=false;
 
-function sheetLeadMatchesResult(r,leadName){
-  const pdf=sheetNameTokens(r&&r.name);
-  const lead=sheetNameTokens(leadName);
-  if(!pdf.length||!lead.length)return false;
+      for(let i=0;i&lt;lines.length;i++){
+        if(!/\bIn Effect\b/i.test(lines[i])) continue;
+        foundInEffect=true;
 
-  const pdfNorm=pdf.join(' ');
-  const leadNorm=lead.join(' ');
-  if(pdfNorm===leadNorm)return true;
+        // Build a small row window around this FIRST In Effect marker. In ALTA,
+        // the carrier/status/date may be on one line or split across nearby lines.
+        const from=Math.max(0,i-2);
+        const to=Math.min(lines.length,i+4);
+        const row=lines.slice(from,to).join(&#x27; &#x27;);
 
-  const pdfFirst=pdf[0];
-  const leadFirst=lead[0];
-  const pdfLast=pdf[pdf.length-1];
-  const leadLast=lead[lead.length-1];
+        // Prefer the carrier whose text is physically closest to this row.
+        // This preserves ALTA&#x27;s on-screen order (top row wins).
+        let best=null;
+        for(const carrier of CARRIERS){
+          const rx=new RegExp(&#x27;\\b&#x27;+carrier.replace(/[.*+?^${}()|[\]\\]/g,&#x27;\\$&amp;&#x27;)+&#x27;\\b&#x27;,&#x27;i&#x27;);
+          const m=rx.exec(row);
+          if(m &amp;&amp; (!best || m.index&lt;best.index)) best={name:carrier,index:m.index};
+        }
+        if(best) company=best.name;
 
-  // Same surname + first-name exact/prefix. This covers PDF text such as
-  // "Les Modrow Colleen Modrow" while AgencyZoom shows "Lester Modrow".
-  const sameLast=pdf.includes(leadLast) || pdfLast===leadLast;
-  const firstCompatible=
-    pdfFirst===leadFirst ||
-    (Math.min(pdfFirst.length,leadFirst.length)>=3 &&
-      (pdfFirst.startsWith(leadFirst)||leadFirst.startsWith(pdfFirst))) ||
-    (pdfFirst.length===1 && leadFirst.startsWith(pdfFirst)) ||
-    (leadFirst.length===1 && pdfFirst.startsWith(leadFirst));
+        if(!company){
+          // Generic fallback: take text immediately before &quot;In Effect&quot; from
+          // the same line, then clean off table labels/numbers if present.
+          const same=lines[i].match(/^(.{2,80}?)\s+In Effect\b/i);
+          if(same){
+            let candidate=cleanText(same[1]);
+            candidate=candidate.replace(/^(?:Prior insurance information|Driver|Drivers|Vehicles|Tenure|Coverage Term|BI|PD)\s*/i,&#x27;&#x27;).trim();
+            candidate=candidate.replace(/^\d+\s+/,&#x27;&#x27;).trim();
+            if(candidate) company=candidate;
+          }
+        }
 
-  if(sameLast&&firstCompatible)return true;
+        // Renewal date must come from the SAME first In Effect policy.
+        // ALTA often renders the carrier/status on one DOM line and the
+        // Coverage Term several lines later, so the old 4-line window could
+        // miss the date even though the top policy was detected correctly.
+        let dm=row.match(/\b(\d{1,2}\/\d{1,2}\/\d{4})\s*-\s*(\d{1,2}\/\d{1,2}\/\d{4})\b/);
+        if(!dm){
+          const firstEffectPos=chunk.search(/\bIn Effect\b/i);
+          if(firstEffectPos&gt;=0){
+            const afterFirst=chunk.slice(firstEffectPos);
+            const nextRel=afterFirst.slice(1).search(/\bIn Effect\b/i);
+            const firstPolicyText=nextRel&gt;=0
+              ? afterFirst.slice(0,nextRel+1)
+              : afterFirst.slice(0,700);
+            dm=firstPolicyText.match(/\b(\d{1,2}\/\d{1,2}\/\d{4})\s*-\s*(\d{1,2}\/\d{1,2}\/\d{4})\b/);
+          }
+        }
+        if(dm) renewalDate=dm[2];
+        break; // critical: never fall through to Progressive/another lower row
+      }
 
-  // Filename fallback: Modrow_Bundle.pdf / Modrow_Auto_10052026.pdf.
-  const fileBase=String(r&&r.filename||'')
-    .replace(/\.pdf$/i,'')
-    .replace(/[_\-\s]+(?:auto|bundle|home)(?:[_\-\s]+\d{8})?$/i,'')
-    .replace(/_/g,' ')
-    .trim();
-  const fileTokens=sheetNameTokens(fileBase);
-  if(fileTokens.length){
-    const fileCompact=fileTokens.join('');
-    const lastCompact=String(leadLast||'').replace(/\s+/g,'');
-    if(fileCompact===lastCompact)return true;
-  }
+      if(!foundInEffect) return {visible:true,inEffect:false,company:&#x27;&#x27;,renewalDate:&#x27;&#x27;};
+      return {visible:true,inEffect:true,company:company,renewalDate:renewalDate};
+    }
 
-  return false;
-}
+    function parseFullDob(value){
+      const m=cleanText(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(!m) return null;
+      const month=Number(m[1]), day=Number(m[2]), year=Number(m[3]);
+      if(month&lt;1||month&gt;12||day&lt;1||day&gt;31||year&lt;1900||year&gt;new Date().getFullYear()) return null;
+      const d=new Date(year,month-1,day);
+      if(d.getFullYear()!==year||d.getMonth()!==month-1||d.getDate()!==day) return null;
+      return d;
+    }
 
-function sheetLeadIdForResult(r){
-  try{
-    const raw=localStorage.getItem('tritox_current_az_lead')||'';
-    if(!raw)return '';
-    const meta=JSON.parse(raw);
-    const leadId=String(meta&&meta.leadId||'').trim();
-    const leadName=String(meta&&meta.leadName||'').trim();
-    const ts=Number(meta&&meta.ts||0);
-    if(!/^\d{5,}$/.test(leadId))return '';
-    if(!ts||Date.now()-ts>300000)return '';
-    if(!sheetLeadMatchesResult(r,leadName))return '';
-    return leadId;
-  }catch(e){
-    return '';
-  }
-}
+    function ageFromDob(dob){
+      if(!(dob instanceof Date) || isNaN(dob)) return null;
+      const now=new Date();
+      let age=now.getFullYear()-dob.getFullYear();
+      const beforeBirthday=(now.getMonth()&lt;dob.getMonth()) ||
+        (now.getMonth()===dob.getMonth() &amp;&amp; now.getDate()&lt;dob.getDate());
+      if(beforeBirthday) age--;
+      return age;
+    }
 
-function syncResultToSheet(r){
-  const url=localStorage.getItem(SHEET_SYNC_URL_KEY)||'';
-  const enabled=localStorage.getItem(SHEET_SYNC_ENABLED_KEY)!=='false';
-  if(!url||!enabled)return Promise.resolve({ok:false,skipped:true});
-  const values=sheetValueForResult(r);
-  setSheetSyncStatus(`Updating ${r.name}: ${values.status} / ${values.quoteType}… please wait`,'busy');
+    function driverCardForDobInput(dobInput){
+      let el=dobInput;
+      for(let depth=0; el &amp;&amp; depth&lt;9; depth++,el=el.parentElement){
+        const controls=el.querySelectorAll ? el.querySelectorAll(&#x27;input,select,[role=&quot;combobox&quot;]&#x27;) : [];
+        const text=cleanText(el.innerText||&#x27;&#x27;);
+        if(controls.length&gt;=5 &amp;&amp; /Accepted|Driver status|Relationship to PNI|On current policy/i.test(text)) return el;
+      }
+      return dobInput.parentElement;
+    }
 
-  // Give Tampermonkey a short moment to mirror the currently open
-  // AgencyZoom Lead ID into this QC page.
-  return new Promise(resolve=>{
-    setTimeout(()=>{
-      const leadId=String(r&&r.leadId||'').trim() || sheetLeadIdForResult(r);
-      const callback='tritoxSheetCb_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
-      const params=new URLSearchParams({
-        callback,
-        leadId,
-        leadName:r.name,
-        status:values.status,
-        quoteType:values.quoteType,
-        filename:r.filename,
-        processedDate:new Date().toLocaleDateString('en-US'),
-        requestId:String(Date.now())+'-'+Math.random().toString(36).slice(2)
+    function selectedControlText(el){
+      if(!el) return &#x27;&#x27;;
+      if(el.tagName===&#x27;SELECT&#x27;){
+        const opt=el.options &amp;&amp; el.selectedIndex&gt;=0 ? el.options[el.selectedIndex] : null;
+        return cleanText(opt ? opt.textContent : el.value);
+      }
+      return cleanText(el.value || el.getAttribute(&#x27;aria-label&#x27;) || el.textContent || &#x27;&#x27;);
+    }
+
+    function driverSnapshot(){
+      const bodyText=document.body ? document.body.innerText : &#x27;&#x27;;
+      if(!/Rated drivers\s*\(/i.test(bodyText)) return {visible:false,drivers:[],selected:null};
+
+      const dobInputs=Array.from(document.querySelectorAll(&#x27;input&#x27;)).filter(function(el){
+        const v=cleanText(el.value);
+        return /^\d{1,2}\/\d{1,2}\/(?:\d{4}|\*{4})$/.test(v);
       });
 
-      const script=document.createElement('script');
-      let finished=false;
-      const finish=result=>{
-        if(finished)return;
-        finished=true;
-        clearTimeout(timer);
-        delete window[callback];
-        script.remove();
-        if(result&&result.ok){
-          const by=result.matchedBy?` via ${result.matchedBy}`:'';
-          setSheetSyncStatus(`✓ ${r.name} updated in row ${result.row}${by}: ${values.status} / ${values.quoteType}`,'ok');
-        }else{
-          const reason=result&&result.message?result.message:'No response from the Sheet connection';
-          setSheetSyncStatus(`Sheet not updated for ${r.name}: ${reason}`,'bad');
-        }
-        resolve(result||{ok:false,message:'No response'});
-      };
-      window[callback]=finish;
-      script.onerror=()=>finish({ok:false,message:'Could not reach the Google Sheet Web App'});
-      const timer=setTimeout(()=>finish({ok:false,message:'Sheet update timed out after 60 seconds'}),60000);
-      script.src=url+(url.includes('?')?'&':'?')+params.toString();
-      document.head.appendChild(script);
-    },450);
-  });
-}
+      const seen=new Set();
+      const drivers=[];
 
-const zone=document.getElementById('uploadZone');
-zone.addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')document.getElementById('fileInput').click();});
-zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
-zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
-zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');handleFiles(e.dataTransfer.files);});
-document.getElementById('fileInput').addEventListener('change',e=>{handleFiles(e.target.files);e.target.value='';});
-document.getElementById('searchBox').addEventListener('input',renderTable);
-document.querySelectorAll('.filter-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');activeFilter=btn.dataset.filter;renderTable();
-  });
-});
+      dobInputs.forEach(function(dobInput,index){
+        const card=driverCardForDobInput(dobInput);
+        if(!card || seen.has(card)) return;
+        seen.add(card);
 
-async function handleFiles(files){
-  const pdfs=Array.from(files).filter(f=>f.name.toLowerCase().endsWith('.pdf'));
-  if(!pdfs.length)return;
-  document.getElementById('progressWrap').style.display='block';
-  document.getElementById('summaryBar').style.display='flex';
-  document.getElementById('toolbar').style.display='flex';
-  document.getElementById('resultsWrap').style.display='block';
-  const fill=document.getElementById('progressFill');
-  const label=document.getElementById('progressLabel');
-  for(let i=0;i<pdfs.length;i++){
-    label.textContent=`Processing ${i+1} of ${pdfs.length}: ${pdfs[i].name}`;
-    fill.style.width=((i/pdfs.length)*100)+'%';
-    const spinId='spin_'+Date.now();
-    const tbody=document.getElementById('resultsBody');
-    const spinRow=document.createElement('tr');
-    spinRow.id=spinId;spinRow.className='processing-row';
-    spinRow.innerHTML=`<td colspan="7"><span class="spinner"></span>&nbsp;Analyzing ${pdfs[i].name}...</td>`;
-    tbody.appendChild(spinRow);
-    try{
-      const text=await extractPDFText(pdfs[i]);
-      const result=analyzeQuote(text,pdfs[i].name);
-      result._rawText=text;
-      allResults.push(result);
-      saveToLocalStorage(result);
-      syncResultToSheet(result).catch(e=>console.warn('[TritoX] Sheet sync failed:',e));
-    }catch(e){
-      allResults.push({filename:pdfs[i].name,name:pdfs[i].name.replace('.pdf','').replace(/_/g,' '),
-        quoteType:'Unknown',errors:['Could not read PDF'],warnings:[],vehicles:[],drivers:[],
-        status:'fail',monthlyEFT:null,vehicleCount:0,putInStop:false,checks:{}});
-    }
-    document.getElementById(spinId)?.remove();
-    renderTable();updateSummary();
-  }
-  fill.style.width='100%';
-  label.textContent=`✓ Done! Processed ${pdfs.length} quote${pdfs.length>1?'s':''}.`;
-  setTimeout(()=>{document.getElementById('progressWrap').style.display='none';},2500);
-  // Show bookmarklet section
-  const bmSec=document.getElementById('bmSection');
-  if(bmSec){bmSec.style.display='block';}
-  initBookmarklet();
-}
+        const dobText=cleanText(dobInput.value);
+        const dob=parseFullDob(dobText);
+        const age=ageFromDob(dob);
+        const cardInputs=Array.from(card.querySelectorAll(&#x27;input&#x27;)).filter(function(x){return x!==dobInput;});
+        const nameValues=cardInputs.map(function(x){return cleanText(x.value);}).filter(function(v){
+          return /^[A-Za-z][A-Za-z .&#x27;-]{0,60}$/.test(v) &amp;&amp; !/^(United States|MI|Accepted|Self|Other)$/i.test(v);
+        });
+        const first=nameValues[0]||&#x27;&#x27;;
+        const last=nameValues[1]||&#x27;&#x27;;
+        const name=cleanText((first+&#x27; &#x27;+last).trim());
 
-async function extractPDFText(file){
-  const buf=await file.arrayBuffer();
-  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-  let text='';
-  for(let p=1;p<=pdf.numPages;p++){
-    const page=await pdf.getPage(p);
-    const content=await page.getTextContent();
-    let pageText='';
-    let lastY=null;
-    for(const item of content.items){
-      if(lastY!==null&&Math.abs(item.transform[5]-lastY)>5) pageText+='\n';
-      pageText+=item.str+' ';
-      lastY=item.transform[5];
-    }
-    text+=pageText+'\n';
-  }
-  return text;
-}
+        const choices=Array.from(card.querySelectorAll(&#x27;select,[role=&quot;combobox&quot;]&#x27;)).map(selectedControlText).filter(Boolean);
+        const cardText=cleanText(card.innerText||&#x27;&#x27;);
+        const accepted=choices.some(function(v){return /^Accepted$/i.test(v);}) || /\bAccepted\b/i.test(cardText);
+        const self=choices.some(function(v){return /^Self$/i.test(v);}) || /\bSelf\b/i.test(cardText);
 
-// ── MAIN ANALYSIS ──
-function analyzeQuote(text,filename){
-  const t=text;
-  const leadId=extractLeadIdFromPdfText(t);
-  const errors=[];
-  const warnings=[];
+        drivers.push({index:index,name:name,dob:dobText,age:age,accepted:accepted,self:self,fullDob:!!dob});
+      });
 
-  // ── Carrier & Quote Type Detection ──
-  const isBristolSummary=/Bristol\s+West\s+Auto\s+quote\s+summary/i.test(t);
-  const isFarmersSummary=/Farmers\s+Auto\s+quote\s+summary/i.test(t);
-  const hasFarmersHome=/Auto\/Farmers\s+Home/i.test(t);
-  const hasAutoHomeCondo=/Auto\/Home\s+or\s+Condo/i.test(t);
-
-  let quoteType='Unknown';
-  if(isFarmersSummary) quoteType='Farmers';
-  else if(isBristolSummary&&hasFarmersHome) quoteType='Farmer-Bristol';
-  else if(isBristolSummary) quoteType='Bristol West';
-
-  // ── Customer Name ──
-  // Read everything immediately after "Prepared for" until the next known
-  // quote label. This is more reliable than a single regex because PDF.js can
-  // split names/lines differently, especially for hyphens and multi-part names.
-  function customerHintFromFilename(filename){
-    return String(filename||'')
-      .replace(/\.pdf$/i,'')
-      .replace(/[_\-\s]+(?:Auto|Bundle|Home)[_\-\s]+\d{8}$/i,'')
-      .replace(/_/g,' ')
-      .replace(/\s+/g,' ')
-      .trim();
-  }
-
-  function compactPersonText(v){
-    let s=String(v||'').toLowerCase();
-    try{ s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }catch(e){}
-    return s.replace(/[^a-z0-9]+/g,'');
-  }
-
-  function trimPreparedNameByFilename(candidate,filename){
-    const hint=customerHintFromFilename(filename);
-    const hintCompact=compactPersonText(hint);
-    if(!candidate || !hintCompact) return candidate;
-
-    // Work with person-like words only. Find the FIRST contiguous token group
-    // matching the filename customer hint, then stop there. This prevents a
-    // second driver/spouse from being appended to the primary customer's name.
-    //
-    // Antony Hawkins Andrea Hawkins + Hawkins_Auto_... => Antony Hawkins
-    // Dean Bachelder Lisa Bachelder + Bachelder_Auto_... => Dean Bachelder
-    // Johntae Galloway-Townsend + Galloway-townsend_Auto_... => full first name + surname
-    const words=String(candidate)
-      .match(/[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'’.\-]*/g) || [];
-
-    for(let start=0;start<words.length;start++){
-      let joined='';
-      for(let finish=start;finish<Math.min(words.length,start+6);finish++){
-        joined+=compactPersonText(words[finish]);
-        if(joined===hintCompact){
-          return words.slice(0,finish+1).join(' ').trim();
-        }
-        if(joined.length>hintCompact.length+4) break;
+      const accepted=drivers.filter(function(d){return d.accepted;});
+      const main=accepted.find(function(d){return d.self;}) || accepted[0] || null;
+      let selected=null;
+      if(main &amp;&amp; main.fullDob &amp;&amp; main.age&lt;65){
+        selected=main;
+      }else if(main &amp;&amp; main.fullDob &amp;&amp; main.age&gt;=65){
+        selected=accepted.find(function(d){return d!==main &amp;&amp; d.fullDob &amp;&amp; d.age&lt;65;}) || null;
+      }else{
+        selected=accepted.find(function(d){return d!==main &amp;&amp; d.fullDob &amp;&amp; d.age&lt;65;}) || null;
       }
+      return {visible:true,drivers:drivers,main:main,selected:selected};
     }
-    return candidate;
-  }
 
-  function extractPreparedForName(text,filename){
-    const source=String(text||'');
-    const marker=/Prepared\s+for\b/i;
-    const mm=marker.exec(source);
-    let candidate='';
+    function detectCarrier(){ return priorInsuranceSnapshot().company; }
+    function detectRenewalDate(){ return priorInsuranceSnapshot().renewalDate; }
 
-    if(mm){
-      let after=source.slice(mm.index+mm[0].length, mm.index+mm[0].length+700);
+    function isBwCoveragePage(){
+      // ALTA&#x27;s Bristol West coverage route is explicit. Check pathname first so
+      // page text, stale SPA content, or quote labels can never override BW.
+      return /\/quote\/auto\/coverages-review-bw(?:\/)?$/i.test(location.pathname) ||
+        /\/quote\/auto\/coverages-review-bw(?:[/?#]|$)/i.test(location.href);
+    }
 
-      // Stop before the next known quote/header field when PDF.js preserved it.
-      const stop=after.search(
-        /(?:\n|\s{2,})(?:Effective(?:\s+date)?|Quote\s+number|Prepared\s+on|Policy\s+start\s+date|Auto\s+quote\s+(?:summary|details)|Home\s+quote\s+(?:summary|details)|Bristol\s+West\s+Auto\s+quote\s+summary|Farmers\s+Auto\s+quote\s+summary)\b/i
-      );
-      if(stop>=0) after=after.slice(0,stop);
+    function onAutoCoverageSection(){
+      return isBwCoveragePage() || /\/quote\/auto\/coverages-review(?:\/)?$/i.test(location.pathname) ||
+        /\/quote\/auto\/coverages-review(?:[/?#]|$)/i.test(location.href);
+    }
 
-      candidate=after
-        .replace(/[\r\n\t]+/g,' ')
-        .replace(/\s+/g,' ')
-        .trim()
-        .replace(/^[\-:|]+|[\-:|]+$/g,'')
-        .trim();
+    // ── ALTA coverage presets ────────────────────────────────────────────────
+    // Apply only after the Auto coverages page has rendered. Farmers and
+    // Bristol West use separate presets. The selected values remain visible in
+    // ALTA because the real page controls are changed and normal change events
+    // are dispatched.
+    const FARMERS_COVERAGE_PRESET=[
+      [&#x27;Bodily injury&#x27;,&#x27;$100,000/$300,000&#x27;],
+      [&#x27;Property damage&#x27;,&#x27;$100,000&#x27;],
+      [&#x27;UM/UIM - bodily injury&#x27;,&#x27;$100,000/$300,000&#x27;]
+    ];
+    const BW_COVERAGE_PRESET=[
+      [&#x27;Bodily injury&#x27;,&#x27;$100,000/$300,000&#x27;],
+      [&#x27;Property damage&#x27;,&#x27;$100,000&#x27;],
+      [&#x27;Limited property damage&#x27;,&#x27;$3,000&#x27;],
+      [&#x27;Uninsured motorist - bodily injury&#x27;,&#x27;$100,000/$300,000&#x27;],
+      [&#x27;Underinsured motorist - bodily injury&#x27;,&#x27;$100,000/$300,000&#x27;]
+    ];
 
-      // PDF.js sometimes flattens the next heading onto the same line.
-      candidate=candidate
-        .replace(/\s+(?:Farmers\s+)?Auto\s+quote(?:\s+(?:summary|details))?[\s\S]*$/i,'')
-        .replace(/\s+Bristol\s+West\s+Auto\s+quote(?:\s+summary)?[\s\S]*$/i,'')
-        .replace(/\s+(?:Farmers\s+)?Home\s+quote(?:\s+(?:summary|details))?[\s\S]*$/i,'')
-        .trim();
+    function covNorm(v){
+      return cleanText(v).toLowerCase().replace(/\$/g,&#x27;&#x27;).replace(/,/g,&#x27;&#x27;).replace(/\s+/g,&#x27;&#x27;).replace(/[–—]/g,&#x27;-&#x27;);
+    }
+    function covLabelNorm(v){
+      return cleanText(v).toLowerCase().replace(/[^a-z0-9/]+/g,&#x27; &#x27;).trim();
+    }
+    function visibleEl(el){
+      if(!el) return false;
+      try{
+        const r=el.getBoundingClientRect();
+        const s=getComputedStyle(el);
+        return r.width&gt;0 &amp;&amp; r.height&gt;0 &amp;&amp; s.display!==&#x27;none&#x27; &amp;&amp; s.visibility!==&#x27;hidden&#x27;;
+      }catch(e){ return false; }
+    }
 
-      // Use the local filename only as a boundary/hint, not as the displayed
-      // customer name. This keeps the FIRST/primary insured and drops a second
-      // driver/spouse when both appear after "Prepared for".
-      candidate=trimPreparedNameByFilename(candidate,filename);
+    function coverageSelectForLabel(label){
+      const wanted=covLabelNorm(label);
+      let best=null;
+      for(const sel of Array.from(document.querySelectorAll(&#x27;select&#x27;))){
+        if(!visibleEl(sel) &amp;&amp; !visibleEl(sel.parentElement)) continue;
+        let node=sel.parentElement;
+        for(let depth=0;node &amp;&amp; depth&lt;6;depth++,node=node.parentElement){
+          const txt=covLabelNorm(node.innerText||&#x27;&#x27;);
+          if(txt.includes(wanted)){
+            const noise=Math.max(0,txt.length-wanted.length);
+            const score=depth*100+noise;
+            if(!best || score&lt;best.score) best={el:sel,score:score};
+            break;
+          }
+        }
+      }
+      return best?best.el:null;
+    }
 
-      if(!/[A-Za-z]/.test(candidate) ||
-         /^(?:effective|quote|prepared|policy|auto|home)\b/i.test(candidate) ||
-         candidate.length>120){
-        candidate='';
+    function optionForValue(select,wanted){
+      const wn=covNorm(wanted);
+      const opts=Array.from(select.options||[]);
+      return opts.find(function(o){return covNorm(o.textContent||o.label||o.value)===wn;}) ||
+        opts.find(function(o){return covNorm(o.value)===wn;}) || null;
+    }
+
+    function setCoverageNative(select,wanted){
+      if(!select) return false;
+      const opt=optionForValue(select,wanted);
+      if(!opt) return false;
+      if(String(select.value)===String(opt.value) &amp;&amp; opt.selected) return true;
+      try{
+        const setter=Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,&#x27;value&#x27;);
+        if(setter&amp;&amp;setter.set) setter.set.call(select,opt.value); else select.value=opt.value;
+        Array.from(select.options||[]).forEach(function(o){o.selected=(o===opt);});
+        select.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+        select.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+        select.dispatchEvent(new Event(&#x27;blur&#x27;,{bubbles:true}));
+        return true;
+      }catch(e){
+        console.warn(&#x27;[TritoX TM] ALTA coverage native select failed:&#x27;,wanted,e);
+        return false;
       }
     }
 
-    if(candidate) return candidate;
-
-    // Final fallback: clean filename, with quote type/date removed.
-    return customerHintFromFilename(filename);
-  }
-
-  const name=extractPreparedForName(t,filename);
-
-  // ── Monthly EFT — AUTO ONLY ──
-  // Rules:
-  // 1) Read only from the Auto quote details section.
-  // 2) Stop before any Home quote summary/details section so Home EFT can never bleed into Auto.
-  // 3) If Auto explicitly uses Monthly EFT, capture the installment amount.
-  // 4) If Auto is Paid in full / 1 Pay only, keep monthlyEFT=null and show the BW warning.
-  const autoSectionIdxEarly=t.search(/Auto\s+quote\s+details/i);
-
-  // Find the FIRST Home section that occurs after Auto details (summary OR details).
-  let homeSectionIdxEarly=-1;
-  if(autoSectionIdxEarly>-1){
-    const afterAuto=t.substring(autoSectionIdxEarly);
-    const relHomeIdx=afterAuto.search(/(?:Farmers\s+)?Home\s+quote\s+(?:summary|details)/i);
-    if(relHomeIdx>-1) homeSectionIdxEarly=autoSectionIdxEarly+relHomeIdx;
-  }
-
-  let autoChunkEarly='';
-  if(autoSectionIdxEarly>-1){
-    const autoEnd=homeSectionIdxEarly>autoSectionIdxEarly?homeSectionIdxEarly:t.length;
-    autoChunkEarly=t.substring(autoSectionIdxEarly,autoEnd);
-  }
-
-  let monthlyEFT=null;
-
-  // Method 1 — Options summary, e.g.:
-  // Installments $1,420.88/mo
-  // Pay plan Monthly EFT
-  const autoOptionEFT=autoChunkEarly.match(
-    /Installments\s+\$?([\d,]+(?:\.\d{1,2})?)\s*\/?\s*mo[\s\S]{0,180}?Pay\s+plan\s+Monthly\s+EFT/i
-  );
-  if(autoOptionEFT){
-    monthlyEFT=parseFloat(autoOptionEFT[1].replace(/,/g,''));
-  }
-
-  // Method 2 — Payment plans table, e.g.:
-  // Monthly EFT $1,353.70 $1,420.88 $8,398.10
-  //                  due today   installment   total
-  if(monthlyEFT===null){
-    const autoPaymentTableEFT=autoChunkEarly.match(
-      /Monthly\s+EFT\s+\$?([\d,]+(?:\.\d{1,2})?)\s+\$?([\d,]+(?:\.\d{1,2})?)(?:\s+\$?[\d,]+(?:\.\d{1,2})?)?/i
-    );
-    if(autoPaymentTableEFT){
-      monthlyEFT=parseFloat(autoPaymentTableEFT[2].replace(/,/g,''));
+    function coverageContainerForLabel(label){
+      const wanted=covLabelNorm(label);
+      const els=Array.from(document.querySelectorAll(&#x27;label,div,span,p,td&#x27;));
+      let best=null;
+      for(const el of els){
+        if(!visibleEl(el)) continue;
+        const own=covLabelNorm(el.textContent||&#x27;&#x27;);
+        if(own!==wanted) continue;
+        let node=el.parentElement;
+        for(let depth=0;node &amp;&amp; depth&lt;5;depth++,node=node.parentElement){
+          const controls=node.querySelectorAll(&#x27;select,button,[role=&quot;combobox&quot;],input&#x27;);
+          if(controls.length){
+            const score=depth*100+(node.innerText||&#x27;&#x27;).length;
+            if(!best||score&lt;best.score) best={el:node,score:score};
+            break;
+          }
+        }
+      }
+      return best?best.el:null;
     }
-  }
 
-  const eftAutoMissing=monthlyEFT===null||Number.isNaN(monthlyEFT);
-  if(eftAutoMissing){
-    monthlyEFT=null;
-    errors.push('Monthly EFT auto not available — use BW');
-  }
-
-  // ── Dates — exactly 14 days from Prepared on ──
-  const prepMatch=t.match(/Prepared\s+on\s+(\d{2}\/\d{2}\/\d{2,4})/i);
-  const startMatch=t.match(/Policy\s+start\s+date\s+\n?\s*([A-Za-z]+\s+\d+,?\s*\d{4})/i);
-  let dateOk=false,dateDiff=null,prepDateStr='',startDateStr='';
-  if(prepMatch&&startMatch){
-    prepDateStr=prepMatch[1];startDateStr=startMatch[1].trim();
-    const pd=parseDate(prepDateStr);
-    const sd=parseDate(startDateStr);
-    if(pd&&sd){
-      dateDiff=Math.round((sd-pd)/(1000*60*60*24));
-      dateOk=(dateDiff===14);
-      if(dateDiff<14) errors.push(`Policy start date too soon (${dateDiff} days — must be exactly 14)`);
-      else if(dateDiff>14) errors.push(`Policy start date too far out (${dateDiff} days — must be exactly 14)`);
+    async function setCoverageFallback(label,wanted){
+      const row=coverageContainerForLabel(label);
+      if(!row) return false;
+      const control=Array.from(row.querySelectorAll(&#x27;button,[role=&quot;combobox&quot;]&#x27;)).find(visibleEl);
+      if(!control) return false;
+      try{ control.click(); }catch(e){ return false; }
+      await new Promise(function(resolve){setTimeout(resolve,60);});
+      const wn=covNorm(wanted);
+      const options=Array.from(document.querySelectorAll(&#x27;[role=&quot;option&quot;],mat-option,.mat-option,.dropdown-menu li a,.dropdown-menu li button,li[role=&quot;option&quot;]&#x27;))
+        .filter(visibleEl);
+      const target=options.find(function(el){return covNorm(el.textContent||&#x27;&#x27;)===wn;});
+      if(!target) return false;
+      try{ target.click(); return true; }catch(e){ return false; }
     }
-  } else warnings.push('Could not verify policy start date');
 
-  // ── Vehicles & Drivers ──
-  const vehicles=extractVehicles(t);
-  const vehicleCount=vehicles.length;
-  const drivers=extractDrivers(t);
-
-  // PIP age check handled after carrier checks below
-
-  // ── Run type-specific checks ──
-  if(quoteType==='Farmers') checkFarmers(t,errors,warnings,vehicles);
-  else if(quoteType==='Farmer-Bristol') checkFarmerBristol(t,errors,warnings,vehicles);
-  else if(quoteType==='Bristol West') checkPureBristol(t,errors,warnings,vehicles);
-  else warnings.push('Quote type could not be identified');
-
-  // ── Premium Threshold ──
-  // Monthly EFT limits apply ONLY to 1, 2, or 3 vehicles.
-  // 1 vehicle = $400 max, 2 vehicles = $800 max, 3 vehicles = $1,000 max.
-  // 4+ vehicles = NO Monthly EFT threshold / never PUT IN STOP for premium amount.
-  let premiumOk=true,putInStop=false;
-  if(monthlyEFT!==null && vehicleCount>=1 && vehicleCount<=3){
-    const limits={1:400,2:800,3:1000};
-    const limit=limits[vehicleCount];
-    if(monthlyEFT>limit){
-      premiumOk=false;
-      putInStop=true;
-      errors.push(`⛔ PUT IN STOP — Monthly EFT $${monthlyEFT.toFixed(2)} exceeds $${limit} limit for ${vehicleCount} vehicle${vehicleCount>1?'s':''}`);
+    let coveragePresetBusy=false;
+    let coveragePresetDoneSig=&#x27;&#x27;;
+    async function applyAltaCoverageDefaults(){
+      if(!onAutoCoverageSection() || coveragePresetBusy) return;
+      const ident=altaIdentity();
+      const sig=(ident.id||&#x27;&#x27;)+&#x27;|&#x27;+location.pathname;
+      if(sig===coveragePresetDoneSig) return;
+      coveragePresetBusy=true;
+      try{
+        const preset=isBwCoveragePage()?BW_COVERAGE_PRESET:FARMERS_COVERAGE_PRESET;
+        let allDone=true;
+        for(const pair of preset){
+          const label=pair[0],wanted=pair[1];
+          const sel=coverageSelectForLabel(label);
+          let ok=false;
+          if(sel){
+            const opt=optionForValue(sel,wanted);
+            if(opt &amp;&amp; covNorm(sel.options[sel.selectedIndex]&amp;&amp;sel.options[sel.selectedIndex].textContent)===covNorm(wanted)) ok=true;
+            else ok=setCoverageNative(sel,wanted);
+          }
+          if(!ok) ok=await setCoverageFallback(label,wanted);
+          if(!ok) allDone=false;
+          await new Promise(function(resolve){setTimeout(resolve,30);});
+        }
+        if(allDone){
+          coveragePresetDoneSig=sig;
+          console.log(&#x27;[TritoX TM] ALTA coverage preset applied:&#x27;,isBwCoveragePage()?&#x27;BW&#x27;:&#x27;Farmers&#x27;);
+        }
+      }finally{
+        coveragePresetBusy=false;
+      }
     }
-  }
 
-  // ── PIP Age-Based Check ──
-  // All drivers 65+ → must be Opt.6
-  // Any driver 64 or below → must be Opt.3
-  const pipLine2=t.match(/Personal\s+(?:Injury\s+)?[Pp]rotection\s+[Mm]edical\s+(Opt\.[\s\S]{0,80}?)(?=PIP\s+medical|PIP\s+wage|Work\s+loss)/i);
-  const pipStr2=pipLine2?pipLine2[1].trim():'';
-  const hasOpt3=/Opt\.\s*3/i.test(pipStr2);
-  const hasOpt6=/Opt\.\s*6/i.test(pipStr2);
-  if(drivers.length>0){
-    const allOver65=drivers.every(d=>d.age>=65);
-    const anyUnder65=drivers.some(d=>d.age<65);
-    if(allOver65&&hasOpt3) errors.push('All drivers are 65+ — PIP must be Opt.6 (Medicare), not Opt.3');
-    if(anyUnder65&&hasOpt6) errors.push('Driver(s) under 65 on policy — PIP must be Opt.3, not Opt.6');
-  }
+    function detectStar(){
+      // Rating is detected ONLY on ALTA&#x27;s Auto coverages page.
+      if(!onAutoCoverageSection()) return &#x27;&#x27;;
 
-  // ── Bundle Detection & Home Checks ──
-  const isBundle=/Farmers\s+[Hh]ome\s+quote/i.test(t)||/Farmers\s+Home\s+quote\s+summary/i.test(t);
-  let homeData={isBundle,ppValOk:true,roofValOk:true,dwelling:null,homePay1:null};
-  if(isBundle){
-    // Personal Property Valuation
-    homeData.ppValOk=/Personal\s+property\s+valuation\s+Replacement\s+cost/i.test(t);
-    if(!homeData.ppValOk) errors.push('Home: Personal Property Valuation must be Replacement Cost');
-    // Roof Valuation
-    homeData.roofValOk=/Roof\s+valuation\s+Replacement\s+cost/i.test(t);
-    if(!homeData.roofValOk) errors.push('Home: Roof Valuation must be Replacement Cost');
+      // IMPORTANT: resolve Bristol West from the route BEFORE scanning text.
+      // The BW page can contain numbers such as Opt. 1 / Opt. 3 and other
+      // content that must never be interpreted as a Farmers star rating.
+      if(isBwCoveragePage()) return &#x27;BW&#x27;;
 
-    // Dwelling amount (Coverage A)
-    const dwellingMatch=t.match(/Dwelling\s+\$([\d,]+)/i);
-    homeData.dwelling=dwellingMatch?parseInt(dwellingMatch[1].replace(/,/g,'')):null;
-    // Home annual amount WITHOUT fees. PDF.js can split four-digit amounts like
-    // "$1,023.00" into "$1, 023.00", so normalize those item-boundary spaces first.
-    // Start at Home quote details to prevent the Auto payment plan being selected.
-    const normalizedMoneyText=t
-      .replace(/(\d),\s+(?=\d{3}(?:\D|$))/g,'$1,')
-      .replace(/\$\s+(?=\d)/g,'$');
-    const homeDetailsIdx=normalizedMoneyText.search(/Home\s+quote\s+details/i);
-    const homeChunk=homeDetailsIdx>-1
-      ? normalizedMoneyText.substring(homeDetailsIdx,homeDetailsIdx+14000)
-      : normalizedMoneyText;
+      const text=document.body ? document.body.innerText : &#x27;&#x27;;
 
-    // "Term Premium" is already the annual premium excluding fees (preferred).
-    const termPremiumMatch=homeChunk.match(
-      /Term\s+Premium\s+\$([\d,]+(?:\.\d{1,2})?)(?:\s*\/\s*12\s*-?\s*mo)?/i
-    );
-    let rawHomePay=termPremiumMatch
-      ? parseFloat(termPremiumMatch[1].replace(/,/g,''))
-      : null;
+      // Farmers rating banner: 1 Star / 2 Stars / 3 Stars.
+      const m=text.match(/\b([123])\s*Stars?\b/i);
+      if(m) return m[1];
 
-    // Fallback for layouts that only show the 1 Pay total including fees.
-    if(rawHomePay===null){
-      const home1PayMatch=homeChunk.match(
-        /1\s+Pay\s+\$([\d,]+(?:\.\d{1,2})?)\s+-?\s*\$([\d,]+(?:\.\d{1,2})?)/i
-      ) || homeChunk.match(/1\s+Pay\s+\$([\d,]+(?:\.\d{1,2})?)/i);
-      if(home1PayMatch){
-        rawHomePay=parseFloat((home1PayMatch[2]||home1PayMatch[1]).replace(/,/g,''));
-        const homeFeeMatch=homeChunk.match(
-          /\*?Includes\s+\$([\d,]+(?:\.\d{1,2})?)\s+(?:in\s+fees|Membership\s+fee)/i
+      // Bristol West coverage layout does not show a Star badge. In the BW
+      // layout ALTA shows the Bristol West PIP deductible row without the
+      // separate Farmers PIP deductible row that is present on Farmers quotes.
+      const hasBWPip=/Bristol\s+West\s+PIP\s+deductible/i.test(text);
+      const hasFarmersPip=/Farmers\s+PIP\s+deductible/i.test(text);
+      if(hasBWPip &amp;&amp; !hasFarmersPip) return &#x27;BW&#x27;;
+
+      // Extra safety: inspect the visible quote banner/logo for Bristol West
+      // branding. This helps if ALTA changes the PIP labels later.
+      const brandEls=Array.from(document.querySelectorAll(&#x27;img,[aria-label],[title],[data-testid],[class],[id]&#x27;)).filter(function(el){
+        try{
+          const r=el.getBoundingClientRect();
+          return r.width&gt;0 &amp;&amp; r.height&gt;0 &amp;&amp; r.top&lt;260 &amp;&amp; r.bottom&gt;0;
+        }catch(e){ return false; }
+      });
+      const bwBrand=brandEls.some(function(el){
+        const bits=[
+          el.getAttribute&amp;&amp;el.getAttribute(&#x27;alt&#x27;),
+          el.getAttribute&amp;&amp;el.getAttribute(&#x27;title&#x27;),
+          el.getAttribute&amp;&amp;el.getAttribute(&#x27;aria-label&#x27;),
+          el.getAttribute&amp;&amp;el.getAttribute(&#x27;data-testid&#x27;),
+          el.id, el.className,
+          el.getAttribute&amp;&amp;el.getAttribute(&#x27;src&#x27;),
+          el.style&amp;&amp;el.style.backgroundImage
+        ].map(function(v){return String(v||&#x27;&#x27;);}).join(&#x27; &#x27;);
+        return /bristol\s*west|bristolwest|(?:^|[^a-z])bw(?:[^a-z]|$)/i.test(bits);
+      });
+      if(bwBrand) return &#x27;BW&#x27;;
+
+      return &#x27;&#x27;;
+    }
+
+    function storageKey(id){ return &#x27;tritox_alta_lead_&#x27;+String(id||&#x27;unknown&#x27;); }
+    const ALTA_INDEX_KEY=&#x27;tritox_alta_index&#x27;;
+
+    function readAltaIndex(){
+      try{
+        const raw=GM_getValue(ALTA_INDEX_KEY,&#x27;{}&#x27;);
+        const index=JSON.parse(raw||&#x27;{}&#x27;)||{};
+        let changed=false;
+        Object.keys(index).forEach(function(id){
+          const m=index[id]||{};
+          if(!m._savedAt || Date.now()-Number(m._savedAt)&gt;ALTA_META_TTL){
+            delete index[id];
+            changed=true;
+          }
+        });
+        if(changed) GM_setValue(ALTA_INDEX_KEY,JSON.stringify(index));
+        return index;
+      }catch(e){ return {}; }
+    }
+
+    function readSaved(id){
+      try{
+        const index=readAltaIndex();
+        if(index[id]) return index[id];
+        const obj=JSON.parse(GM_getValue(storageKey(id),&#x27;{}&#x27;))||{};
+        if(obj._savedAt &amp;&amp; Date.now()-obj._savedAt&gt;ALTA_META_TTL) return {};
+        return obj;
+      }catch(e){return {};}
+    }
+
+    function saveMeta(meta){
+      if(!meta || !meta.altaId) return;
+      meta._savedAt=Date.now();
+
+      // Keep every lead separately so 4-6 quotes can be worked in parallel.
+      // Nothing is overwritten just because another ALTA lead becomes current.
+      const index=readAltaIndex();
+      index[String(meta.altaId)]=meta;
+      GM_setValue(ALTA_INDEX_KEY,JSON.stringify(index));
+
+      // Per-ID key retained for backwards compatibility/debugging.
+      GM_setValue(storageKey(meta.altaId),JSON.stringify(meta));
+      GM_setValue(&#x27;tritox_alta_latest&#x27;,JSON.stringify(meta));
+      console.log(&#x27;[TritoX TM] ALTA metadata auto-saved:&#x27;,meta,&#x27;cached leads:&#x27;,Object.keys(index).length);
+    }
+
+    // ── Dummy In-force Insurance ─────────────────────────────────────────────
+    // User-triggered only. It never runs automatically.
+    // Defaults:
+    //   Company: AAA
+    //   BI: $100,000/$300,000
+    //   Expiration: 6 months from today&#x27;s browser date
+    //   Insured with company: 6 - 11 Months
+    //   More than 6 months continuous insurance: Yes (auto-selected by ALTA from tenure)
+    function txVisible(el){
+      if(!el) return false;
+      try{
+        const r=el.getBoundingClientRect();
+        const s=getComputedStyle(el);
+        return r.width&gt;0 &amp;&amp; r.height&gt;0 &amp;&amp; s.display!==&#x27;none&#x27; &amp;&amp; s.visibility!==&#x27;hidden&#x27;;
+      }catch(e){ return false; }
+    }
+
+    function txNorm(v){
+      return cleanText(v)
+        .toLowerCase()
+        .replace(/[–—]/g,&#x27;-&#x27;)
+        .replace(/\s*\/\s*/g,&#x27;/&#x27;)
+        .replace(/\s*-\s*/g,&#x27;-&#x27;)
+        .replace(/\s+/g,&#x27; &#x27;)
+        .trim();
+    }
+
+    function txPageWindow(){
+      try{ return typeof unsafeWindow!==&#x27;undefined&#x27; ? unsafeWindow : window; }
+      catch(e){ return window; }
+    }
+
+    function txNativeSetInput(input,value){
+      if(!input) return false;
+      try{
+        const pw=txPageWindow();
+        const proto=input.tagName===&#x27;TEXTAREA&#x27;
+          ? pw.HTMLTextAreaElement.prototype
+          : pw.HTMLInputElement.prototype;
+        const desc=Object.getOwnPropertyDescriptor(proto,&#x27;value&#x27;);
+        if(desc&amp;&amp;desc.set) desc.set.call(input,String(value)); else input.value=String(value);
+
+        const E=pw.Event||Event;
+        const IE=pw.InputEvent||InputEvent;
+        try{ input.dispatchEvent(new IE(&#x27;input&#x27;,{bubbles:true,cancelable:true,data:String(value),inputType:&#x27;insertText&#x27;})); }
+        catch(e){ input.dispatchEvent(new E(&#x27;input&#x27;,{bubbles:true})); }
+        input.dispatchEvent(new E(&#x27;change&#x27;,{bubbles:true}));
+        return true;
+      }catch(e){
+        try{ input.value=String(value); input.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true})); input.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true})); return true; }
+        catch(_e){ return false; }
+      }
+    }
+
+    function txFindButton(rx,root){
+      root=root||document;
+      return Array.from(root.querySelectorAll(&#x27;button,a,[role=&quot;button&quot;],input[type=&quot;button&quot;],input[type=&quot;submit&quot;]&#x27;))
+        .filter(txVisible)
+        .find(function(el){
+          const t=cleanText(el.textContent||el.value||el.getAttribute(&#x27;aria-label&#x27;)||&#x27;&#x27;);
+          return rx.test(t);
+        })||null;
+    }
+
+    function txFindDrawer(){
+      const candidates=Array.from(document.querySelectorAll(&#x27;aside,[role=&quot;dialog&quot;],.drawer,.modal,[class*=&quot;drawer&quot;],[class*=&quot;panel&quot;],div&#x27;))
+        .filter(txVisible)
+        .filter(function(el){
+          const t=cleanText(el.innerText||&#x27;&#x27;);
+          return /^In-force policy\b/i.test(t) || (/\bIn-force policy\b/i.test(t) &amp;&amp; /Current insurance company/i.test(t));
+        });
+      if(!candidates.length) return null;
+      // Prefer the smallest visible container containing the complete form.
+      candidates.sort(function(a,b){
+        return (a.getBoundingClientRect().width*a.getBoundingClientRect().height)-
+               (b.getBoundingClientRect().width*b.getBoundingClientRect().height);
+      });
+      return candidates[0];
+    }
+
+    function txWaitFor(getter,timeout){
+      return new Promise(function(resolve){
+        let finished=false;
+        let observer=null;
+        let fallbackTimer=null;
+        let timeoutTimer=null;
+
+        function finish(value){
+          if(finished) return;
+          finished=true;
+          try{ if(observer) observer.disconnect(); }catch(e){}
+          try{ if(fallbackTimer) clearInterval(fallbackTimer); }catch(e){}
+          try{ if(timeoutTimer) clearTimeout(timeoutTimer); }catch(e){}
+          resolve(value||null);
+        }
+
+        function check(){
+          if(finished) return;
+          try{
+            const v=getter();
+            if(v){ finish(v); return; }
+          }catch(e){}
+        }
+
+        check();
+        if(finished) return;
+
+        // MutationObserver continues reacting to DOM changes when the ALTA tab
+        // is in the background, unlike very short setTimeout polling loops which
+        // Chrome heavily throttles.
+        try{
+          observer=new MutationObserver(check);
+          observer.observe(document.documentElement,{
+            childList:true,
+            subtree:true,
+            attributes:true,
+            characterData:true
+          });
+        }catch(e){}
+
+        // Slow fallback only; this is not the main driver.
+        fallbackTimer=setInterval(check,500);
+        timeoutTimer=setTimeout(function(){ finish(null); },timeout||4000);
+      });
+    }
+
+    function txLabelNode(drawer,labelText){
+      const wanted=txNorm(labelText).replace(/\s*\*\s*$/,&#x27;&#x27;);
+      const nodes=Array.from(drawer.querySelectorAll(&#x27;label,div,span,p&#x27;))
+        .filter(txVisible)
+        .filter(function(node){
+          const own=txNorm(node.textContent||&#x27;&#x27;).replace(/\s*\*\s*$/,&#x27;&#x27;);
+          return own===wanted || own.startsWith(wanted);
+        });
+      if(!nodes.length) return null;
+      nodes.sort(function(a,b){
+        const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+        const aExact=txNorm(a.textContent||&#x27;&#x27;).replace(/\s*\*\s*$/,&#x27;&#x27;)===wanted ? 0 : 1;
+        const bExact=txNorm(b.textContent||&#x27;&#x27;).replace(/\s*\*\s*$/,&#x27;&#x27;)===wanted ? 0 : 1;
+        if(aExact!==bExact) return aExact-bExact;
+        const aArea=ar.width*ar.height, bArea=br.width*br.height;
+        return aArea-bArea;
+      });
+      return nodes[0];
+    }
+
+    function txVisibleTextInputs(drawer){
+      return Array.from(drawer.querySelectorAll(&#x27;input&#x27;)).filter(function(el){
+        return txVisible(el) &amp;&amp; !/radio|checkbox|hidden|button|submit/i.test(el.type||&#x27;&#x27;);
+      }).sort(function(a,b){
+        return a.getBoundingClientRect().top-b.getBoundingClientRect().top;
+      });
+    }
+
+    function txClickLikeUser(el){
+      if(!el) return false;
+      try{ el.scrollIntoView({block:&#x27;center&#x27;,inline:&#x27;nearest&#x27;}); }catch(e){}
+      try{ el.focus(); }catch(e){}
+      try{
+        [&#x27;pointerdown&#x27;,&#x27;mousedown&#x27;,&#x27;pointerup&#x27;,&#x27;mouseup&#x27;,&#x27;click&#x27;].forEach(function(type){
+          let evt;
+          try{
+            evt = type.indexOf(&#x27;pointer&#x27;)===0
+              ? new PointerEvent(type,{bubbles:true,cancelable:true,view:window,pointerType:&#x27;mouse&#x27;,isPrimary:true})
+              : new MouseEvent(type,{bubbles:true,cancelable:true,view:window});
+          }catch(e){
+            evt = new Event(type,{bubbles:true,cancelable:true});
+          }
+          el.dispatchEvent(evt);
+        });
+        return true;
+      }catch(e){
+        try{ el.click(); return true; }catch(_e){ return false; }
+      }
+    }
+
+    function txSetInput(input,value){
+      if(!input) return false;
+      try{
+        input.focus();
+        const ok=txNativeSetInput(input,value);
+        try{ input.dispatchEvent(new KeyboardEvent(&#x27;keyup&#x27;,{bubbles:true,key:&#x27;Tab&#x27;})); }catch(e){}
+        try{ input.blur(); }catch(e){}
+        return ok;
+      }catch(e){
+        console.warn(&#x27;[TritoX TM] Dummy insurance input set failed:&#x27;,e);
+        return false;
+      }
+    }
+
+    async function txTypeIntoInput(input,value){
+      if(!input) return false;
+      try{
+        txClickLikeUser(input);
+        // Clear through native setter first.
+        const desc=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,&#x27;value&#x27;);
+        if(desc&amp;&amp;desc.set) desc.set.call(input,&#x27;&#x27;); else input.value=&#x27;&#x27;;
+        try{
+          input.dispatchEvent(new InputEvent(&#x27;input&#x27;,{bubbles:true,inputType:&#x27;deleteContentBackward&#x27;}));
+        }catch(e){ input.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true})); }
+        await new Promise(function(resolve){setTimeout(resolve,100);});
+
+        let current=&#x27;&#x27;;
+        for(const ch of String(value)){
+          try{ input.dispatchEvent(new KeyboardEvent(&#x27;keydown&#x27;,{bubbles:true,cancelable:true,key:ch})); }catch(e){}
+          current+=ch;
+          if(desc&amp;&amp;desc.set) desc.set.call(input,current); else input.value=current;
+          try{
+            input.dispatchEvent(new InputEvent(&#x27;input&#x27;,{
+              bubbles:true,cancelable:true,data:ch,inputType:&#x27;insertText&#x27;
+            }));
+          }catch(e){ input.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true})); }
+          try{ input.dispatchEvent(new KeyboardEvent(&#x27;keyup&#x27;,{bubbles:true,cancelable:true,key:ch})); }catch(e){}
+          await new Promise(function(resolve){setTimeout(resolve,120);});
+        }
+        input.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+        return txNorm(input.value)===txNorm(value);
+      }catch(e){
+        return txSetInput(input,value);
+      }
+    }
+
+    function txFindFieldRow(drawer,labelText){
+      const label=txLabelNode(drawer,labelText);
+      if(!label) return null;
+      const lr=label.getBoundingClientRect();
+      const center=lr.top+lr.height/2;
+
+      // Find the smallest ancestor that still looks like one horizontal form row.
+      let node=label.parentElement;
+      let best=null;
+      for(let depth=0;node &amp;&amp; node!==drawer.parentElement &amp;&amp; depth&lt;7;depth++,node=node.parentElement){
+        const r=node.getBoundingClientRect();
+        const controls=node.querySelectorAll(
+          &#x27;input,select,button,[role=&quot;combobox&quot;],[aria-haspopup=&quot;listbox&quot;],[tabindex]&#x27;
         );
-        const homeFee=homeFeeMatch
-          ? parseFloat(homeFeeMatch[1].replace(/,/g,''))
-          : 0;
-        rawHomePay-=homeFee;
-      }
-    }
-    homeData.homePay1=rawHomePay;
-  }
-
-  // ── AgencyZoom Checklist Data ──
-  // Vehicles: Year Make Model (first word only), comma separated
-  const azVehicles=vehicles.map(v=>{
-    // Model from PDF is like "Chevrolet Blazer ..." or "Lincoln Nautilus ..."
-    // We want: Year Make FirstModelWord e.g. "2026 Chevrolet Blazer"
-    const rawWords=v.model.trim().split(/\s+/).filter(w=>w&&!/^\.+$/.test(w)&&w!=='...');
-    // Take first 2 words (Make + Model) only
-    const cleanParts=rawWords.slice(0,2).map(w=>w.replace(/\.+$/,'').replace(/\.\.\.$/,''));
-    return v.year+' '+cleanParts.join(' ');
-  }).join(', ');
-
-  // Monthly Auto — round
-  const azMonthly=monthlyEFT?Math.round(monthlyEFT):null;
-
-  // Auto_6months = 1 Pay amount WITHOUT fees
-  // IMPORTANT: use the complete Auto section (already isolated above as autoChunkEarly)
-  // so the Membership fee line is not missed on longer quotes.
-  let az6months=null;
-  const autoChunk=autoChunkEarly || '';
-
-  // Patterns:
-  // Farmers:     1 Pay $1,981.00 - $1,981.00
-  // Bristol West:1 Pay $1,105.24 $0.00 $1,105.24
-  const onePay1=autoChunk.match(/1\s+Pay\s+\$([\d,]+\.?\d*)\s+\$0\.00\s+\$([\d,]+\.?\d*)/i);
-  const onePay2=autoChunk.match(/1\s+Pay\s+\$([\d,]+\.?\d*)\s+-\s+\$([\d,]+\.?\d*)/i);
-  const onePay3=autoChunk.match(/1\s+Pay\s+\$([\d,]+\.?\d*)/i);
-
-  let rawAuto6=null;
-  if(onePay1) rawAuto6=parseFloat(onePay1[2].replace(/,/g,''));
-  else if(onePay2) rawAuto6=parseFloat(onePay2[2].replace(/,/g,''));
-  else if(onePay3) rawAuto6=parseFloat(onePay3[1].replace(/,/g,''));
-
-  // Subtract Auto fees from 1 Pay:
-  // e.g. $1,981 - $60 Membership fee = $1,921
-  if(rawAuto6!==null){
-    const autoFeeMatch=autoChunk.match(
-      /\*?Includes\s+\$([\d,]+(?:\.\d{1,2})?)\s+(?:in\s+fees|Membership\s+fee)/i
-    );
-    const autoFee=autoFeeMatch
-      ? parseFloat(autoFeeMatch[1].replace(/,/g,''))
-      : 0;
-
-    az6months=Math.round(rawAuto6-autoFee);
-  }
-
-  // Home Annual — round
-  const azHomeAnnual=homeData.homePay1?Math.round(homeData.homePay1):null;
-
-  // Home Coverage A always uses the extracted Dwelling amount.
-  const azCoverageA=homeData.dwelling;
-
-  const azChecklist={vehicles:azVehicles,monthly:azMonthly,sixMonths:az6months,
-    homeAnnual:azHomeAnnual,coverageA:azCoverageA,eftAutoMissing:eftAutoMissing};
-
-  const status=errors.length>0?'fail':warnings.length>0?'warn':'pass';
-  return{filename,name,leadId,quoteType,monthlyEFT,vehicleCount,vehicles,drivers,
-    errors,warnings,status,putInStop,homeData,azChecklist,
-    checks:{dateOk,dateDiff,prepDateStr,startDateStr,premiumOk}};
-}
-
-function parseDate(str){
-  const m1=str.match(/(\d{2})\/(\d{2})\/(\d{2,4})/);
-  if(m1){let y=parseInt(m1[3]);if(y<100)y+=2000;return new Date(y,parseInt(m1[1])-1,parseInt(m1[2]));}
-  const m2=str.match(/([A-Za-z]+)\s+(\d+),?\s*(\d{4})/);
-  if(m2)return new Date(`${m2[1]} ${m2[2]}, ${m2[3]}`);
-  return null;
-}
-
-// ── EXTRACT VEHICLES ──
-// Reads from summary page "Coverage for your property" table
-// Two layouts exist:
-// A) Interleaved: VehName, val1, val2, VehName, val1, val2 (values right after each name)
-// B) Grouped: VehName, VehName, VehName, val1, val2, val1, val2 (all names then all values)
-function extractVehicles(t){
-  const vehicles=[];
-  const lines=t.split('\n').map(l=>l.trim()).filter(Boolean);
-  const isVal=v=>/^\$[\d,]+$/.test(v)||/^-$/.test(v)||/^included$/i.test(v)||/^none$/i.test(v);
-  const toNum=v=>{
-    if(!v||/^[-]$/.test(v)||/^(included|none)$/i.test(v)) return null;
-    return v.replace(/[$,]/g,'');
-  };
-  const isVehLine=l=>/^((?:19|20)\d{2})\s+[A-Za-z]/.test(l);
-
-  // ── STEP 1: Find "Coverage for your property" table on summary page ──
-  let tableStart=-1;
-  for(let i=0;i<lines.length;i++){
-    if(/Coverage for your property/i.test(lines[i])){
-      for(let j=i+1;j<Math.min(i+20,lines.length);j++){
-        if(isVehLine(lines[j])){tableStart=i;break;}
-      }
-      if(tableStart>-1) break;
-    }
-  }
-  if(tableStart===-1) return vehicles;
-
-  // ── STEP 2: Detect which columns exist in the summary table header ──
-  // The header line(s) between "Coverage for your property" and the first vehicle
-  // tell us whether Comprehensive and/or Collision columns are present.
-  // e.g. "Vehicle Comprehensive Collision" → both
-  //      "Vehicle Collision"               → collision only (no comp)
-  //      "Vehicle"                         → PLPD only (no values expected)
-  let hasCompCol=false, hasCollCol=false;
-  for(let i=tableStart;i<Math.min(tableStart+10,lines.length);i++){
-    const l=lines[i];
-    if(/Comprehensive/i.test(l)) hasCompCol=true;
-    if(/Collision/i.test(l)) hasCollCol=true;
-    if(isVehLine(l)) break; // stop at first vehicle line
-  }
-  // If neither header found, default to both (older layout)
-  if(!hasCompCol&&!hasCollCol){ hasCompCol=true; hasCollCol=true; }
-
-  // ── STEP 3: Collect entries (skip noise) ──
-  const entries=[];
-  for(let i=tableStart+1;i<lines.length&&i<tableStart+100;i++){
-    const line=lines[i];
-    if(/Additional selected|Discounts \/|Page \d+\s+of/i.test(line)) break;
-    if(/^Vehicle$|^Comprehensive$|^Collision$|^Standard$|Aaron Budnick|License|farmersagent|\(517\)/i.test(line)) continue;
-    if(/^Comp(rehensive)?\s+Coll(ision)?$/i.test(line)) continue;
-    entries.push(line);
-  }
-
-  // ── STEP 4: Parse vehicle names + values using column knowledge ──
-  const tempVehicles=[];
-  let i=0;
-  while(i<entries.length){
-    const line=entries[i];
-    const m=line.match(/^((?:19|20)\d{2})\s+([A-Za-z0-9][a-zA-Z0-9 \-\/\.]{2,50}?)(?=\s+[\$\(]|\s{2,}|$)/) || line.match(/^((?:19|20)\d{2})\s+([A-Za-z0-9][a-zA-Z0-9 \-\/\.]{2,50})/);
-    if(m){
-      const year=parseInt(m[1]);
-      const model=m[2].trimEnd(); // trimEnd to remove trailing spaces before value
-      let compVal=null, collVal=null;
-
-      // Extract whatever comes AFTER the model name on the same line
-      // e.g. "2011 Chevrolet Camaro ...   $1,000" → afterModel = "$1,000"
-      // Extract afterModel — strip truncated suffix like (Ne... or & C... before values
-      let afterModel=line.slice(m[0].length).trim();
-      // If afterModel starts with ( or & (truncated name suffix), skip to first $
-      if(afterModel.startsWith('(')||afterModel.startsWith('&')){
-        const dollarIdx=afterModel.indexOf('$');
-        if(dollarIdx>-1) afterModel=afterModel.slice(dollarIdx).trim();
-        else afterModel='';
-      }
-
-      // Normalize afterModel — remove "Standard/Limited/Broadened" attached to values
-      // e.g. "$1,000Standard" → "$1,000" and "$1,000 $1,000Standard" → "$1,000 $1,000"
-      const normAfter = afterModel.replace(/(\$[\d,]+|-)(Standard|Limited|Broadened)/gi,'$1 $2').trim();
-      // Check for two inline values: "$1,000 $1,000"
-      const inlineTwo=normAfter.match(/^(\$[\d,]+|-)\s+(\$[\d,]+|-)(?:\s+(?:Standard|Limited|Broadened))?\s*$/i);
-      // Check for one inline value: "$1,000" or "$1,000 Standard"
-      const inlineOne=normAfter.match(/^(\$[\d,]+|-)(?:\s+(?:Standard|Limited|Broadened))?\s*$/i);
-
-      if(inlineTwo&&hasCompCol&&hasCollCol){
-        compVal=toNum(inlineTwo[1]);
-        collVal=toNum(inlineTwo[2]);
-      } else if(inlineTwo&&!hasCompCol&&hasCollCol){
-        collVal=toNum(inlineTwo[1]);
-      } else if(inlineTwo&&hasCompCol&&!hasCollCol){
-        compVal=toNum(inlineTwo[1]);
-      } else if(inlineOne){
-        // Single value inline — assign to whichever column exists
-        if(!hasCompCol&&hasCollCol) collVal=toNum(inlineOne[1]);
-        else if(hasCompCol&&!hasCollCol) compVal=toNum(inlineOne[1]);
-        else compVal=toNum(inlineOne[1]); // fallback: treat as comp
-      } else {
-        // Values on next lines — skip "Standard/Limited" noise lines
-        const nextLines=[];
-        for(let k=i+1;k<Math.min(i+5,entries.length);k++){
-          const nl=entries[k];
-          if(/^(Standard|Limited|Broadened|Michigan)/i.test(nl)) continue;
-          if(isVal(nl)) nextLines.push(nl);
-          if(nextLines.length===2) break;
-        }
-        if(hasCompCol&&hasCollCol){
-          if(nextLines[0]!==undefined) compVal=toNum(nextLines[0]);
-          if(nextLines[1]!==undefined) collVal=toNum(nextLines[1]);
-        } else if(!hasCompCol&&hasCollCol){
-          if(nextLines[0]!==undefined) collVal=toNum(nextLines[0]);
-        } else if(hasCompCol&&!hasCollCol){
-          if(nextLines[0]!==undefined) compVal=toNum(nextLines[0]);
+        if(controls.length){
+          const heightPenalty=r.height&gt;110 ? 500 : 0;
+          const score=depth*50+heightPenalty+r.height;
+          if(!best || score&lt;best.score) best={root:node,score:score};
         }
       }
-      tempVehicles.push({year,model,compVal,collVal,_entryIndex:i});
+
+      // If ancestry is noisy, create a synthetic row by using the drawer and
+      // selecting controls closest to the label&#x27;s Y coordinate.
+      return {root:best?best.root:drawer,label:label,labelRect:lr,center:center};
     }
-    i++;
-  }
 
-  // ── STEP 5: Grouped layout fallback ──
-  // If all vehicles still have null values, try grouped layout
-  const allNull=tempVehicles.length>0&&tempVehicles.every(v=>v.compVal===null&&v.collVal===null);
-  if(allNull){
-    const valBlock=entries.filter(e=>isVal(e));
-    const colCount=(hasCompCol?1:0)+(hasCollCol?1:0)||2;
-    for(let j=0;j<tempVehicles.length;j++){
-      let vi=0;
-      if(hasCompCol){ tempVehicles[j].compVal=valBlock[j*colCount+vi]!==undefined?toNum(valBlock[j*colCount+vi]):null; vi++; }
-      if(hasCollCol){ tempVehicles[j].collVal=valBlock[j*colCount+vi]!==undefined?toNum(valBlock[j*colCount+vi]):null; }
+    function txRowControls(drawer,labelText){
+      const row=txFindFieldRow(drawer,labelText);
+      if(!row) return [];
+      const lr=row.labelRect;
+      const cy=row.center;
+      const candidates=Array.from(drawer.querySelectorAll(
+        &#x27;input,select,button,[role=&quot;combobox&quot;],[aria-haspopup=&quot;listbox&quot;],[tabindex]&#x27;
+      )).filter(function(el){
+        if(!txVisible(el)) return false;
+        if(el.closest(&#x27;#tritox-alta-panel&#x27;)) return false;
+        if(el.tagName===&#x27;INPUT&#x27; &amp;&amp; /hidden/i.test(el.type||&#x27;&#x27;)) return false;
+        const r=el.getBoundingClientRect();
+        const ey=r.top+r.height/2;
+        return Math.abs(ey-cy)&lt;=55 &amp;&amp; r.right&gt;lr.right-20;
+      });
+
+      return candidates.sort(function(a,b){
+        const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+        const ay=Math.abs((ar.top+ar.height/2)-cy);
+        const by=Math.abs((br.top+br.height/2)-cy);
+        if(ay!==by) return ay-by;
+        // Prefer larger field controls over small icon buttons.
+        return (br.width*br.height)-(ar.width*ar.height);
+      });
     }
-  }
 
-    for(const v of tempVehicles){
-    delete v._entryIndex;
-    vehicles.push(v);
-  }
-  return vehicles;
-}
-
-// ── EXTRACT DRIVERS ──
-function extractDrivers(t){
-  const drivers=[];
-  const seen=new Set();
-  const re=/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+),\s*(\d{2})\b/g;
-  let m;
-  while((m=re.exec(t))!==null){
-    const name=m[1].trim();
-    const age=parseInt(m[2]);
-    const key=name+'|'+age;
-    if(age>=16&&age<=100&&!seen.has(key)&&!/^(Aaron|Budnick|Agency|Farmers|Bristol)/i.test(name)&&name.includes(' ')){
-      seen.add(key);drivers.push({name,age});
+    function txExactVisibleText(text){
+      const wanted=txNorm(text);
+      const selectors=&#x27;[role=&quot;option&quot;],[role=&quot;menuitem&quot;],mat-option,.mat-option,.dropdown-item,.dropdown-menu li a,.dropdown-menu li button,li,button,a,div,span&#x27;;
+      const candidates=Array.from(document.querySelectorAll(selectors)).filter(txVisible).filter(function(el){
+        return txNorm(el.textContent||&#x27;&#x27;)===wanted;
+      });
+      if(!candidates.length) return null;
+      // Prefer the smallest exact text node in a popup/overlay.
+      candidates.sort(function(a,b){
+        const aa=a.getBoundingClientRect(), bb=b.getBoundingClientRect();
+        const aOverlay=a.closest(&#x27;[role=&quot;listbox&quot;],[role=&quot;menu&quot;],.cdk-overlay-container,.dropdown-menu,.modal,.drawer&#x27;)?0:1;
+        const bOverlay=b.closest(&#x27;[role=&quot;listbox&quot;],[role=&quot;menu&quot;],.cdk-overlay-container,.dropdown-menu,.modal,.drawer&#x27;)?0:1;
+        if(aOverlay!==bOverlay) return aOverlay-bOverlay;
+        return (aa.width*aa.height)-(bb.width*bb.height);
+      });
+      return candidates[0];
     }
-  }
-  return drivers;
-}
 
-// ── COMMON LIABILITY & PIP CHECKS ──
-function checkLiabilityPIP(t,errors){
-  if(!/Bodily\s+injury\s+\$100,000\/\$300,000/i.test(t)) errors.push('Bodily Injury must be $100,000/$300,000');
-  if(!/Property\s+damage\s+\$100,000(?!\s*\/)/i.test(t)) errors.push('Property Damage must be $100,000');
-  if(!/(?:UM\/UIM|Uninsured\s+motorist|Underinsured\s+motorist)[^\n$]*\$100,000\/\$300,000/i.test(t)) errors.push('UM/UIM must be $100,000/$300,000');
-  const pipLine=t.match(/Personal\s+(?:Injury\s+)?[Pp]rotection\s+[Mm]edical\s+(Opt\.[\s\S]{0,80}?)(?=PIP\s+medical|PIP\s+wage|Work\s+loss)/i);
-  const pipStr=pipLine?pipLine[1].trim():'';
-  const isOpt3=/Opt\.\s*3/i.test(pipStr);
-  const isOpt6=/Opt\.\s*6/i.test(pipStr);
-  if(!isOpt3&&!isOpt6) errors.push(`PIP must be Opt.3 or Opt.6 (found: ${pipStr.substring(0,30)||'not found'})`);
-  if(isOpt3){
-    if(!/\$250,000[\s\S]{0,10}\/\$500/i.test(t)&&!/no\s+exclusions[\s\S]{0,10}\/\$500/i.test(t))
-      errors.push('PIP deductible must be $500 for Opt.3');
-  }
-  if(isOpt6&&!/\/\$0/i.test(t)) errors.push('PIP deductible must be $0 for Opt.6');
-  if(!/PIP\s+medical\s+Primary/i.test(t)) errors.push('PIP Medical must be Primary');
-  if(!/PIP\s+wage\s+loss\s+Primary/i.test(t)) errors.push('PIP Wage Loss must be Primary');
-}
+    async function txOpenAndPick(drawer,labelText,wanted){
+      const controls=txRowControls(drawer,labelText);
+      let control=controls.find(function(el){
+        if(el.tagName===&#x27;INPUT&#x27; &amp;&amp; !/button|submit/i.test(el.type||&#x27;&#x27;)) return false;
+        const r=el.getBoundingClientRect();
+        return r.width&gt;80 &amp;&amp; (el.tagName===&#x27;SELECT&#x27; ||
+          el.getAttribute(&#x27;role&#x27;)===&#x27;combobox&#x27; ||
+          el.getAttribute(&#x27;aria-haspopup&#x27;)===&#x27;listbox&#x27; ||
+          el.tagName===&#x27;BUTTON&#x27; ||
+          el.hasAttribute(&#x27;tabindex&#x27;));
+      }) || controls.find(function(el){
+        return el.tagName===&#x27;SELECT&#x27; || el.getAttribute(&#x27;role&#x27;)===&#x27;combobox&#x27;;
+      });
 
-// ── TYPE 1: FARMERS ──
-function checkFarmers(t,errors,warnings,vehicles){
-  checkLiabilityPIP(t,errors);
-  if(/Signal\s+by\s+Farmers/i.test(t)) errors.push('Signal by Farmers must be REMOVED');
-  if(!/Auto\/Home\s+or\s+Condo/i.test(t)) errors.push('Farmers: Auto/Home or Condo discount is MISSING');
-  checkVehicleCoverage(t,vehicles,errors);
-}
+      if(!control) return false;
 
-// ── TYPE 2: FARMER-BRISTOL ──
-function checkFarmerBristol(t,errors,warnings,vehicles){
-  checkLiabilityPIP(t,errors);
-  if(/Signal\s+by\s+Farmers/i.test(t)) errors.push('Signal by Farmers must be REMOVED');
-  if(!/Auto\/Farmers\s+Home/i.test(t)) errors.push('Farmer-Bristol: Auto/Farmers Home discount is MISSING');
-  checkVehicleCoverage(t,vehicles,errors);
-}
+      if(control.tagName===&#x27;SELECT&#x27;){
+        const wn=txNorm(wanted);
+        const opts=Array.from(control.options||[]);
+        const opt=opts.find(function(o){return txNorm(o.textContent||o.label||o.value)===wn;}) ||
+                  opts.find(function(o){return txNorm(o.textContent||&#x27;&#x27;).includes(wn);});
+        if(!opt) return false;
+        try{
+          const desc=Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,&#x27;value&#x27;);
+          if(desc&amp;&amp;desc.set) desc.set.call(control,opt.value); else control.value=opt.value;
+          opts.forEach(function(o){o.selected=(o===opt);});
+          control.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+          control.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+          control.dispatchEvent(new Event(&#x27;blur&#x27;,{bubbles:true}));
+          await new Promise(function(resolve){setTimeout(resolve,120);});
+          return txNorm(control.options[control.selectedIndex]&amp;&amp;control.options[control.selectedIndex].textContent||control.value).includes(wn);
+        }catch(e){ return false; }
+      }
 
-// ── TYPE 3: PURE BRISTOL WEST ──
-function checkPureBristol(t,errors,warnings,vehicles){
-  checkLiabilityPIP(t,errors);
-  // Extract discount section from detail page
-  const discMatch=t.match(/Discounts\/Preferences\s+([\s\S]{0,400}?)(?:Included|Payment\s+plans)/i);
-  const discText=discMatch?discMatch[1]:'';
-  // Paperless must be present
-  if(!/Go\s+Paperless|Paperless/i.test(discText)) errors.push('Bristol West: Paperless discount is MISSING');
-  // Only flag manually added discounts (not defaults: EFT, Safe Driver, Preferred Driver)
-  const forbidden=[
-    {name:'Signal by Farmers',rx:/Signal\s+by\s+Farmers/i},
-    {name:'Homeowner',rx:/\bHomeowner\b/i},
-    {name:'Auto\/Farmers Home',rx:/Auto\/Farmers\s+Home/i},
-    {name:'Auto\/Home or Condo',rx:/Auto\/Home\s+or\s+Condo/i},
-  ];
-  for(const f of forbidden){
-    if(f.rx.test(discText)) errors.push(`Bristol West: "${f.name}" should NOT be checked`);
-  }
-  checkVehicleCoverage(t,vehicles,errors);
-}
+      txClickLikeUser(control);
+      let opt=await txWaitFor(function(){ return txExactVisibleText(wanted); },2200);
+      if(!opt){
+        // If the clickable field itself was not the dropdown trigger, try the
+        // widest other control on the same row.
+        for(const other of controls){
+          if(other===control) continue;
+          const r=other.getBoundingClientRect();
+          if(r.width&lt;70) continue;
+          txClickLikeUser(other);
+          opt=await txWaitFor(function(){ return txExactVisibleText(wanted); },900);
+          if(opt) break;
+        }
+      }
+      if(!opt) return false;
+      txClickLikeUser(opt);
+      await new Promise(function(resolve){setTimeout(resolve,45);});
+      return true;
+    }
 
-// ── VEHICLE COVERAGE CHECK ──
-// Uses summary page values (compVal/collVal) extracted with vehicle
-function checkVehicleCoverage(t,vehicles,errors){
-  const tUp=t.toUpperCase();
+    async function txPickAutocomplete(drawer,labelText,value){
+      const controls=txRowControls(drawer,labelText);
+      let input=controls.find(function(el){
+        return el.tagName===&#x27;INPUT&#x27; &amp;&amp; !/radio|checkbox|hidden|button|submit/i.test(el.type||&#x27;&#x27;);
+      });
+      if(!input){
+        const inputs=txVisibleTextInputs(drawer);
+        input=inputs[0]||null;
+      }
+      if(!input) return false;
 
-  // Locate the most likely detailed coverage heading for each vehicle. A quote can
-  // mention the same vehicle in summaries and detail pages, so prefer the mention
-  // followed by coverage labels instead of taking the first match in the PDF.
-  const vehicleStarts=vehicles.map(v=>{
-    const words=v.model.split(/\s+/).filter(Boolean);
-    const keys=[
-      `${v.year} ${words.slice(0,3).join(' ')}`.toUpperCase(),
-      `${v.year} ${words[0]||''}`.toUpperCase()
-    ].filter((key,index,array)=>key.trim()&&array.indexOf(key)===index);
-    let bestIndex=-1;
-    let bestScore=-1;
-    for(const key of keys){
-      let from=0;
-      while(from<tUp.length){
-        const found=tUp.indexOf(key,from);
-        if(found===-1) break;
-        const immediate=t.substring(found,found+220);
-        const preview=t.substring(found,found+600);
-        const score=(/\bCoverage\b/i.test(immediate)?20:0)+[
-          /\bCoverage\b/i,
-          /Liability\s+and\s+policy\s+coverages/i,
-          /Comprehensive/i,
-          /Collision/i,
-          /Roadside\s+assistance/i,
-          /MCCA\s+assessment/i,
-          /Vehicle\s+premium/i
-        ].reduce((total,rx)=>total+(rx.test(preview)?1:0),0);
-        // Prefer the later occurrence when scores tie; detailed pages normally
-        // follow summary pages in the extracted PDF text.
-        if(score>=bestScore){bestScore=score;bestIndex=found;}
-        from=found+key.length;
+      await txTypeIntoInput(input,value);
+      await new Promise(function(resolve){setTimeout(resolve,350);});
+
+      let opt=txExactVisibleText(value);
+
+      // Force ALTA&#x27;s carrier lookup with the search icon / button on the row.
+      if(!opt){
+        const searchButton=controls.find(function(el){
+          if(el===input) return false;
+          const r=el.getBoundingClientRect();
+          return (el.tagName===&#x27;BUTTON&#x27; || el.getAttribute(&#x27;role&#x27;)===&#x27;button&#x27; || el.hasAttribute(&#x27;tabindex&#x27;)) &amp;&amp;
+                 r.width&lt;=90;
+        });
+        if(searchButton){
+          txClickLikeUser(searchButton);
+          opt=await txWaitFor(function(){ return txExactVisibleText(value); },2200);
+        }
+      }
+
+      if(opt){
+        txClickLikeUser(opt);
+        await new Promise(function(resolve){setTimeout(resolve,120);});
+      }else{
+        // Keyboard selection fallback.
+        try{
+          input.focus();
+          input.dispatchEvent(new KeyboardEvent(&#x27;keydown&#x27;,{bubbles:true,cancelable:true,key:&#x27;ArrowDown&#x27;}));
+          input.dispatchEvent(new KeyboardEvent(&#x27;keyup&#x27;,{bubbles:true,cancelable:true,key:&#x27;ArrowDown&#x27;}));
+          await new Promise(function(resolve){setTimeout(resolve,120);});
+          input.dispatchEvent(new KeyboardEvent(&#x27;keydown&#x27;,{bubbles:true,cancelable:true,key:&#x27;Enter&#x27;}));
+          input.dispatchEvent(new KeyboardEvent(&#x27;keyup&#x27;,{bubbles:true,cancelable:true,key:&#x27;Enter&#x27;}));
+        }catch(e){}
+        await new Promise(function(resolve){setTimeout(resolve,120);});
+      }
+
+      // Do not only trust the internal value during the transient autocomplete
+      // rerender. Require visible AAA text either in the input or its row.
+      const rowText=controls.map(function(el){return cleanText(el.value||el.textContent||&#x27;&#x27;);}).join(&#x27; &#x27;);
+      return txNorm(input.value)===txNorm(value) || /\bAAA\b/i.test(rowText);
+    }
+
+    async function txFillDate(drawer,value){
+      const controls=txRowControls(drawer,&#x27;Policy expiration date&#x27;);
+      let input=controls.find(function(el){
+        return el.tagName===&#x27;INPUT&#x27; &amp;&amp; !/radio|checkbox|hidden|button|submit/i.test(el.type||&#x27;&#x27;);
+      });
+      if(!input){
+        const inputs=txVisibleTextInputs(drawer);
+        input=inputs.find(function(el){ return /date|mm\/dd/i.test((el.type||&#x27;&#x27;)+&#x27; &#x27;+(el.placeholder||&#x27;&#x27;)); }) ||
+              inputs[1] || null;
+      }
+      if(!input) return false;
+      txSetInput(input,value);
+      await new Promise(function(resolve){setTimeout(resolve,70);});
+      try{
+        input.focus();
+        input.dispatchEvent(new KeyboardEvent(&#x27;keydown&#x27;,{bubbles:true,key:&#x27;Tab&#x27;}));
+        input.dispatchEvent(new KeyboardEvent(&#x27;keyup&#x27;,{bubbles:true,key:&#x27;Tab&#x27;}));
+        input.blur();
+      }catch(e){}
+      await new Promise(function(resolve){setTimeout(resolve,120);});
+      return txNorm(input.value)===txNorm(value);
+    }
+
+    async function txChooseContinuousYes(drawer){
+      // Click the visible Yes text first. ALTA may use a custom radio control
+      // where the real input is hidden.
+      const yesNodes=Array.from(drawer.querySelectorAll(&#x27;label,span,div,button&#x27;))
+        .filter(txVisible)
+        .filter(function(el){ return txNorm(el.textContent||&#x27;&#x27;)===&#x27;yes&#x27;; })
+        .sort(function(a,b){
+          const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+          return (ar.width*ar.height)-(br.width*br.height);
+        });
+      if(yesNodes.length){
+        txClickLikeUser(yesNodes[0]);
+        await new Promise(function(resolve){setTimeout(resolve,70);});
+      }
+
+      const radios=Array.from(drawer.querySelectorAll(&#x27;input[type=&quot;radio&quot;]&#x27;));
+      if(radios.length){
+        for(const radio of radios){
+          let txt=&#x27;&#x27;;
+          try{
+            const lab=radio.id ? drawer.querySelector(&#x27;label[for=&quot;&#x27;+CSS.escape(radio.id)+&#x27;&quot;]&#x27;) : null;
+            txt=txNorm((lab&amp;&amp;lab.textContent)||(radio.parentElement&amp;&amp;radio.parentElement.textContent)||&#x27;&#x27;);
+          }catch(e){}
+          if(/\byes\b/.test(txt) &amp;&amp; !/\bno\b/.test(txt)){
+            try{radio.checked=true;}catch(e){}
+            radio.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+            radio.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+            return true;
+          }
+        }
+        // Fixed current layout: Yes is the first radio.
+        try{
+          radios[0].checked=true;
+          radios[0].dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+          radios[0].dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+        }catch(e){}
+        return true;
+      }
+
+      // If there are no native radios but Yes was clicked, treat that click as success.
+      return yesNodes.length&gt;0;
+    }
+
+    function txSixMonthsFromToday(){
+      const d=new Date();
+      const day=d.getDate();
+      d.setDate(1);
+      d.setMonth(d.getMonth()+6);
+      const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+      d.setDate(Math.min(day,lastDay));
+      const mm=String(d.getMonth()+1).padStart(2,&#x27;0&#x27;);
+      const dd=String(d.getDate()).padStart(2,&#x27;0&#x27;);
+      return mm+&#x27;/&#x27;+dd+&#x27;/&#x27;+d.getFullYear();
+    }
+
+
+    function txDrawerRect(drawer){
+      try{ return drawer.getBoundingClientRect(); }
+      catch(e){ return {left:0,right:window.innerWidth,top:0,bottom:window.innerHeight,width:window.innerWidth,height:window.innerHeight}; }
+    }
+
+    function txPointControl(drawer,labelText){
+      const label=txLabelNode(drawer,labelText);
+      if(!label) return null;
+      const dr=txDrawerRect(drawer);
+      const lr=label.getBoundingClientRect();
+      const y=Math.round(lr.top+lr.height/2);
+
+      // Probe several X positions across the input area. This works even when
+      // ALTA renders a custom div-based control rather than input/select.
+      const xs=[
+        Math.round(dr.right-90),
+        Math.round(dr.right-150),
+        Math.round(dr.left+dr.width*0.78),
+        Math.round(dr.left+dr.width*0.68)
+      ];
+
+      for(const x of xs){
+        let el=null;
+        try{ el=document.elementFromPoint(x,y); }catch(e){}
+        if(!el) continue;
+        if(el.closest &amp;&amp; el.closest(&#x27;#tritox-alta-panel&#x27;)) continue;
+
+        // Walk upward until we reach a sensible clickable/editable control.
+        let n=el;
+        for(let depth=0;n &amp;&amp; n!==drawer &amp;&amp; depth&lt;6;depth++,n=n.parentElement){
+          const role=(n.getAttribute&amp;&amp;n.getAttribute(&#x27;role&#x27;))||&#x27;&#x27;;
+          const tag=n.tagName||&#x27;&#x27;;
+          if(tag===&#x27;INPUT&#x27; || tag===&#x27;SELECT&#x27; || tag===&#x27;TEXTAREA&#x27; ||
+             tag===&#x27;BUTTON&#x27; || role===&#x27;combobox&#x27; || role===&#x27;button&#x27; ||
+             (n.getAttribute&amp;&amp;n.getAttribute(&#x27;aria-haspopup&#x27;)===&#x27;listbox&#x27;)){
+            return n;
+          }
+        }
+        return el;
+      }
+      return null;
+    }
+
+    function txFirstEditableInDrawer(drawer,skip){
+      return Array.from(drawer.querySelectorAll(&#x27;input,textarea,[contenteditable=&quot;true&quot;]&#x27;))
+        .filter(function(el){
+          if(!txVisible(el)) return false;
+          if(skip &amp;&amp; skip.includes(el)) return false;
+          if(el.tagName===&#x27;INPUT&#x27; &amp;&amp; /radio|checkbox|hidden|button|submit/i.test(el.type||&#x27;&#x27;)) return false;
+          return true;
+        })
+        .sort(function(a,b){
+          return a.getBoundingClientRect().top-b.getBoundingClientRect().top;
+        })[0] || null;
+    }
+
+    async function txHumanFillTextControl(control,value){
+      if(!control) return false;
+
+      // If elementFromPoint landed on a wrapper, prefer its editable descendant.
+      if(control.tagName!==&#x27;INPUT&#x27; &amp;&amp; control.tagName!==&#x27;TEXTAREA&#x27; &amp;&amp;
+         control.getAttribute(&#x27;contenteditable&#x27;)!==&#x27;true&#x27;){
+        const child=control.querySelector &amp;&amp; control.querySelector(&#x27;input,textarea,[contenteditable=&quot;true&quot;]&#x27;);
+        if(child &amp;&amp; txVisible(child)) control=child;
+      }
+
+      txClickLikeUser(control);
+      await new Promise(function(resolve){setTimeout(resolve,30);});
+
+      try{
+        if(control.tagName===&#x27;INPUT&#x27; || control.tagName===&#x27;TEXTAREA&#x27;){
+          control.focus();
+          try{ control.select(); }catch(e){}
+          // execCommand fires browser-style input events in many Angular controls.
+          let usedExec=false;
+          try{
+            usedExec=document.execCommand &amp;&amp; document.execCommand(&#x27;insertText&#x27;,false,String(value));
+          }catch(e){}
+          if(!usedExec || txNorm(control.value)!==txNorm(value)){
+            txSetInput(control,value);
+          }
+          control.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+          control.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+          return txNorm(control.value)===txNorm(value);
+        }
+
+        if(control.getAttribute(&#x27;contenteditable&#x27;)===&#x27;true&#x27;){
+          control.focus();
+          control.textContent=&#x27;&#x27;;
+          try{ document.execCommand(&#x27;insertText&#x27;,false,String(value)); }
+          catch(e){ control.textContent=String(value); }
+          control.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+          control.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+          return txNorm(control.textContent)===txNorm(value);
+        }
+      }catch(e){}
+      return false;
+    }
+
+    async function txSpatialPick(drawer,labelText,wanted){
+      const control=txPointControl(drawer,labelText);
+      if(!control) return false;
+
+      // Native select path.
+      if(control.tagName===&#x27;SELECT&#x27;){
+        const wn=txNorm(wanted);
+        const opts=Array.from(control.options||[]);
+        const opt=opts.find(function(o){return txNorm(o.textContent||o.label||o.value)===wn;});
+        if(!opt) return false;
+        try{
+          const desc=Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,&#x27;value&#x27;);
+          if(desc&amp;&amp;desc.set) desc.set.call(control,opt.value); else control.value=opt.value;
+          opts.forEach(function(o){o.selected=(o===opt);});
+          control.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+          control.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+          return true;
+        }catch(e){}
+      }
+
+      txClickLikeUser(control);
+      await new Promise(function(resolve){setTimeout(resolve,80);});
+
+      let opt=await txWaitFor(function(){ return txExactVisibleText(wanted); },2200);
+      if(!opt){
+        // Some ALTA menus are rendered as plain text items without role attributes.
+        const wn=txNorm(wanted);
+        const all=Array.from(document.querySelectorAll(&#x27;div,span,li,button,a&#x27;))
+          .filter(txVisible)
+          .filter(function(el){
+            if(el.closest &amp;&amp; el.closest(&#x27;#tritox-alta-panel&#x27;)) return false;
+            return txNorm(el.textContent||&#x27;&#x27;)===wn;
+          })
+          .sort(function(a,b){
+            const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+            return (ar.width*ar.height)-(br.width*br.height);
+          });
+        opt=all[0]||null;
+      }
+      if(!opt) return false;
+      txClickLikeUser(opt);
+      await new Promise(function(resolve){setTimeout(resolve,80);});
+      return true;
+    }
+
+
+    function txControlAtRowCenter(drawer,labelText){
+      const label=txLabelNode(drawer,labelText);
+      if(!label) return null;
+      const dr=drawer.getBoundingClientRect();
+      const lr=label.getBoundingClientRect();
+      const y=Math.round(lr.top+lr.height/2);
+
+      // Target the middle of the field itself, not the search/caret icon.
+      const xs=[
+        Math.round(dr.left+dr.width*0.68),
+        Math.round(dr.left+dr.width*0.73),
+        Math.round(dr.left+dr.width*0.63)
+      ];
+
+      for(const x of xs){
+        let el=null;
+        try{ el=document.elementFromPoint(x,y); }catch(e){}
+        if(!el || (el.closest&amp;&amp;el.closest(&#x27;#tritox-alta-panel&#x27;))) continue;
+
+        // Prefer a descendant/ancestor that is the actual control.
+        if(el.matches&amp;&amp;el.matches(&#x27;input,select,textarea,[role=&quot;combobox&quot;],button,[aria-haspopup=&quot;listbox&quot;]&#x27;)) return el;
+        const child=el.querySelector&amp;&amp;el.querySelector(&#x27;input,select,textarea,[role=&quot;combobox&quot;],button,[aria-haspopup=&quot;listbox&quot;]&#x27;);
+        if(child&amp;&amp;txVisible(child)) return child;
+        const up=el.closest&amp;&amp;el.closest(&#x27;input,select,textarea,[role=&quot;combobox&quot;],button,[aria-haspopup=&quot;listbox&quot;]&#x27;);
+        if(up&amp;&amp;txVisible(up)) return up;
+        return el;
+      }
+      return null;
+    }
+
+    function txVisibleValueForRow(drawer,labelText){
+      const c=txControlAtRowCenter(drawer,labelText);
+      if(!c) return &#x27;&#x27;;
+      if(c.tagName===&#x27;INPUT&#x27;||c.tagName===&#x27;TEXTAREA&#x27;||c.tagName===&#x27;SELECT&#x27;) return cleanText(c.value||c.textContent||&#x27;&#x27;);
+      return cleanText(c.textContent||c.getAttribute(&#x27;aria-valuetext&#x27;)||c.getAttribute(&#x27;aria-label&#x27;)||&#x27;&#x27;);
+    }
+
+    async function txPickRowOption(drawer,labelText,wanted){
+      let control=txControlAtRowCenter(drawer,labelText);
+      if(!control) return false;
+
+      if(control.tagName===&#x27;SELECT&#x27;){
+        const wn=txNorm(wanted);
+        const opts=Array.from(control.options||[]);
+        const opt=opts.find(function(o){return txNorm(o.textContent||o.label||o.value)===wn;});
+        if(!opt) return false;
+        try{
+          const pw=txPageWindow();
+          const desc=Object.getOwnPropertyDescriptor(pw.HTMLSelectElement.prototype,&#x27;value&#x27;);
+          if(desc&amp;&amp;desc.set) desc.set.call(control,opt.value); else control.value=opt.value;
+          opts.forEach(function(o){o.selected=(o===opt);});
+          control.dispatchEvent(new pw.Event(&#x27;input&#x27;,{bubbles:true}));
+          control.dispatchEvent(new pw.Event(&#x27;change&#x27;,{bubbles:true}));
+          await new Promise(function(resolve){setTimeout(resolve,180);});
+          return true;
+        }catch(e){ return false; }
+      }
+
+      txClickLikeUser(control);
+      await new Promise(function(resolve){setTimeout(resolve,120);});
+
+      const wn=txNorm(wanted);
+      let option=await txWaitFor(function(){
+        const candidates=Array.from(document.querySelectorAll(
+          &#x27;[role=&quot;option&quot;],[role=&quot;menuitem&quot;],mat-option,.mat-option,.dropdown-item,.dropdown-menu li a,.dropdown-menu li button,li,button,a,div,span&#x27;
+        )).filter(txVisible).filter(function(el){
+          if(el.closest&amp;&amp;el.closest(&#x27;#tritox-alta-panel&#x27;)) return false;
+          const t=txNorm(el.textContent||&#x27;&#x27;);
+          return t===wn;
+        });
+        if(!candidates.length) return null;
+        candidates.sort(function(a,b){
+          const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+          return (ar.width*ar.height)-(br.width*br.height);
+        });
+        return candidates[0];
+      },2500);
+
+      if(!option) return false;
+      txClickLikeUser(option);
+      await new Promise(function(resolve){setTimeout(resolve,120);});
+      return true;
+    }
+
+    async function txFillCarrierDirect(drawer,value){
+      let input=txControlAtRowCenter(drawer,&#x27;Current insurance company&#x27;);
+      if(input &amp;&amp; input.tagName!==&#x27;INPUT&#x27;){
+        const child=input.querySelector&amp;&amp;input.querySelector(&#x27;input&#x27;);
+        if(child&amp;&amp;txVisible(child)) input=child;
+      }
+      if(!input || input.tagName!==&#x27;INPUT&#x27;){
+        input=txVisibleTextInputs(drawer)[0]||null;
+      }
+      if(!input) return false;
+
+      txClickLikeUser(input);
+      await new Promise(function(resolve){setTimeout(resolve,30);});
+      txNativeSetInput(input,&#x27;&#x27;);
+      await new Promise(function(resolve){setTimeout(resolve,80);});
+      txNativeSetInput(input,value);
+      await new Promise(function(resolve){setTimeout(resolve,280);});
+
+      // Click the lookup icon on the same row if present.
+      const row=txFindFieldRow(drawer,&#x27;Current insurance company&#x27;);
+      if(row){
+        const cy=row.center;
+        const lr=row.labelRect;
+        const search=Array.from(drawer.querySelectorAll(&#x27;button,[role=&quot;button&quot;],[tabindex],svg&#x27;))
+          .filter(txVisible)
+          .find(function(el){
+            const r=el.getBoundingClientRect();
+            return Math.abs((r.top+r.height/2)-cy)&lt;45 &amp;&amp; r.left&gt;lr.right &amp;&amp; r.width&lt;80;
+          });
+        if(search){
+          txClickLikeUser(search);
+          await new Promise(function(resolve){setTimeout(resolve,300);});
+        }
+      }
+
+      // Select exact AAA option if ALTA opens a lookup/autocomplete list.
+      const wn=txNorm(value);
+      const option=await txWaitFor(function(){
+        const candidates=Array.from(document.querySelectorAll(
+          &#x27;[role=&quot;option&quot;],[role=&quot;menuitem&quot;],mat-option,.mat-option,.dropdown-item,.dropdown-menu li a,.dropdown-menu li button,li,button,a,div,span&#x27;
+        )).filter(txVisible).filter(function(el){
+          if(el.closest&amp;&amp;el.closest(&#x27;#tritox-alta-panel&#x27;)) return false;
+          return txNorm(el.textContent||&#x27;&#x27;)===wn;
+        });
+        if(!candidates.length) return null;
+        candidates.sort(function(a,b){
+          const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+          return (ar.width*ar.height)-(br.width*br.height);
+        });
+        return candidates[0];
+      },1400);
+
+      if(option){
+        txClickLikeUser(option);
+        await new Promise(function(resolve){setTimeout(resolve,90);});
+      }
+
+      // Final page-world value refresh in case selecting the lookup rerendered input.
+      const fresh=txControlAtRowCenter(drawer,&#x27;Current insurance company&#x27;);
+      const finalInput=(fresh&amp;&amp;fresh.tagName===&#x27;INPUT&#x27;)?fresh:(txVisibleTextInputs(drawer)[0]||input);
+      if(finalInput &amp;&amp; txNorm(finalInput.value)!==wn){
+        txNativeSetInput(finalInput,value);
+        await new Promise(function(resolve){setTimeout(resolve,120);});
+      }
+      return finalInput &amp;&amp; txNorm(finalInput.value)===wn;
+    }
+
+    async function txFillDateDirect(drawer,value){
+      let input=txControlAtRowCenter(drawer,&#x27;Policy expiration date&#x27;);
+      if(input &amp;&amp; input.tagName!==&#x27;INPUT&#x27;){
+        const child=input.querySelector&amp;&amp;input.querySelector(&#x27;input&#x27;);
+        if(child&amp;&amp;txVisible(child)) input=child;
+      }
+      if(!input || input.tagName!==&#x27;INPUT&#x27;){
+        const inputs=txVisibleTextInputs(drawer);
+        input=inputs.find(function(el){return /date|mm\/dd/i.test((el.type||&#x27;&#x27;)+&#x27; &#x27;+(el.placeholder||&#x27;&#x27;));}) || inputs[1] || null;
+      }
+      if(!input) return false;
+
+      let internal=value;
+      if((input.type||&#x27;&#x27;).toLowerCase()===&#x27;date&#x27;){
+        const m=String(value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if(m) internal=m[3]+&#x27;-&#x27;+m[1]+&#x27;-&#x27;+m[2];
+      }
+      txClickLikeUser(input);
+      txNativeSetInput(input,internal);
+      await new Promise(function(resolve){setTimeout(resolve,180);});
+      return !!input.value;
+    }
+
+    async function txSpatialCarrier(drawer,value){
+      let control=txPointControl(drawer,&#x27;Current insurance company&#x27;);
+      if(!control || (control.tagName!==&#x27;INPUT&#x27; &amp;&amp; control.tagName!==&#x27;TEXTAREA&#x27;)){
+        const inputs=txVisibleTextInputs(drawer);
+        control=inputs[0]||control;
+      }
+      if(!control) return false;
+
+      await txHumanFillTextControl(control,value);
+      await new Promise(function(resolve){setTimeout(resolve,120);});
+
+      // Click search icon if present on the same row.
+      const row=txFindFieldRow(drawer,&#x27;Current insurance company&#x27;);
+      if(row){
+        const lr=row.labelRect;
+        const cy=row.center;
+        const search=Array.from(drawer.querySelectorAll(&#x27;button,[role=&quot;button&quot;],[tabindex]&#x27;))
+          .filter(txVisible)
+          .find(function(el){
+            const r=el.getBoundingClientRect();
+            return Math.abs((r.top+r.height/2)-cy)&lt;45 &amp;&amp; r.left&gt;lr.right &amp;&amp; r.width&lt;90;
+          });
+        if(search){
+          txClickLikeUser(search);
+          await new Promise(function(resolve){setTimeout(resolve,250);});
+        }
+      }
+
+      let opt=await txWaitFor(function(){ return txExactVisibleText(value); },1100);
+      if(opt){
+        txClickLikeUser(opt);
+        await new Promise(function(resolve){setTimeout(resolve,180);});
+      }else{
+        // Keyboard selection fallback after the lookup has been triggered.
+        try{
+          control.focus();
+          control.dispatchEvent(new KeyboardEvent(&#x27;keydown&#x27;,{bubbles:true,key:&#x27;ArrowDown&#x27;}));
+          control.dispatchEvent(new KeyboardEvent(&#x27;keyup&#x27;,{bubbles:true,key:&#x27;ArrowDown&#x27;}));
+          await new Promise(function(resolve){setTimeout(resolve,100);});
+          control.dispatchEvent(new KeyboardEvent(&#x27;keydown&#x27;,{bubbles:true,key:&#x27;Enter&#x27;}));
+          control.dispatchEvent(new KeyboardEvent(&#x27;keyup&#x27;,{bubbles:true,key:&#x27;Enter&#x27;}));
+        }catch(e){}
+      }
+
+      await new Promise(function(resolve){setTimeout(resolve,90);});
+      return true;
+    }
+
+
+    // Exact selectors from the current ALTA In-force policy drawer.
+    function txInsuranceRow(drawer,labelText){
+      const wanted=txNorm(labelText);
+
+      // Normal rows used by BI / tenure.
+      const direct=Array.from(drawer.querySelectorAll(&#x27;.prior-insurance-bi-limit&#x27;))
+        .find(function(row){
+          const title=row.querySelector(&#x27;.prior-insurance-bi-limit-title&#x27;);
+          return title &amp;&amp; txNorm(title.textContent||&#x27;&#x27;).startsWith(wanted);
+        });
+      if(direct) return direct;
+
+      // Current insurance company uses a different wrapper in the latest ALTA
+      // layout. Find its title first, then climb until the matching input/button
+      // is inside the same visual row.
+      const title=Array.from(drawer.querySelectorAll(&#x27;.prior-insurance-bi-limit-title,div,span,label&#x27;))
+        .filter(txVisible)
+        .find(function(el){
+          return txNorm(el.textContent||&#x27;&#x27;).startsWith(wanted);
+        });
+      if(!title) return null;
+
+      let p=title.parentElement;
+      for(let depth=0;p &amp;&amp; p!==drawer.parentElement &amp;&amp; depth&lt;7;depth++,p=p.parentElement){
+        if(p.querySelector &amp;&amp; p.querySelector(&#x27;input,button,[role=&quot;button&quot;],mat-icon&#x27;)){
+          return p;
+        }
+      }
+      return title.parentElement || null;
+    }
+
+    function txCompanyInputExact(drawer){
+      // Exact ALTA structure supplied from DevTools:
+      // &lt;input class=&quot;mat-mdc-autocomplete-trigger ...&quot; role=&quot;combobox&quot; ...&gt;
+      // inside a mat-form-field whose mat-label is &quot;Current insurance company&quot;.
+      const inputs=Array.from(drawer.querySelectorAll(
+        &#x27;input.mat-mdc-autocomplete-trigger[role=&quot;combobox&quot;], input[role=&quot;combobox&quot;][aria-autocomplete=&quot;list&quot;]&#x27;
+      )).filter(txVisible);
+
+      for(const input of inputs){
+        const form=input.closest(&#x27;mat-form-field&#x27;);
+        const label=form &amp;&amp; form.querySelector(&#x27;mat-label&#x27;);
+        if(label &amp;&amp; /current insurance company/i.test(cleanText(label.textContent||&#x27;&#x27;))){
+          return input;
+        }
+      }
+
+      // Fallback if ALTA changes generated Angular classes/IDs.
+      return inputs[0] || null;
+    }
+
+    function txExactSelectedText(control){
+      if(!control) return &#x27;&#x27;;
+      return cleanText(
+        (control.querySelector &amp;&amp; control.querySelector(&#x27;.mat-mdc-select-value-text&#x27;) &amp;&amp;
+          control.querySelector(&#x27;.mat-mdc-select-value-text&#x27;).textContent) ||
+        control.textContent || &#x27;&#x27;
+      );
+    }
+
+    async function txPickMatSelectExact(selectId,wanted){
+      const control=document.getElementById(selectId);
+      if(!control || !txVisible(control)) return false;
+
+      txClickLikeUser(control);
+
+      const option=await txWaitFor(function(){
+        const wn=txNorm(wanted);
+        const opts=Array.from(document.querySelectorAll(&#x27;mat-option,[role=&quot;option&quot;]&#x27;))
+          .filter(txVisible);
+        return opts.find(function(el){
+          return txNorm(el.textContent||&#x27;&#x27;)===wn;
+        }) || null;
+      },3000);
+
+      if(!option) return false;
+      txClickLikeUser(option);
+
+      const selected=await txWaitFor(function(){
+        const text=txNorm(txExactSelectedText(control));
+        return (text===txNorm(wanted) || text.includes(txNorm(wanted))) ? control : null;
+      },1500);
+
+      return !!selected;
+    }
+
+    async function txFillPolicyExpiryExact(value){
+      const input=document.querySelector(
+        &#x27;mat-form-field#policyExpiryDate input#policyExpiryDate[type=&quot;tel&quot;], input#policyExpiryDate[type=&quot;tel&quot;]&#x27;
+      );
+      if(!input || !txVisible(input)) return false;
+
+      const m=String(value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      const digits=m ? (m[1]+m[2]+m[3]) : String(value).replace(/\D/g,&#x27;&#x27;);
+      const pw=txPageWindow();
+
+      try{
+        const desc=Object.getOwnPropertyDescriptor(pw.HTMLInputElement.prototype,&#x27;value&#x27;);
+        try{ input.focus(); }catch(e){}
+        try{ input.dispatchEvent(new pw.FocusEvent(&#x27;focusin&#x27;,{bubbles:true,composed:true})); }catch(e){}
+
+        // First try the whole masked date in a single Angular input event.
+        if(desc&amp;&amp;desc.set) desc.set.call(input,digits); else input.value=digits;
+        try{
+          input.dispatchEvent(new pw.InputEvent(&#x27;input&#x27;,{
+            bubbles:true,composed:true,data:digits,inputType:&#x27;insertText&#x27;
+          }));
+        }catch(e){
+          input.dispatchEvent(new pw.Event(&#x27;input&#x27;,{bubbles:true,composed:true}));
+        }
+        input.dispatchEvent(new pw.Event(&#x27;change&#x27;,{bubbles:true,composed:true}));
+
+        let ok=await txWaitFor(function(){
+          return String(input.value||&#x27;&#x27;).trim() ? input : null;
+        },500);
+
+        // Fallback: fire the progressive Angular events synchronously, with no
+        // tiny timers that would be clamped in a background Chrome tab.
+        if(!ok){
+          let typed=&#x27;&#x27;;
+          if(desc&amp;&amp;desc.set) desc.set.call(input,&#x27;&#x27;); else input.value=&#x27;&#x27;;
+          for(const ch of digits){
+            typed+=ch;
+            if(desc&amp;&amp;desc.set) desc.set.call(input,typed); else input.value=typed;
+            try{
+              input.dispatchEvent(new pw.InputEvent(&#x27;input&#x27;,{
+                bubbles:true,composed:true,data:ch,inputType:&#x27;insertText&#x27;
+              }));
+            }catch(e){
+              input.dispatchEvent(new pw.Event(&#x27;input&#x27;,{bubbles:true,composed:true}));
+            }
+            try{
+              input.dispatchEvent(new pw.KeyboardEvent(&#x27;keyup&#x27;,{
+                bubbles:true,composed:true,key:ch
+              }));
+            }catch(e){}
+          }
+          input.dispatchEvent(new pw.Event(&#x27;change&#x27;,{bubbles:true,composed:true}));
+          ok=await txWaitFor(function(){
+            return String(input.value||&#x27;&#x27;).trim() ? input : null;
+          },600);
+        }
+
+        return !!ok;
+      }catch(e){
+        console.warn(&#x27;[TritoX TM] exact policy expiry fill failed&#x27;,e);
+        return false;
       }
     }
-    return {vehicle:v,start:bestIndex};
-  });
 
-  const orderedStarts=vehicleStarts
-    .filter(item=>item.start>=0)
-    .map(item=>item.start)
-    .sort((a,b)=>a-b);
+    async function txFillCompanyExact(drawer,value){
+      const pw=txPageWindow();
+      const pd=pw.document;
+      const wanted=txNorm(value);
 
-  for(let i=0;i<vehicles.length;i++){
-    const v=vehicles[i];
-    const yr=v.year;
-    const short=`${yr} ${v.model.split(' ').slice(0,3).join(' ')}`;
+      function findInput(){
+        const inputs=Array.from(pd.querySelectorAll(
+          &#x27;input.mat-mdc-autocomplete-trigger[role=&quot;combobox&quot;], input[role=&quot;combobox&quot;][aria-autocomplete=&quot;list&quot;]&#x27;
+        )).filter(function(el){
+          try{
+            const r=el.getBoundingClientRect();
+            return r.width&gt;0 &amp;&amp; r.height&gt;0;
+          }catch(e){ return false; }
+        });
 
-    // Normalize compVal/collVal to number or null for reliable comparison
-    const normalizeVal=val=>{
-      if(val===null||val===undefined) return null;
-      const n=parseInt(String(val).replace(/[$,]/g,''),10);
-      return isNaN(n)?null:n;
-    };
-    const compNum=normalizeVal(v.compVal);
-    const collNum=normalizeVal(v.collVal);
-    const hasComp=compNum!==null;
-    const hasColl=collNum!==null;
-    const compIs1000=compNum===1000;
-    const collIs1000=collNum===1000;
+        for(const input of inputs){
+          const form=input.closest &amp;&amp; input.closest(&#x27;mat-form-field&#x27;);
+          const label=form &amp;&amp; form.querySelector(&#x27;mat-label&#x27;);
+          if(label &amp;&amp; /current insurance company/i.test(String(label.textContent||&#x27;&#x27;))){
+            return input;
+          }
+        }
+        return inputs[0] || null;
+      }
 
-    // Roadside must appear inside this vehicle's own coverage section. Stop at
-    // the next vehicle heading so another vehicle's roadside cannot cause a pass.
-    const start=vehicleStarts[i].start;
-    const nextStart=orderedStarts.find(pos=>pos>start);
-    const end=nextStart===undefined?t.length:nextStart;
-    let vehSection=start>=0?t.substring(start,end):'';
-    const premiumIndex=vehSection.search(/Vehicle\s+premium/i);
-    if(premiumIndex>=0){
-      const premiumLineEnd=vehSection.indexOf('\n',premiumIndex);
-      if(premiumLineEnd>=0) vehSection=vehSection.substring(0,premiumLineEnd);
+      function findExactOption(){
+        const roots=Array.from(pd.querySelectorAll(
+          &#x27;.cdk-overlay-pane,.mat-mdc-autocomplete-panel,[role=&quot;listbox&quot;]&#x27;
+        )).filter(function(el){
+          try{
+            const r=el.getBoundingClientRect();
+            return r.width&gt;0 &amp;&amp; r.height&gt;0;
+          }catch(e){ return false; }
+        });
+
+        for(const root of roots){
+          const opts=Array.from(root.querySelectorAll(
+            &#x27;mat-option,[role=&quot;option&quot;],.mat-mdc-option,.mat-option&#x27;
+          )).filter(function(el){
+            try{
+              const r=el.getBoundingClientRect();
+              return r.width&gt;0 &amp;&amp; r.height&gt;0;
+            }catch(e){ return false; }
+          });
+
+          let opt=opts.find(function(el){
+            return txNorm(el.textContent||&#x27;&#x27;)===wanted;
+          });
+          if(opt) return opt;
+
+          opt=opts.find(function(el){
+            const t=txNorm(el.textContent||&#x27;&#x27;);
+            return t.startsWith(wanted+&#x27; &#x27;) || t.startsWith(wanted+&#x27;-&#x27;);
+          });
+          if(opt) return opt;
+        }
+        return null;
+      }
+
+      function clickPage(el){
+        if(!el) return;
+        try{
+          el.dispatchEvent(new pw.MouseEvent(&#x27;mousedown&#x27;,{bubbles:true,cancelable:true,view:pw}));
+          el.dispatchEvent(new pw.MouseEvent(&#x27;mouseup&#x27;,{bubbles:true,cancelable:true,view:pw}));
+          el.dispatchEvent(new pw.MouseEvent(&#x27;click&#x27;,{bubbles:true,cancelable:true,view:pw}));
+        }catch(e){
+          try{ pw.HTMLElement.prototype.click.call(el); }
+          catch(_e){ try{ el.click(); }catch(__e){} }
+        }
+      }
+
+      function setPageValue(input,text){
+        const desc=Object.getOwnPropertyDescriptor(pw.HTMLInputElement.prototype,&#x27;value&#x27;);
+        if(desc &amp;&amp; desc.set) desc.set.call(input,String(text));
+        else input.value=String(text);
+
+        try{
+          input.dispatchEvent(new pw.InputEvent(&#x27;input&#x27;,{
+            bubbles:true,
+            composed:true,
+            cancelable:false,
+            data:String(text),
+            inputType:&#x27;insertText&#x27;
+          }));
+        }catch(e){
+          input.dispatchEvent(new pw.Event(&#x27;input&#x27;,{bubbles:true,composed:true}));
+        }
+        input.dispatchEvent(new pw.Event(&#x27;change&#x27;,{bubbles:true,composed:true}));
+      }
+
+      function isSelected(input){
+        if(!input) return false;
+        const form=input.closest &amp;&amp; input.closest(&#x27;mat-form-field&#x27;);
+        const invalid=
+          input.classList.contains(&#x27;ng-invalid&#x27;) ||
+          input.getAttribute(&#x27;aria-invalid&#x27;)===&#x27;true&#x27; ||
+          !!(form &amp;&amp; (
+            form.classList.contains(&#x27;mat-form-field-invalid&#x27;) ||
+            form.classList.contains(&#x27;mat-mdc-form-field-invalid&#x27;)
+          ));
+        return txNorm(input.value||&#x27;&#x27;)===wanted &amp;&amp; !invalid;
+      }
+
+      let input=findInput();
+      if(!input) return false;
+
+      // Use ALTA&#x27;s page realm and event-driven DOM waits so this continues even
+      // after the user switches to another Chrome tab.
+      try{ input.focus(); }catch(e){}
+      try{ input.dispatchEvent(new pw.FocusEvent(&#x27;focusin&#x27;,{bubbles:true,composed:true})); }catch(e){}
+      setPageValue(input,&#x27;&#x27;);
+      setPageValue(input,value);
+
+      if(input.getAttribute(&#x27;aria-expanded&#x27;)!==&#x27;true&#x27;){
+        clickPage(input);
+      }
+
+      let option=await txWaitFor(function(){
+        input=findInput()||input;
+        return findExactOption();
+      },1800);
+
+      if(option){
+        clickPage(option);
+
+        // Wait for ALTA to commit the selected autocomplete value instead of a
+        // fixed foreground-only sleep.
+        await txWaitFor(function(){
+          input=findInput()||input;
+          return txNorm(input.value||&#x27;&#x27;)===wanted ? input : null;
+        },900);
+      }else{
+        // Final Material fallback: when the panel is open, ArrowDown + Enter
+        // selects the first autocomplete result.
+        try{
+          input.focus();
+          input.dispatchEvent(new pw.KeyboardEvent(&#x27;keydown&#x27;,{
+            bubbles:true,composed:true,cancelable:true,key:&#x27;ArrowDown&#x27;,code:&#x27;ArrowDown&#x27;
+          }));
+          input.dispatchEvent(new pw.KeyboardEvent(&#x27;keyup&#x27;,{
+            bubbles:true,composed:true,cancelable:true,key:&#x27;ArrowDown&#x27;,code:&#x27;ArrowDown&#x27;
+          }));
+          await new Promise(function(resolve){setTimeout(resolve,180);});
+          input.dispatchEvent(new pw.KeyboardEvent(&#x27;keydown&#x27;,{
+            bubbles:true,composed:true,cancelable:true,key:&#x27;Enter&#x27;,code:&#x27;Enter&#x27;
+          }));
+          input.dispatchEvent(new pw.KeyboardEvent(&#x27;keyup&#x27;,{
+            bubbles:true,composed:true,cancelable:true,key:&#x27;Enter&#x27;,code:&#x27;Enter&#x27;
+          }));
+          await new Promise(function(resolve){setTimeout(resolve,100);});
+        }catch(e){}
+      }
+
+      input=findInput()||input;
+
+      // If AAA is visibly present, allow the workflow to continue to Save.
+      // ALTA sometimes keeps the Angular invalid class for a short time even
+      // after the visible value is filled. The Save click is the final validator.
+      const strictOk=isSelected(input);
+      const visibleOk=txNorm(input &amp;&amp; input.value||&#x27;&#x27;)===wanted;
+      const ok=strictOk || visibleOk;
+      if(strictOk){
+        try{ input.blur(); }catch(e){}
+      }
+
+      console.log(&#x27;[TritoX TM] page-realm company result&#x27;,{
+        value:input &amp;&amp; input.value,
+        ariaExpanded:input &amp;&amp; input.getAttribute(&#x27;aria-expanded&#x27;),
+        ariaControls:input &amp;&amp; input.getAttribute(&#x27;aria-controls&#x27;),
+        ariaInvalid:input &amp;&amp; input.getAttribute(&#x27;aria-invalid&#x27;),
+        className:input &amp;&amp; input.className,
+        optionFound:!!option,
+        ok:ok
+      });
+      return ok;
     }
-    const hasRoadside=/Roadside\s+assistance/i.test(vehSection);
 
-    if(yr>=2015){
-      if(!hasComp) errors.push(`${short}: Missing Comprehensive (2015+ = Full Coverage)`);
-      else if(!compIs1000) errors.push(`${short}: Comprehensive deductible must be $1,000 (found $${compNum})`);
-      if(!hasColl) errors.push(`${short}: Missing Collision (2015+ = Full Coverage)`);
-      else if(!collIs1000) errors.push(`${short}: Collision deductible must be $1,000 (found $${collNum})`);
-    } else {
-      if(hasComp) errors.push(`${short}: Has Comprehensive — pre-2015 must be PLPD only`);
-      if(hasColl) errors.push(`${short}: Has Collision — pre-2015 must be PLPD only`);
+    function txExactInsuranceValues(drawer){
+      const company=txCompanyInputExact(drawer);
+      const bi=document.getElementById(&#x27;auto-add-driver-policyBILimits__input-section&#x27;);
+      const date=document.querySelector(
+        &#x27;mat-form-field#policyExpiryDate input#policyExpiryDate[type=&quot;tel&quot;], input#policyExpiryDate[type=&quot;tel&quot;]&#x27;
+      );
+      const tenure=document.getElementById(&#x27;auto-add-driver-insuranceTenure__input-section&#x27;);
+      return {
+        company:company ? cleanText(company.value||&#x27;&#x27;) : &#x27;&#x27;,
+        bi:txExactSelectedText(bi),
+        date:date ? cleanText(date.value||&#x27;&#x27;) : &#x27;&#x27;,
+        tenure:txExactSelectedText(tenure)
+      };
     }
-    if(!hasRoadside) errors.push(`${short}: Roadside Assistance is missing`);
-  }
-}
 
-// ── RENDER TABLE ──
-function renderTable(){
-  const tbody=document.getElementById('resultsBody');
-  const search=document.getElementById('searchBox').value.toLowerCase();
-  const filtered=allResults.filter(r=>{
-    const mf=activeFilter==='all'||r.status===activeFilter;
-    const ms=!search||r.name.toLowerCase().includes(search)||r.filename.toLowerCase().includes(search);
-    return mf&&ms;
-  });
-  tbody.innerHTML='';
-  if(!filtered.length){
-    tbody.innerHTML=`<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">No results match.</td></tr>`;
+    async function addDummyInsurance(){
+      const status=document.getElementById(&#x27;tx-alta-status&#x27;);
+      function say(msg,color){
+        if(status){ status.textContent=msg; status.style.color=color||&#x27;#64748b&#x27;; }
+      }
+
+      const prior=priorInsuranceSnapshot();
+      if(prior.visible &amp;&amp; prior.inEffect){
+        say(&#x27;In Effect already exists&#x27;,&#x27;#15803d&#x27;);
+        setTimeout(function(){
+          if(status){status.textContent=&#x27;Auto-saved&#x27;;status.style.color=&#x27;#64748b&#x27;;}
+        },1800);
+        return;
+      }
+
+      say(document.hidden?&#x27;Opening insurance in background…&#x27;:&#x27;Opening insurance…&#x27;,&#x27;#2563eb&#x27;);
+
+      const addBtn=txFindButton(/add\s+in-force/i,document);
+      if(!addBtn){
+        say(&#x27;Open Drivers &amp; vehicles&#x27;,&#x27;#b45309&#x27;);
+        return;
+      }
+
+      txClickLikeUser(addBtn);
+
+      let drawer=await txWaitFor(txFindDrawer,5000);
+      if(!drawer){
+        say(&#x27;Insurance form not found&#x27;,&#x27;#b91c1c&#x27;);
+        return;
+      }
+
+      // ALTA mounts this drawer in stages. Wait for the four required rows.
+      const controlsReady=await txWaitFor(function(){
+        drawer=txFindDrawer()||drawer;
+        const txt=cleanText(drawer.innerText||&#x27;&#x27;);
+        const required=
+          /Current insurance company/i.test(txt) &amp;&amp;
+          /Current BI limits/i.test(txt) &amp;&amp;
+          /Policy expiration date/i.test(txt) &amp;&amp;
+          /How long were they insured/i.test(txt);
+        return required ? drawer : null;
+      },3500);
+      if(controlsReady) drawer=controlsReady;
+
+      say(&#x27;Filling insurance…&#x27;,&#x27;#2563eb&#x27;);
+
+      const expiration=txSixMonthsFromToday();
+
+      // ONE PASS ONLY:
+      // Company -&gt; BI -&gt; Date -&gt; Tenure -&gt; Save.
+      // Do not return to the company field after tenure.
+      const companyOk=await txFillCompanyExact(drawer,&#x27;AAA&#x27;);
+
+      const biOk=await txPickMatSelectExact(
+        &#x27;auto-add-driver-policyBILimits__input-section&#x27;,
+        &#x27;$100,000/$300,000&#x27;
+      );
+
+      const dateOk=await txFillPolicyExpiryExact(expiration);
+
+      const tenureOk=await txPickMatSelectExact(
+        &#x27;auto-add-driver-insuranceTenure__input-section&#x27;,
+        &#x27;6 - 11 Months&#x27;
+      );
+
+      // Tenure causes ALTA to auto-select Yes. Wait for that Angular state via a
+      // DOM mutation, not a short timer that Chrome may throttle in background.
+      await txWaitFor(function(){
+        const radios=Array.from(drawer.querySelectorAll(&#x27;input[type=&quot;radio&quot;]&#x27;));
+        return radios.find(function(r){ return r.checked; }) || null;
+      },1200);
+
+      // All four controls are now visibly filled in ALTA. Do not re-read the
+      // Angular FormControl state here: ALTA can briefly report the company as
+      // empty even while AAA is visibly selected. Go straight to Save.
+      console.log(&#x27;[TritoX TM] insurance fill finished&#x27;,{
+        companyOk:companyOk,biOk:biOk,dateOk:dateOk,tenureOk:tenureOk
+      });
+
+      say(document.hidden?&#x27;Saving insurance in background…&#x27;:&#x27;Saving insurance…&#x27;,&#x27;#2563eb&#x27;);
+
+      const pw=txPageWindow();
+      let saveBtn=
+        pw.document.querySelector(&#x27;button.auto-add-driver-save__button&#x27;) ||
+        document.querySelector(&#x27;button.auto-add-driver-save__button&#x27;);
+
+      if(!saveBtn){
+        say(&#x27;Insurance Save not found&#x27;,&#x27;#b91c1c&#x27;);
+        return;
+      }
+
+      function clickSaveDirect(btn){
+        if(!btn) return false;
+        try{
+          btn.dispatchEvent(new pw.MouseEvent(&#x27;mousedown&#x27;,{bubbles:true,cancelable:true,view:pw}));
+          btn.dispatchEvent(new pw.MouseEvent(&#x27;mouseup&#x27;,{bubbles:true,cancelable:true,view:pw}));
+          btn.dispatchEvent(new pw.MouseEvent(&#x27;click&#x27;,{bubbles:true,cancelable:true,view:pw}));
+          return true;
+        }catch(e){
+          try{
+            pw.HTMLElement.prototype.click.call(btn);
+            return true;
+          }catch(_e){
+            try{ btn.click(); return true; }catch(__e){ return false; }
+          }
+        }
+      }
+
+      clickSaveDirect(saveBtn);
+
+      let finalClosed=await txWaitFor(function(){
+        const d=txFindDrawer();
+        return !d || !txVisible(d) ? true : null;
+      },650);
+
+      // If ALTA needs a moment to enable/commit the form, retry Save only.
+      // Never touch Company / BI / Date / Tenure again.
+      if(!finalClosed){
+        saveBtn=
+          pw.document.querySelector(&#x27;button.auto-add-driver-save__button&#x27;) ||
+          document.querySelector(&#x27;button.auto-add-driver-save__button&#x27;);
+        clickSaveDirect(saveBtn);
+
+        finalClosed=await txWaitFor(function(){
+          const d=txFindDrawer();
+          return !d || !txVisible(d) ? true : null;
+        },1800);
+      }
+
+      if(!finalClosed){
+        say(&#x27;Fields filled — Save did not close drawer&#x27;,&#x27;#b91c1c&#x27;);
+        return;
+      }
+
+      say(&#x27;Insurance added ✓&#x27;,&#x27;#15803d&#x27;);
+      setTimeout(function(){
+        try{ buildPanel(); }catch(e){}
+        const s=document.getElementById(&#x27;tx-alta-status&#x27;);
+        if(s){s.textContent=&#x27;Auto-saved&#x27;;s.style.color=&#x27;#64748b&#x27;;}
+      },900);
+    }
+
+    function buildPanel(){
+      const ident=altaIdentity();
+      if(!ident.id || !ident.name) return;
+      let panel=document.getElementById(&#x27;tritox-alta-panel&#x27;);
+      const existing=readSaved(ident.id);
+      const prior=priorInsuranceSnapshot();
+      const detected={
+        company:prior.inEffect?prior.company:&#x27;&#x27;,
+        renewalDate:prior.inEffect?prior.renewalDate:&#x27;&#x27;,
+        star:detectStar()
+      };
+      // If the Prior insurance section is visible and is not In Effect, clear
+      // carrier/date for this lead. On other ALTA pages preserve the last valid
+      // In Effect values captured earlier in the same 2-hour window.
+      if(prior.visible &amp;&amp; !prior.inEffect){
+        existing.company=&#x27;&#x27;;
+        existing.renewalDate=&#x27;&#x27;;
+        existing.companyInEffect=false;
+      }
+      const state={
+        name:ident.name,
+        altaId:ident.id,
+        company:(prior.inEffect?detected.company:(existing.companyInEffect?existing.company:&#x27;&#x27;))||&#x27;&#x27;,
+        renewalDate:(prior.inEffect?detected.renewalDate:(existing.companyInEffect?existing.renewalDate:&#x27;&#x27;))||&#x27;&#x27;,
+        // Keep blank until ALTA&#x27;s Auto coverages page exposes the actual star.
+        // On that page, the detected value wins so an old/manual value cannot
+        // survive when ALTA clearly shows a different rating.
+        star:onAutoCoverageSection() ? (detected.star||&#x27;&#x27;) : (existing.star||&#x27;&#x27;),
+        companyInEffect:prior.inEffect?true:!!existing.companyInEffect
+      };
+
+      if(!panel){
+        panel=document.createElement(&#x27;div&#x27;);
+        panel.id=&#x27;tritox-alta-panel&#x27;;
+        panel.style.cssText=&#x27;position:fixed;right:20px;bottom:20px;z-index:2147483646;width:315px;background:#fff;border:2px solid #17243b;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:14px;font-family:Arial,sans-serif;color:#17243b;&#x27;;
+        panel.innerHTML=&#x27;&#x27;
+          +&#x27;&lt;div id=&quot;tx-alta-head&quot; style=&quot;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;&quot;&gt;&#x27;
+          +&#x27;&lt;strong style=&quot;font-size:14px;white-space:nowrap;&quot;&gt;TritoX Lead Info&lt;/strong&gt;&#x27;
+          +&#x27;&lt;div style=&quot;display:flex;align-items:center;gap:7px;&quot;&gt;&#x27;
+          +&#x27;&lt;span id=&quot;tx-alta-status&quot; style=&quot;font-size:11px;color:#64748b;white-space:nowrap;&quot;&gt;Auto-saved&lt;/span&gt;&#x27;
+          +&#x27;&lt;button id=&quot;tx-alta-minimize&quot; type=&quot;button&quot; title=&quot;Minimize&quot; aria-label=&quot;Minimize TritoX Lead Info&quot; style=&quot;width:25px;height:25px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#17243b;font-size:18px;line-height:20px;font-weight:700;cursor:pointer;padding:0;&quot;&gt;−&lt;/button&gt;&#x27;
+          +&#x27;&lt;/div&gt;&lt;/div&gt;&#x27;
+          +&#x27;&lt;div id=&quot;tx-alta-body&quot;&gt;&#x27;
+          +&#x27;&lt;div id=&quot;tx-alta-ident&quot; style=&quot;font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.45;&quot;&gt;&lt;/div&gt;&#x27;
+          +&#x27;&lt;div id=&quot;tx-alta-pip-driver&quot; style=&quot;display:none;margin:0 0 10px;padding:9px 10px;border:1px solid #86efac;background:#f0fdf4;border-radius:8px;font-size:11px;line-height:1.45;color:#166534;&quot;&gt;&lt;/div&gt;&#x27;
+          +&#x27;&lt;label style=&quot;display:block;font-size:11px;font-weight:700;margin:7px 0 4px;&quot;&gt;Current Company&lt;/label&gt;&#x27;
+          +&#x27;&lt;input id=&quot;tx-alta-company&quot; list=&quot;tx-carriers&quot; placeholder=&quot;Select or type carrier&quot; style=&quot;width:100%;height:34px;border:1px solid #cbd5e1;border-radius:7px;padding:0 9px;font-size:12px;&quot;&gt;&#x27;
+          +&#x27;&lt;datalist id=&quot;tx-carriers&quot;&gt;&#x27;+CARRIERS.map(function(c){return &#x27;&lt;option value=&quot;&#x27;+c.replace(/&quot;/g,&#x27;&amp;quot;&#x27;)+&#x27;&quot;&gt;&lt;/option&gt;&#x27;;}).join(&#x27;&#x27;)+&#x27;&lt;/datalist&gt;&#x27;
+          +&#x27;&lt;label style=&quot;display:block;font-size:11px;font-weight:700;margin:9px 0 4px;&quot;&gt;Auto Renewal Date&lt;/label&gt;&#x27;
+          +&#x27;&lt;input id=&quot;tx-alta-date&quot; type=&quot;text&quot; placeholder=&quot;MM/DD/YYYY&quot; style=&quot;width:100%;height:34px;border:1px solid #cbd5e1;border-radius:7px;padding:0 9px;font-size:12px;&quot;&gt;&#x27;
+          +&#x27;&lt;label style=&quot;display:block;font-size:11px;font-weight:700;margin:9px 0 4px;&quot;&gt;Star / BW&lt;/label&gt;&#x27;
+          +&#x27;&lt;select id=&quot;tx-alta-star&quot; style=&quot;width:100%;height:34px;border:1px solid #cbd5e1;border-radius:7px;padding:0 8px;font-size:12px;background:#fff;&quot;&gt;&#x27;
+          +&#x27;&lt;option value=&quot;&quot;&gt;Select&lt;/option&gt;&lt;option value=&quot;1&quot;&gt;1 Star&lt;/option&gt;&lt;option value=&quot;2&quot;&gt;2 Stars&lt;/option&gt;&lt;option value=&quot;3&quot;&gt;3 Stars&lt;/option&gt;&lt;option value=&quot;BW&quot;&gt;BW&lt;/option&gt;&lt;/select&gt;&#x27;
+          +&#x27;&lt;button id=&quot;tx-alta-save&quot; style=&quot;width:100%;margin-top:11px;height:36px;border:0;border-radius:8px;background:#2563eb;color:white;font-weight:700;cursor:pointer;&quot;&gt;Save Lead Info&lt;/button&gt;&#x27;
+          +&#x27;&lt;button id=&quot;tx-alta-add-insurance&quot; style=&quot;width:100%;margin-top:8px;height:36px;border:0;border-radius:8px;background:#0f766e;color:white;font-weight:700;cursor:pointer;&quot;&gt;+ Add Insurance&lt;/button&gt;&#x27;
+          +&#x27;&lt;/div&gt;&#x27;;
+        document.body.appendChild(panel);
+
+        // Minimize/expand the ALTA lead panel without affecting auto-save.
+        const panelBody=document.getElementById(&#x27;tx-alta-body&#x27;);
+        const panelHead=document.getElementById(&#x27;tx-alta-head&#x27;);
+        const minimizeBtn=document.getElementById(&#x27;tx-alta-minimize&#x27;);
+        function setPanelMinimized(minimized){
+          if(panelBody) panelBody.style.display=minimized?&#x27;none&#x27;:&#x27;block&#x27;;
+          if(panelHead) panelHead.style.marginBottom=minimized?&#x27;0&#x27;:&#x27;10px&#x27;;
+          panel.style.width=minimized?&#x27;245px&#x27;:&#x27;315px&#x27;;
+          if(minimizeBtn){
+            minimizeBtn.textContent=minimized?&#x27;+&#x27;:&#x27;−&#x27;;
+            minimizeBtn.title=minimized?&#x27;Expand&#x27;:&#x27;Minimize&#x27;;
+            minimizeBtn.setAttribute(&#x27;aria-label&#x27;,(minimized?&#x27;Expand&#x27;:&#x27;Minimize&#x27;)+&#x27; TritoX Lead Info&#x27;);
+          }
+          GM_setValue(&#x27;tritox_alta_panel_minimized&#x27;,!!minimized);
+        }
+        setPanelMinimized(!!GM_getValue(&#x27;tritox_alta_panel_minimized&#x27;,false));
+        if(minimizeBtn){
+          minimizeBtn.addEventListener(&#x27;click&#x27;,function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            setPanelMinimized(panelBody &amp;&amp; panelBody.style.display!==&#x27;none&#x27;);
+          });
+        }
+
+        const saveNow=function(){
+          const now=altaIdentity();
+          if(!now.id) return;
+          const priorNow=priorInsuranceSnapshot();
+          const prev=readSaved(now.id);
+          const validInEffect=priorNow.visible ? priorNow.inEffect : !!prev.companyInEffect;
+          const meta={
+            name:now.name||state.name,
+            altaId:now.id,
+            company:validInEffect?document.getElementById(&#x27;tx-alta-company&#x27;).value.trim():&#x27;&#x27;,
+            renewalDate:validInEffect?document.getElementById(&#x27;tx-alta-date&#x27;).value.trim():&#x27;&#x27;,
+            star:document.getElementById(&#x27;tx-alta-star&#x27;).value,
+            companyInEffect:validInEffect,
+            pipDriverName:(driverSnapshot().selected||{}).name||prev.pipDriverName||&#x27;&#x27;,
+            pipDriverDob:(driverSnapshot().selected||{}).dob||prev.pipDriverDob||&#x27;&#x27;,
+            pipDriverAge:(driverSnapshot().selected||{}).age!=null?(driverSnapshot().selected||{}).age:(prev.pipDriverAge!=null?prev.pipDriverAge:null)
+          };
+          saveMeta(meta);
+          const s=document.getElementById(&#x27;tx-alta-status&#x27;);
+          if(s){s.textContent=&#x27;Saved ✓&#x27;;s.style.color=&#x27;#15803d&#x27;;setTimeout(function(){if(s){s.textContent=&#x27;Auto-saved&#x27;;s.style.color=&#x27;#64748b&#x27;;}},1200);}
+        };
+        document.getElementById(&#x27;tx-alta-save&#x27;).addEventListener(&#x27;click&#x27;,saveNow);
+        const addInsuranceBtn=document.getElementById(&#x27;tx-alta-add-insurance&#x27;);
+        if(addInsuranceBtn){
+          addInsuranceBtn.addEventListener(&#x27;click&#x27;,function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            addDummyInsurance();
+          });
+        }
+        document.getElementById(&#x27;tx-alta-company&#x27;).addEventListener(&#x27;change&#x27;,saveNow);
+        document.getElementById(&#x27;tx-alta-date&#x27;).addEventListener(&#x27;change&#x27;,saveNow);
+        document.getElementById(&#x27;tx-alta-star&#x27;).addEventListener(&#x27;change&#x27;,saveNow);
+      }
+
+      document.getElementById(&#x27;tx-alta-ident&#x27;).textContent=ident.name+&#x27;  •  ALTA #&#x27;+ident.id;
+      const pip=driverSnapshot();
+      const pipBox=document.getElementById(&#x27;tx-alta-pip-driver&#x27;);
+      if(pipBox){
+        if(pip.selected){
+          pipBox.style.display=&#x27;block&#x27;;
+          pipBox.style.borderColor=&#x27;#86efac&#x27;;
+          pipBox.style.background=&#x27;#f0fdf4&#x27;;
+          pipBox.style.color=&#x27;#166534&#x27;;
+          pipBox.innerHTML=&#x27;&lt;strong&gt;PIP Driver (&amp;lt;65)&lt;/strong&gt;&lt;br&gt;&#x27;+pip.selected.name+&#x27;  •  &#x27;+pip.selected.dob+&#x27;  •  Age &#x27;+pip.selected.age;
+        }else if(pip.visible){
+          pipBox.style.display=&#x27;block&#x27;;
+          pipBox.style.borderColor=&#x27;#cbd5e1&#x27;;
+          pipBox.style.background=&#x27;#f8fafc&#x27;;
+          pipBox.style.color=&#x27;#64748b&#x27;;
+          const main=pip.main;
+          if(main &amp;&amp; main.fullDob &amp;&amp; main.age&gt;=65){
+            pipBox.innerHTML=&#x27;&lt;strong&gt;PIP Driver (&amp;lt;65)&lt;/strong&gt;&lt;br&gt;No accepted driver under 65 with a visible full DOB.&#x27;;
+          }else{
+            pipBox.innerHTML=&#x27;&lt;strong&gt;PIP Driver (&amp;lt;65)&lt;/strong&gt;&lt;br&gt;Waiting for an accepted driver DOB.&#x27;;
+          }
+        }else{
+          pipBox.style.display=&#x27;none&#x27;;
+        }
+      }
+      const comp=document.getElementById(&#x27;tx-alta-company&#x27;);
+      const date=document.getElementById(&#x27;tx-alta-date&#x27;);
+      const star=document.getElementById(&#x27;tx-alta-star&#x27;);
+      if(comp &amp;&amp; !comp.value &amp;&amp; state.company) comp.value=state.company;
+      if(date &amp;&amp; !date.value &amp;&amp; state.renewalDate) date.value=state.renewalDate;
+      if(star){
+        if(isBwCoveragePage()){
+          // BW route is authoritative: force the panel to BW immediately.
+          star.value=&#x27;BW&#x27;;
+        }else if(onAutoCoverageSection()){
+          // Auto-detect when ALTA displays the rating; otherwise leave blank so
+          // the user can choose 1/2/3/BW manually.
+          star.value=state.star||&#x27;&#x27;;
+        }else if(!star.value &amp;&amp; state.star){
+          star.value=state.star;
+        }
+      }
+
+      // If ALTA exposes new values as the user moves to another quote page,
+      // merge them without overwriting a manual choice already made.
+      const current=readSaved(ident.id);
+      const merged={
+        name:ident.name, altaId:ident.id,
+        company:state.companyInEffect?(current.company||state.company||&#x27;&#x27;):&#x27;&#x27;,
+        renewalDate:state.companyInEffect?(current.renewalDate||state.renewalDate||&#x27;&#x27;):&#x27;&#x27;,
+        star:isBwCoveragePage() ? &#x27;BW&#x27; : (onAutoCoverageSection() ? (state.star||&#x27;&#x27;) : (current.star||state.star||&#x27;&#x27;)),
+        companyInEffect:!!state.companyInEffect,
+        pipDriverName:(pip.selected&amp;&amp;pip.selected.name)||current.pipDriverName||&#x27;&#x27;,
+        pipDriverDob:(pip.selected&amp;&amp;pip.selected.dob)||current.pipDriverDob||&#x27;&#x27;,
+        pipDriverAge:(pip.selected&amp;&amp;pip.selected.age!=null)?pip.selected.age:(current.pipDriverAge!=null?current.pipDriverAge:null)
+      };
+      if(merged.company || merged.renewalDate || merged.star || prior.visible) saveMeta(merged);
+    }
+
+    buildPanel();
+    applyAltaCoverageDefaults();
+    // ALTA is a SPA. Re-read the page as the quote moves between sections.
+    let lastSig=&#x27;&#x27;;
+    setInterval(function(){
+      const i=altaIdentity();
+      const ds=driverSnapshot(); const sd=ds.selected;
+      const sig=i.id+&#x27;|&#x27;+location.pathname+&#x27;|&#x27;+detectCarrier()+&#x27;|&#x27;+detectRenewalDate()+&#x27;|&#x27;+detectStar()+&#x27;|&#x27;+(sd?(sd.name+&#x27;|&#x27;+sd.dob+&#x27;|&#x27;+sd.age):&#x27;no-pip-driver&#x27;);
+      if(sig!==lastSig){
+        lastSig=sig;
+        coveragePresetDoneSig=&#x27;&#x27;;
+        buildPanel();
+      }
+      applyAltaCoverageDefaults();
+    },500);
     return;
   }
-  filtered.forEach((r,idx)=>{
-    const uid='r_'+idx+'_'+Math.random().toString(36).substr(2,5);
-    const tr=document.createElement('tr');
-    tr.className='row-card';
-    const statusBadge=r.status==='pass'?`<span class="status-badge status-pass">✓ PASS</span>`:
-      r.status==='warn'?`<span class="status-badge status-warn">⚠ REVIEW</span>`:
-      `<span class="status-badge status-fail">✗ FLAGGED</span>`;
-    const typeChip=r.quoteType==='Farmers'?`<span class="chip chip-farmers">Farmers</span>`:
-      r.quoteType==='Farmer-Bristol'?`<span class="chip chip-farmer-bristol">Farmer→Bristol</span>`:
-      r.quoteType==='Bristol West'?`<span class="chip chip-bristol">Bristol West</span>`:
-      `<span class="chip chip-unknown">Unknown</span>`;
-    const pills=[
-      ...r.errors.map(e=>`<span class="err-pill">⚑ ${e}</span>`),
-      ...r.warnings.map(w=>`<span class="warn-pill">⚠ ${w}</span>`)
-    ].join('')||`<span class="ok-text">✓ All checks passed</span>`;
-    const eft=r.monthlyEFT?`$${r.monthlyEFT.toFixed(2)}/mo`:'—';
-    const stopBanner=r.putInStop?`<div class="stop-banner">⛔ PUT IN STOP — Premium exceeds threshold</div>`:'';
-    tr.innerHTML=`<td colspan="7">
-      ${stopBanner}
-      <div class="row-main" onclick="toggleDetail('${uid}')">
-        <span class="row-expand" id="exp_${uid}">▶</span>
-        <div class="col-name"><div class="cname">${r.name}</div><div class="fname">${r.filename}${r.leadId?` · Lead ID: ${r.leadId}`:''}</div></div>
-        <div>${typeChip}</div>
-        <div style="font-size:13px;color:var(--text2);">${r.vehicleCount} vehicle${r.vehicleCount!==1?'s':''}</div>
-        <div style="font-size:13px;">${eft}</div>
-        <div>${statusBadge}</div>
-        <div>${pills}</div>
-        <div><button class="debug-btn" onclick="event.stopPropagation();openDebug(this)" title="Show raw parse debug">🔍 Debug</button></div>
-      </div>
-      <div class="row-details" id="${uid}">${buildDetails(r)}</div>
-    </td>`;
-    tr.dataset.filename=r.filename;
-    tbody.appendChild(tr);
-  });
-}
+  if(window.location.hostname === &#x27;tritoxtech.github.io&#x27; || (window.location.hostname === &#x27;saravanatritox-cloud.github.io&#x27; &amp;&amp; window.location.pathname.startsWith(&#x27;/aaron/&#x27;))){
+    console.log(&#x27;[TritoX TM] Running on TritoX page&#x27;);
 
-function toggleDetail(uid){
-  document.getElementById(uid).classList.toggle('open');
-  document.getElementById('exp_'+uid).classList.toggle('open');
-}
+    // Aaron&#x27;s current GitHub page omits the processed PDF filename from
+    // buildAZData(). Patch it at runtime so AgencyZoom can retrieve the exact
+    // cached PDF that belongs to the selected quote.
+    (function patchAaronFilenameTransfer(){
+      const pageWindow=typeof unsafeWindow!==&#x27;undefined&#x27;?unsafeWindow:window;
+      let attempts=0;
+      const timer=setInterval(function(){
+        attempts++;
+        const original=pageWindow.buildAZData;
+        if(typeof original===&#x27;function&#x27; &amp;&amp; !original.__tritoxFilenamePatched){
+          const patched=function(result){
+            const data=original.apply(this,arguments);
+            if(data &amp;&amp; result){
+              if(result.filename) data._filename=result.filename;
+              // Transfer QC routing flags so AgencyZoom can choose the correct tags.
+              data._highPrice=!!result.putInStop;
+              if(result.homeData) data._isBundle=!!result.homeData.isBundle;
+            }
+            return data;
+          };
+          patched.__tritoxFilenamePatched=true;
+          pageWindow.buildAZData=patched;
+          clearInterval(timer);
+          console.log(&#x27;[TritoX TM] Aaron filename transfer patch installed&#x27;);
+        }else if(original &amp;&amp; original.__tritoxFilenamePatched){
+          clearInterval(timer);
+        }else if(attempts&gt;=80){
+          clearInterval(timer);
+          console.warn(&#x27;[TritoX TM] Aaron buildAZData was not found&#x27;);
+        }
+      },250);
+    })();
 
-function buildDetails(r){
-  const c=r.checks||{};
-  const ck=(ok,label,val='',isWarn=false)=>{
-    const icon=ok?'✓':isWarn?'⚠':'✗';
-    const cls=ok?'ci-ok':isWarn?'ci-warn':'ci-fail';
-    const vc=ok?'ok':isWarn?'neutral':'bad';
-    return `<div class="check-item"><span class="ci-icon ${cls}">${icon}</span>
-      <span class="ci-label">${label}</span>
-      ${val?`<span class="ci-val ${vc}">${val}</span>`:''}</div>`;
-  };
-  // Vehicles
-  let vHTML='';
-  for(const v of r.vehicles){
-    const isNew=v.year>=2015;
-    // Use both year AND partial model name to match errors correctly (avoids same-year collision)
-    const shortModel=v.model.split(' ').slice(0,3).join(' ');
-    const vKey=`${v.year} ${shortModel}`.toLowerCase();
-    const cErr=r.errors.some(e=>e.toLowerCase().includes(vKey)&&e.toLowerCase().includes('comprehensive'));
-    const colErr=r.errors.some(e=>e.toLowerCase().includes(vKey)&&e.toLowerCase().includes('collision'));
-    const rErr=r.errors.some(e=>e.toLowerCase().includes(vKey)&&e.toLowerCase().includes('roadside'));
-    vHTML+=`<div class="vehicle-item">
-      <div class="v-name">${v.year} ${v.model.split(' ').slice(0,4).join(' ')}</div>
-      <div class="v-tags"><span class="${isNew?'v-ok':'v-info'}">${isNew?'Full Coverage':'PLPD'}</span></div>
-      <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:4px;">
-        <span class="${cErr?'v-fail':'v-ok'}">${isNew?(cErr?'✗ Comp missing':'✓ Comp $1,000'):'✓ No Comp'}</span>
-        <span class="${colErr?'v-fail':'v-ok'}">${isNew?(colErr?'✗ Collision missing':'✓ Collision $1,000'):'✓ No Collision'}</span>
-        <span class="${rErr?'v-fail':'v-ok'}">${rErr?'✗ No Roadside':'✓ Roadside'}</span>
-      </div>
-    </div>`;
-  }
-  if(!vHTML) vHTML=`<div style="font-size:12px;color:var(--muted);">No vehicles detected</div>`;
-  // Drivers
-  let dHTML='';
-  for(const d of r.drivers){
-    const is65=d.age>=65;
-    dHTML+=`<div class="check-item">
-      <span class="ci-icon ${is65?'ci-warn':'ci-ok'}">${is65?'⚠':'✓'}</span>
-      <span class="ci-label">${d.name}</span>
-      <span class="ci-val ${is65?'bad':'ok'}">Age ${d.age}${is65?' (65+)':''}</span>
-    </div>`;
-  }
-  if(!dHTML) dHTML=`<div style="font-size:12px;color:var(--muted);">No drivers detected</div>`;
-  // Discount label
-  const discLabel=r.quoteType==='Farmers'?'Auto/Home or Condo required':
-    r.quoteType==='Farmer-Bristol'?'Auto/Farmers Home required':
-    'Paperless only (defaults allowed)';
-  const discOk=r.quoteType==='Farmers'?!r.errors.some(e=>/Auto\/Home or Condo/i.test(e)):
-    r.quoteType==='Farmer-Bristol'?!r.errors.some(e=>/Auto\/Farmers Home/i.test(e)):
-    !r.errors.some(e=>/Paperless|should NOT/i.test(e));
-  // Premium — limits apply only to 1–3 vehicles
-  const limits={1:400,2:800,3:1000};
-  let premRow;
-  if(r.monthlyEFT){
-    if(r.vehicleCount>=1 && r.vehicleCount<=3){
-      const limit=limits[r.vehicleCount];
-      premRow=ck(c.premiumOk,`Monthly EFT vs $${limit} (${r.vehicleCount} vehicle${r.vehicleCount!==1?'s':''})`,`$${r.monthlyEFT.toFixed(2)}/mo`);
-    } else {
-      premRow=ck(true,`Monthly EFT — No limit for ${r.vehicleCount} vehicles`,`$${r.monthlyEFT.toFixed(2)}/mo`);
-    }
-  } else {
-    premRow=`<div class="check-item"><span class="ci-icon ci-fail">✗</span><span class="ci-label">Monthly EFT auto not available — use BW</span></div>`;
-  }
-
-  return `<div class="row-details-grid">
-    <div class="detail-group">
-      <h4>Liability</h4>
-      ${ck(!r.errors.some(e=>/Bodily Injury/i.test(e)),'Bodily Injury','$100K/$300K')}
-      ${ck(!r.errors.some(e=>/Property Damage/i.test(e)),'Property Damage','$100,000')}
-      ${ck(!r.errors.some(e=>/UM\/UIM/i.test(e)),'UM/UIM','$100K/$300K')}
-    </div>
-    <div class="detail-group">
-      <h4>PIP</h4>
-      ${ck(!r.errors.some(e=>/PIP must be/i.test(e)),'PIP Option','Opt.3 or Opt.6')}
-      ${ck(!r.errors.some(e=>/PIP deductible/i.test(e)),'PIP Deductible','Opt.3→$500 / Opt.6→$0')}
-      ${ck(!r.errors.some(e=>/PIP Medical/i.test(e)),'PIP Medical','Primary')}
-      ${ck(!r.errors.some(e=>/PIP Wage/i.test(e)),'PIP Wage Loss','Primary')}
-    </div>
-    <div class="detail-group">
-      <h4>Discounts (${r.quoteType})</h4>
-      ${ck(discOk,discLabel)}
-      ${r.quoteType==='Farmers'?ck(!r.errors.some(e=>/Signal/i.test(e)),'Signal discount removed'):''}
-    </div>
-    <div class="detail-group">
-      <h4>Vehicles (${r.vehicles.length})</h4>
-      ${vHTML}
-    </div>
-    <div class="detail-group">
-      <h4>Drivers (${r.drivers.length})</h4>
-      ${dHTML}
-    </div>
-    <div class="detail-group">
-      <h4>Date &amp; Premium</h4>
-      ${ck(c.dateOk,'Policy start date (14 days)',c.dateDiff!==null?`${c.dateDiff} days`:'')}
-      ${premRow}
-    </div>
-  </div>
-  ${r.homeData&&r.homeData.isBundle?buildHomePanel(r):''}
-  ${buildAZPanel(r)}`;
-}
-
-function buildHomePanel(r){
-  const h=r.homeData;
-  return '<div class="row-details-grid" style="margin-top:0">'
-    +'<div class="detail-group home-group">'
-    +'<h4>🏠 Home QC</h4>'
-    +(h.ppValOk
-      ?'<div class="check-item"><span class="ci-icon ci-ok">✓</span><span class="ci-label">Personal Property Valuation</span><span class="ci-val ok">Replacement Cost</span></div>'
-      :'<div class="check-item"><span class="ci-icon ci-fail">✗</span><span class="ci-label">Personal Property Valuation</span><span class="ci-val bad">NOT Replacement Cost</span></div>')
-    +(h.roofValOk
-      ?'<div class="check-item"><span class="ci-icon ci-ok">✓</span><span class="ci-label">Roof Valuation</span><span class="ci-val ok">Replacement Cost</span></div>'
-      :'<div class="check-item"><span class="ci-icon ci-fail">✗</span><span class="ci-label">Roof Valuation</span><span class="ci-val bad">NOT Replacement Cost</span></div>')
-    +(h.dwelling?'<div class="check-item"><span class="ci-icon ci-ok">✓</span><span class="ci-label">Dwelling (Cov A)</span><span class="ci-val neutral">$'+h.dwelling.toLocaleString()+'</span></div>':'')
-    +'</div></div>';
-}
-
-function buildAZPanel(r){
-  const az=r.azChecklist;
-  if(!az) return "";
-  function azRow(label,val,id){
-    if(!val&&val!==0) return "";
-    const dispVal=String(val);
-    return "<div class='az-row'>"
-      +"<span class='az-label'>"+label+"</span>"
-      +"<span class='az-val' id='azv_"+id+"_"+r.filename.replace(/[^a-z0-9]/gi,'')+"'>"+dispVal+"</span>"
-      +"<button class='az-copy' onclick='copyAZ(this)'>📋 Copy</button>"
-      +"</div>";
-  }
-  let html="<div class='az-panel'>"
-    +"<h4>📋 AgencyZoom Main Page</h4>"
-    +(az.vehicles?azRow("Vehicles on Policy",az.vehicles,"veh"):"<div class='az-row'><span class='az-label'>Vehicles on Policy</span><span class='az-manual'>Not detected</span></div>")
-    +(az.monthly?azRow("Monthly Auto","$"+az.monthly,"meft"):"<div class='az-row'><span class='az-label'>Monthly Auto</span><span class='ci-fail'>✗ Monthly EFT auto not available — use BW</span></div>")
-    +(az.sixMonths?azRow("6 Months Auto","$"+az.sixMonths,"6mo"):"");
-  if(r.homeData&&r.homeData.isBundle){
-    html+=(az.homeAnnual?azRow("Home Annual Price","$"+az.homeAnnual,"hann"):"")
-      +(az.coverageA?azRow("Home Coverage A","$"+az.coverageA.toLocaleString(),"hcova"):"");
-  }
-  if(r.quoteType==='Farmers'||r.quoteType==='Farmer-Bristol'){
-    html+="<div class='az-row'><span class='az-label'>Star 1-3</span><span class='az-manual'>⚠ Fill manually</span></div>";
-  }
-  html+="</div>";
-  return html;
-}
-
-
-
-function buildAZData(r){
-  const v=r.vehicles||[];
-  const az=r.azChecklist||{};
-  const autoFields={};
-  for(let i=0;i<5;i++){
-    const veh=v[i];
-    if(veh){
-      const rawW=veh.model.trim().split(' ').filter(function(w){return w&&w!=='...'&&w!=='.';});
-      const cleanW=rawW.slice(0,2).map(function(w){return w.replace(/\.+$/,'');});
-      autoFields['auto'+(i+1)]=veh.year+' '+cleanW.join(' ');
-      autoFields['auto'+(i+1)+'_ded']=veh.year>=2015?'$1000':'PLPD';
-    } else {
-      autoFields['auto'+(i+1)]='';
-      autoFields['auto'+(i+1)+'_ded']='';
-    }
-  }
-  return {
-    vehicles_policy:az.vehicles||'',
-    monthly_auto:az.monthly?String(az.monthly):'',
-    auto_6months:az.sixMonths?String(az.sixMonths):'',
-    bodily_injury:'$100,000/$300,000',
-    home_coverage_a:az.coverageA?String(az.coverageA):'',
-    home_annual:az.homeAnnual?String(az.homeAnnual):'',
-    auto1:autoFields.auto1||'',
-    auto1_ded:autoFields.auto1_ded||'',
-    auto2:autoFields.auto2||'',
-    auto2_ded:autoFields.auto2_ded||'',
-    auto3:autoFields.auto3||'',
-    auto3_ded:autoFields.auto3_ded||'',
-    auto4:autoFields.auto4||'',
-    auto4_ded:autoFields.auto4_ded||'',
-    auto5:autoFields.auto5||'',
-    auto5_ded:autoFields.auto5_ded||'',
-    _name:r.name,
-    _filename:r.filename,
-    _leadId:String(r.leadId||'').trim(),
-    _isBundle:!!(r.homeData && r.homeData.isBundle),
-    _highPrice:!!r.putInStop,
-    _ts:Date.now()
-  };
-}
-
-function saveToLocalStorage(r){
-  try{
-    const data=buildAZData(r);
-    localStorage.setItem('tritox_az_data',JSON.stringify(data));
-    console.log('[TritoX] Saved for:', r.name, data);
-    // Write to meta tag for Tampermonkey to read
-    try{
-      let meta = document.getElementById('tritox-tm-bridge');
-      if(!meta){
-        meta = document.createElement('meta');
-        meta.id = 'tritox-tm-bridge';
-        meta.name = 'tritox-data';
-        document.head.appendChild(meta);
+    function pdfStorageKey(name){
+      let h=2166136261;
+      const s=String(name||&#x27;quote.pdf&#x27;).toLowerCase();
+      for(let i=0;i&lt;s.length;i++){
+        h^=s.charCodeAt(i);
+        h=Math.imul(h,16777619);
       }
-      meta.content = JSON.stringify(data);
-      console.log('[TritoX] Written to TM bridge meta tag');
-    } catch(e){}
-    // Store reset flag in localStorage so TM on AZ knows new PDF processed
-    try{
-      localStorage.setItem('tritox_new_pdf', Date.now().toString());
-    } catch(e){}
-    // Show ready status
-    const bmReady=document.getElementById('bmReady');
-    if(bmReady){
-      bmReady.style.display='block';
-      bmReady.textContent='✅ '+r.name+' — data saved! Tampermonkey will pick it up. Open the correct AgencyZoom lead → click 🚀 Fill + Attach PDF.';
+      return &#x27;tritox_pdf_&#x27;+(h&gt;&gt;&gt;0).toString(16);
     }
-    const bmSec=document.getElementById('bmSection');
-    if(bmSec) bmSec.style.display='block';
-    const bmName=document.getElementById('bmName');
-    if(bmName) bmName.textContent=r.name;
-  } catch(e){
-    console.error('[TritoX] Save failed:',e);
+
+    function cachePdf(file){
+      if(!file || !/.pdf$/i.test(file.name)) return;
+      if(file.size&gt;20*1024*1024){
+        console.warn(&#x27;[TritoX TM] PDF is larger than 20 MB and was not cached:&#x27;,file.name);
+        return;
+      }
+      const reader=new FileReader();
+      reader.onload=function(){
+        try{
+          GM_setValue(pdfStorageKey(file.name),JSON.stringify({
+            name:file.name,
+            type:file.type||&#x27;application/pdf&#x27;,
+            size:file.size,
+            lastModified:file.lastModified||Date.now(),
+            dataUrl:String(reader.result),
+            savedAt:Date.now()
+          }));
+          console.log(&#x27;[TritoX TM] PDF cached for AgencyZoom:&#x27;,file.name);
+        }catch(err){
+          console.error(&#x27;[TritoX TM] Could not cache PDF:&#x27;,err);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Capture PDFs selected or dropped into Aaron QC. Each file is stored under
+    // its filename so bulk processing can still match the correct customer PDF.
+    document.addEventListener(&#x27;change&#x27;,function(e){
+      if(e.target &amp;&amp; e.target.id===&#x27;fileInput&#x27; &amp;&amp; e.target.files){
+        Array.from(e.target.files).forEach(cachePdf);
+      }
+    },true);
+    document.addEventListener(&#x27;drop&#x27;,function(e){
+      if(e.dataTransfer &amp;&amp; e.dataTransfer.files &amp;&amp; e.target.closest &amp;&amp; e.target.closest(&#x27;#uploadZone&#x27;)){
+        Array.from(e.dataTransfer.files).forEach(cachePdf);
+      }
+    },true);
+
+    function mirrorCurrentAgencyZoomLead(){
+      try{
+        const raw=GM_getValue(&#x27;tritox_current_az_lead&#x27;,&#x27;&#x27;);
+        if(raw) localStorage.setItem(&#x27;tritox_current_az_lead&#x27;,String(raw));
+      }catch(e){}
+    }
+    mirrorCurrentAgencyZoomLead();
+    setInterval(mirrorCurrentAgencyZoomLead,200);
+
+    function checkTritoXData(){
+      try{
+        const raw = localStorage.getItem(&#x27;tritox_az_data&#x27;);
+        if(!raw) return;
+        const data = JSON.parse(raw);
+        if(!data || !data._name || !data._ts) return;
+
+        // Find the correct ALTA metadata from the multi-lead cache.
+        // This supports processing 4-6 ALTA quotes first, then uploading PDFs
+        // later in any order without reopening or re-saving each lead.
+        try{
+          const norm=function(v){
+            return String(v||&#x27;&#x27;).toLowerCase().replace(/[^a-z0-9]+/g,&#x27; &#x27;).trim().replace(/\s+/g,&#x27; &#x27;);
+          };
+          const firstLast=function(v){
+            const p=norm(v).split(&#x27; &#x27;).filter(Boolean);
+            return p.length&gt;=2 ? p[0]+&#x27; &#x27;+p[p.length-1] : p.join(&#x27; &#x27;);
+          };
+          const indexRaw=GM_getValue(&#x27;tritox_alta_index&#x27;,&#x27;{}&#x27;);
+          const index=JSON.parse(indexRaw||&#x27;{}&#x27;)||{};
+          const now=Date.now();
+          const valid=Object.keys(index).map(function(k){return index[k];}).filter(function(a){
+            return a &amp;&amp; a.name &amp;&amp; a._savedAt &amp;&amp; now-Number(a._savedAt)&lt;=7200000;
+          });
+
+          let a=valid.find(function(x){return norm(x.name)===norm(data._name);})||null;
+
+          // If the PDF includes/omits a middle name or initial, use first+last
+          // only when exactly one cached lead matches that pair.
+          if(!a){
+            const key=firstLast(data._name);
+            const matches=valid.filter(function(x){return firstLast(x.name)===key;});
+            if(matches.length===1) a=matches[0];
+          }
+
+          // If QC had to fall back to a surname-only filename
+          // (e.g. Galloway-townsend_Auto_09282026.pdf), recover the FULL ALTA
+          // customer name only when exactly one cached lead has that surname.
+          if(!a){
+            const parts=norm(data._name).split(&#x27; &#x27;).filter(Boolean);
+            const filenameBase=String(data._filename||&#x27;&#x27;)
+              .replace(/\.pdf$/i,&#x27;&#x27;)
+              .replace(/[_\-\s]+(?:auto|bundle|home)[_\-\s]+\d{8}$/i,&#x27;&#x27;)
+              .replace(/_/g,&#x27; &#x27;)
+              .trim();
+            const shortName=norm(filenameBase||data._name);
+            const shortCompact=shortName.replace(/\s+/g,&#x27;&#x27;);
+            const surnameMatches=valid.filter(function(x){
+              const xp=norm(x.name).split(&#x27; &#x27;).filter(Boolean);
+              if(!xp.length) return false;
+              const last=xp[xp.length-1];
+              const compound=xp.length&gt;=2 ? xp[xp.length-2]+xp[xp.length-1] : last;
+              return shortCompact===last.replace(/\s+/g,&#x27;&#x27;) ||
+                     shortCompact===compound.replace(/\s+/g,&#x27;&#x27;);
+            });
+            if(surnameMatches.length===1){
+              a=surnameMatches[0];
+              data._name=a.name; // restore full first + last name for AZ button/guard
+              localStorage.setItem(&#x27;tritox_az_data&#x27;,JSON.stringify(data));
+              console.log(&#x27;[TritoX TM] Recovered full name from unique ALTA surname:&#x27;,
+                filenameBase,&#x27;=&gt;&#x27;,a.name);
+            }
+          }
+
+          // Backward-compatible fallback for data captured before v4.36.
+          if(!a){
+            const latestRaw=GM_getValue(&#x27;tritox_alta_latest&#x27;,&#x27;&#x27;);
+            if(latestRaw){
+              const latest=JSON.parse(latestRaw);
+              if(latest &amp;&amp; latest.name &amp;&amp; norm(latest.name)===norm(data._name)) a=latest;
+            }
+          }
+
+          if(a){
+            data.current_company=a.companyInEffect ? (a.company||&#x27;&#x27;) : &#x27;&#x27;;
+            data.auto_renewal_date=a.companyInEffect ? (a.renewalDate||&#x27;&#x27;) : &#x27;&#x27;;
+            data.star_rating=a.star||&#x27;&#x27;;
+            data._altaId=a.altaId||&#x27;&#x27;;
+            data._altaSavedAt=a._savedAt||0;
+            localStorage.setItem(&#x27;tritox_az_data&#x27;,JSON.stringify(data));
+            console.log(&#x27;[TritoX TM] Multi-lead ALTA match:&#x27;,data._name,&#x27;=&gt;&#x27;,a.name,a.altaId);
+          }else{
+            // Explicitly keep these blank rather than borrowing another lead&#x27;s data.
+            data.current_company=&#x27;&#x27;;
+            data.auto_renewal_date=&#x27;&#x27;;
+            data.star_rating=&#x27;&#x27;;
+            data._altaId=&#x27;&#x27;;
+            data._altaSavedAt=0;
+            localStorage.setItem(&#x27;tritox_az_data&#x27;,JSON.stringify(data));
+            console.log(&#x27;[TritoX TM] No ALTA cache match for:&#x27;,data._name);
+          }
+        }catch(e){ console.warn(&#x27;[TritoX TM] ALTA multi-lead merge skipped:&#x27;,e); }
+
+        const gmRaw = GM_getValue(&#x27;tritox_az_data&#x27;,&#x27;&#x27;);
+        let gmData={};
+        try{ gmData = JSON.parse(gmRaw||&#x27;{}&#x27;)||{}; }catch(e){}
+
+        // Keep the AgencyZoom lead-ID binding ONLY for the exact same processed
+        // PDF/QC result. Never copy a previous customer&#x27;s bound ID to a new PDF.
+        const sameBoundResult=
+          Number(gmData._ts||0)===Number(data._ts||0) &amp;&amp;
+          String(gmData._filename||&#x27;&#x27;)===String(data._filename||&#x27;&#x27;);
+        if(sameBoundResult &amp;&amp; gmData._leadId &amp;&amp; !data._leadId){
+          data._leadId=String(gmData._leadId);
+          data._leadNameBound=String(gmData._leadNameBound||&#x27;&#x27;);
+        }
+
+        const gmTs = Number(gmData._ts||0);
+        const metaChanged =
+          String(gmData.current_company||&#x27;&#x27;)!==String(data.current_company||&#x27;&#x27;) ||
+          String(gmData.auto_renewal_date||&#x27;&#x27;)!==String(data.auto_renewal_date||&#x27;&#x27;) ||
+          String(gmData.star_rating||&#x27;&#x27;)!==String(data.star_rating||&#x27;&#x27;) ||
+          String(gmData._altaId||&#x27;&#x27;)!==String(data._altaId||&#x27;&#x27;);
+        if(data._ts &gt; gmTs || (data._ts===gmTs &amp;&amp; metaChanged)){
+          GM_setValue(&#x27;tritox_az_data&#x27;, JSON.stringify(data));
+          console.log(&#x27;[TritoX TM] Saved to GM for:&#x27;, data._name, &#x27;metadata changed:&#x27;,metaChanged);
+        }
+      }catch(e){ console.log(&#x27;[TritoX TM] Error:&#x27;, e); }
+    }
+    setInterval(checkTritoXData, 1000);
+    return;
   }
-}
 
-function openDebug(btn){
-  const tr=btn.closest('tr');
-  const fn=tr?tr.dataset.filename:'';
-  const r=allResults.find(x=>x.filename===fn);
-  if(r) showDebug(r);
-}
-function showDebug(r){
-  const v=r.vehicles;
-  const raw=r._rawText||'(not stored)';
-  const idx=raw.toLowerCase().indexOf('coverage for your property');
-  const tableSnippet=(idx>-1?raw.substring(idx,idx+600):'(not found)').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const detIdx=raw.toLowerCase().indexOf('vehicles\n');
-  const detSnippet=(detIdx>-1?raw.substring(detIdx,detIdx+800):'(not found)').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  console.log(&#x27;[TritoX TM] Running on AgencyZoom page&#x27;);
 
-  let vRows='';
-  for(const veh of v){
-    const cColor=veh.compVal?'#00e887':'#ff4d6a';
-    const oColor=veh.collVal?'#00e887':'#ff4d6a';
-    const cVal=veh.compVal!==null?'$'+veh.compVal:'null (no comp)';
-    const oVal=veh.collVal!==null?'$'+veh.collVal:'null (no coll)';
-    vRows+='<tr><td>'+veh.year+' '+veh.model+'</td>'
-      +'<td style="color:'+cColor+'">'+cVal+'</td>'
-      +'<td style="color:'+oColor+'">'+oVal+'</td></tr>';
+  function normalizeLeadName(value){
+    return String(value||&#x27;&#x27;).toLowerCase().replace(/[^a-z0-9]+/g,&#x27; &#x27;).trim().replace(/\s+/g,&#x27; &#x27;);
   }
 
-  const vTable=v.length
-    ?('<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;">'
-      +'<tr style="color:#8a97bb;border-bottom:1px solid #252d45;">'
-      +'<th style="text-align:left;padding:6px 8px;">Vehicle</th>'
-      +'<th style="text-align:left;padding:6px 8px;">compVal</th>'
-      +'<th style="text-align:left;padding:6px 8px;">collVal</th>'
-      +'</tr>'+vRows+'</table>')
-    :'<p style="color:#ff4d6a;font-size:13px;margin-bottom:20px;">⚠ No vehicles extracted!</p>';
-
-  const modal=document.createElement('div');
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-
-  const box=document.createElement('div');
-  box.style.cssText='background:#111520;border:1px solid #252d45;border-radius:16px;max-width:800px;width:100%;max-height:90vh;overflow-y:auto;padding:28px;';
-
-  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">'
-    +'<h3 style="font-family:Orbitron,sans-serif;color:#00d4ff;font-size:16px;">🔍 Debug — '+r.name+'</h3>'
-    +'<button id="dbgClose" style="background:#1e2438;border:1px solid #252d45;color:#dce4f5;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;">✕ Close</button>'
-    +'</div>'
-    +'<h4 style="color:#8a97bb;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Parsed Vehicles</h4>'
-    +vTable
-    +'<h4 style="color:#8a97bb;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Raw — Summary Table</h4>'
-    +'<pre style="background:#080a0f;border:1px solid #252d45;border-radius:8px;padding:12px;font-size:11px;color:#dce4f5;white-space:pre-wrap;overflow-x:auto;margin-bottom:20px;max-height:200px;overflow-y:auto;">'+tableSnippet+'</pre>'
-    +'<h4 style="color:#8a97bb;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Raw — Vehicle Detail Section</h4>'
-    +'<pre style="background:#080a0f;border:1px solid #252d45;border-radius:8px;padding:12px;font-size:11px;color:#dce4f5;white-space:pre-wrap;overflow-x:auto;max-height:200px;overflow-y:auto;">'+detSnippet+'</pre>';
-
-  modal.appendChild(box);
-  document.body.appendChild(modal);
-  box.querySelector('#dbgClose').addEventListener('click',function(){modal.remove();});
-  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
-}
-
-
-function copyAZ(btn){
-  const row=btn.closest('.az-row');
-  const valEl=row.querySelector('.az-val');
-  if(!valEl) return;
-  const val=valEl.textContent.trim();
-  navigator.clipboard.writeText(val).then(function(){
-    btn.textContent='✓ Copied';
-    btn.classList.add('copied');
-    setTimeout(function(){btn.textContent='📋 Copy';btn.classList.remove('copied');},2000);
-  }).catch(function(){
-    // Fallback for older browsers
-    const ta=document.createElement('textarea');
-    ta.value=val;ta.style.position='fixed';ta.style.opacity='0';
-    document.body.appendChild(ta);ta.select();
-    document.execCommand('copy');document.body.removeChild(ta);
-    btn.textContent='✓ Copied';btn.classList.add('copied');
-    setTimeout(function(){btn.textContent='📋 Copy';btn.classList.remove('copied');},2000);
-  });
-}
-
-
-function generateBookmarklet(){
-  const code = `(function(){
-  var d=JSON.parse(localStorage.getItem('tritox_az_data')||'{}');
-  if(!d.vehicles_policy&&!d.auto1){alert('No TritoX data found!\\nPlease process a PDF in TritoX first.');return;}
-  var ok=0,fail=0;
-  function fillText(id,val){
-    if(val===undefined||val===null||val==='')return;
-    var el=document.getElementById('customfields-'+id);
-    if(!el){fail++;return;}
+  // v4.44: Merge ALTA metadata again at the exact moment Fill is clicked.
+  // This removes timing dependence on the QC bridge and is important when
+  // several ALTA leads are quoted first, then PDFs are processed later.
+  function mergeAltaMetadataAtFill(data){
     try{
-      var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
-      s.call(el,val);
-      el.dispatchEvent(new Event('input',{bubbles:true}));
-      el.dispatchEvent(new Event('change',{bubbles:true}));
-      ok++;
-    }catch(e){fail++;}
-  }
-  function fillSelect(id,val){
-    if(val===undefined||val===null||val==='')return;
-    var el=document.getElementById('customfields-'+id);
-    if(!el){fail++;return;}
-    try{
-      var s=Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,'value').set;
-      s.call(el,val);
-      el.dispatchEvent(new Event('change',{bubbles:true}));
-      ok++;
-    }catch(e){fail++;}
-  }
-  fillText('cf30203',d.vehicles_policy);
-  fillText('cf30197',d.monthly_auto);
-  fillText('cf30199',d.auto_6months);
-  fillSelect('cf56698',d.bodily_injury);
-  fillText('cf47028',d.home_coverage_a);
-  fillText('cf37981',d.home_annual);
-  fillText('cf56654',d.auto1);
-  fillSelect('cf56655',d.auto1_ded);
-  fillText('cf56656',d.auto2);
-  fillSelect('cf56657',d.auto2_ded);
-  fillText('cf56692',d.auto3);
-  fillSelect('cf56693',d.auto3_ded);
-  fillText('cf56694',d.auto4);
-  fillSelect('cf56695',d.auto4_ded);
-  fillText('cf56696',d.auto5);
-  fillSelect('cf56697',d.auto5_ded);
-  if(fail===0){
-    alert('\\u2705 All fields filled for: '+( d._name||'Unknown')+'\\nPlease review and click Save/Update.');
-  } else {
-    alert('\\u26a0 Filled '+ok+' fields. '+fail+' fields not found.\\nMake sure you are on the lead Main page in AgencyZoom.');
-  }
-})();`;
-  return 'javascript:'+encodeURIComponent(code);
-}
+      if(!data || !data._name) return data;
+      const indexRaw=GM_getValue(&#x27;tritox_alta_index&#x27;,&#x27;{}&#x27;);
+      const index=JSON.parse(indexRaw||&#x27;{}&#x27;)||{};
+      const now=Date.now();
+      const valid=Object.keys(index).map(function(k){return index[k];}).filter(function(a){
+        return a &amp;&amp; a.name &amp;&amp; a._savedAt &amp;&amp; now-Number(a._savedAt)&lt;=7200000;
+      });
+      const target=normalizeLeadName(data._name);
+      let matches=valid.filter(function(a){return normalizeLeadName(a.name)===target;});
 
-function initBookmarklet(){
-  const bmLink = document.getElementById('bmLink');
-  if(bmLink){
-    bmLink.href = generateBookmarklet();
-    // Prevent navigation — it should only be dragged
-    bmLink.addEventListener('click', function(e){
-      e.preventDefault();
-      alert('Drag this button to your Chrome bookmark bar!\\nDo not click — drag it.');
+      if(!matches.length){
+        const parts=target.split(&#x27; &#x27;).filter(Boolean);
+        const key=parts.length&gt;=2 ? parts[0]+&#x27; &#x27;+parts[parts.length-1] : target;
+        const loose=valid.filter(function(a){
+          const p=normalizeLeadName(a.name).split(&#x27; &#x27;).filter(Boolean);
+          const k=p.length&gt;=2 ? p[0]+&#x27; &#x27;+p[p.length-1] : p.join(&#x27; &#x27;);
+          return k===key;
+        });
+        if(loose.length===1) matches=loose;
+      }
+
+      // Surname-only recovery for filename fallbacks. Use only when unique.
+      if(!matches.length){
+        const base=String(data._filename||&#x27;&#x27;)
+          .replace(/\.pdf$/i,&#x27;&#x27;)
+          .replace(/[_\-\s]+(?:auto|bundle|home)[_\-\s]+\d{8}$/i,&#x27;&#x27;)
+          .replace(/_/g,&#x27; &#x27;)
+          .trim();
+        const compact=normalizeLeadName(base||data._name).replace(/\s+/g,&#x27;&#x27;);
+        const bySurname=valid.filter(function(a){
+          const p=normalizeLeadName(a.name).split(&#x27; &#x27;).filter(Boolean);
+          if(!p.length) return false;
+          const last=p[p.length-1];
+          const compound=p.length&gt;=2 ? p[p.length-2]+p[p.length-1] : last;
+          return compact===last.replace(/\s+/g,&#x27;&#x27;) ||
+                 compact===compound.replace(/\s+/g,&#x27;&#x27;);
+        });
+        if(bySurname.length===1){
+          matches=bySurname;
+          data._name=bySurname[0].name;
+          console.log(&#x27;[TritoX TM] Direct full-name recovery:&#x27;,base,&#x27;=&gt;&#x27;,data._name);
+        }
+      }
+
+      if(matches.length){
+        matches.sort(function(a,b){return Number(b._savedAt||0)-Number(a._savedAt||0);});
+        const a=matches[0];
+        data.current_company=a.companyInEffect ? String(a.company||&#x27;&#x27;) : &#x27;&#x27;;
+        data.auto_renewal_date=a.companyInEffect ? String(a.renewalDate||&#x27;&#x27;) : &#x27;&#x27;;
+        data.star_rating=String(a.star||&#x27;&#x27;);
+        data._altaId=String(a.altaId||&#x27;&#x27;);
+        data._altaSavedAt=Number(a._savedAt||0);
+        console.log(&#x27;[TritoX TM] Direct ALTA merge at Fill:&#x27;,data._name,data.current_company,data.auto_renewal_date,data.star_rating,data._altaId);
+      }else{
+        console.log(&#x27;[TritoX TM] No direct ALTA match at Fill for:&#x27;,data._name);
+      }
+      return data;
+    }catch(e){
+      console.warn(&#x27;[TritoX TM] Direct ALTA merge failed:&#x27;,e);
+      return data;
+    }
+  }
+
+  function getVisibleLeadHeaderText(){
+    const pieces=[];
+    const selectors=[
+      &#x27;#referral-container&#x27;,
+      &#x27;[class*=\&quot;lead-header\&quot;]&#x27;,&#x27;[class*=\&quot;referral-header\&quot;]&#x27;,&#x27;[class*=\&quot;contact-header\&quot;]&#x27;,
+      &#x27;[class*=\&quot;leadHeader\&quot;]&#x27;,&#x27;[class*=\&quot;referralHeader\&quot;]&#x27;,&#x27;[class*=\&quot;contactHeader\&quot;]&#x27;
+    ];
+    selectors.forEach(function(selector){
+      document.querySelectorAll(selector).forEach(function(el){
+        const r=el.getBoundingClientRect();
+        if(r.width&gt;0 &amp;&amp; r.height&gt;0 &amp;&amp; r.top&lt;220){
+          pieces.push(el.innerText||el.textContent||&#x27;&#x27;);
+        }
+      });
+    });
+    // AgencyZoom&#x27;s lead name is often outside #referral-container. Capture only
+    // visible text in the upper lead pane so old activity/history names do not count.
+    document.querySelectorAll(&#x27;h1,h2,h3,h4,strong,b,span,div&#x27;).forEach(function(el){
+      const r=el.getBoundingClientRect();
+      if(r.width&lt;=0 || r.height&lt;=0 || r.top&lt;0 || r.top&gt;150 || r.left&lt;0) return;
+      const text=(el.textContent||&#x27;&#x27;).trim();
+      if(text &amp;&amp; text.length&lt;=100) pieces.push(text);
+    });
+    return normalizeLeadName(pieces.join(&#x27; | &#x27;));
+  }
+
+  function currentLeadMatchesData(data){
+    const wanted=normalizeLeadName(data &amp;&amp; data._name);
+    if(!wanted) return true;
+    const header=getVisibleLeadHeaderText();
+    return !!header &amp;&amp; header.includes(wanted);
+  }
+
+  // Fill popup lifecycle: same 7-second untouched window used by the
+  // original Aaron/TritoX workflow. Once a popup expires/cancels, the same
+  // processed lead will not be recreated; any newer lead replaces it instantly.
+  let expiredTs = Number(GM_getValue(&#x27;tritox_popup_expired_ts&#x27;,0)) || 0;
+
+  function expireFillPopup(ts){
+    expiredTs=Math.max(expiredTs,Number(ts||0));
+    GM_setValue(&#x27;tritox_popup_expired_ts&#x27;,expiredTs);
+    const oldBtn=document.getElementById(&#x27;tritox-fill-btn&#x27;);
+    if(oldBtn) oldBtn.remove();
+    const oldOverlay=document.getElementById(&#x27;tritox-fill-overlay&#x27;);
+    if(oldOverlay) oldOverlay.remove();
+  }
+
+  function addFillButton(){
+    const raw = GM_getValue(&#x27;tritox_az_data&#x27;,&#x27;&#x27;);
+    if(!raw) return;
+    let data;
+    try{ data = JSON.parse(raw); }catch(e){ return; }
+    if(!data || !data._name) return;
+
+    // Bind the processed PDF/QC result to this AgencyZoom lead ID as soon as a
+    // safe customer-name match is available. Future checks use the ID first.
+    data=bindDataToCurrentLeadId(data);
+
+    const buttonDataTs = data._ts || 0;
+
+    // Do not recreate data that was already filled.
+    if(buttonDataTs &lt;= filledTs || buttonDataTs &lt;= expiredTs) return;
+
+    const age = Date.now() - buttonDataTs;
+    if(age &gt; 7200000) return;
+
+    // If a new PDF/lead arrives while AgencyZoom stays on the same URL,
+    // replace the previous Fill button immediately.
+    const existingBtn=document.getElementById(&#x27;tritox-fill-btn&#x27;);
+    if(existingBtn){
+      const existingTs=Number(existingBtn.dataset.tritoxTs||0);
+      if(existingTs===buttonDataTs) return;
+      existingBtn.remove();
+    }
+
+    const btn = document.createElement(&#x27;div&#x27;);
+    btn.dataset.tritoxTs=String(buttonDataTs);
+    btn.id = &#x27;tritox-fill-btn&#x27;;
+    btn.style.cssText = &#x27;position:fixed;top:80px;right:20px;z-index:99999;background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(0,212,255,0.4);font-family:sans-serif;text-align:center;min-width:160px;&#x27;;
+    btn.innerHTML = &#x27;🚀 Fill + Attach PDF&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:400;opacity:0.9;&quot;&gt;&#x27; + data._name + &#x27;&lt;/span&gt;&#x27;;
+
+    // Initial Fill button is visible for a maximum of 7 seconds if untouched.
+    let autoHideTimer=null;
+    let manualMismatchOverride=false;
+
+    btn.addEventListener(&#x27;click&#x27;, function(){
+      if(autoHideTimer){ clearTimeout(autoHideTimer); autoHideTimer=null; }
+
+      // v4.45.52 PDF / AgencyZoom lead guard.
+      // Never fill fields, attach a PDF, add tags, or click Update when the
+      // customer in the processed PDF does not match the open AgencyZoom lead.
+      const identityCheck=validateLeadIdentity(data);
+      if(identityCheck.mismatch &amp;&amp; !manualMismatchOverride){
+        const reasons=[];
+        if(identityCheck.idMatch===false){
+          reasons.push(&#x27;Bound lead ID: &#x27;+identityCheck.expectedId+&#x27; | Open lead ID: &#x27;+identityCheck.leadId);
+        }else if(identityCheck.idMatch===null &amp;&amp; identityCheck.nameMatch===false){
+          reasons.push(&#x27;PDF customer: &#x27;+(identityCheck.pdfName||&#x27;Unknown&#x27;)+&#x27; | AgencyZoom lead: &#x27;+(identityCheck.leadName||&#x27;Unknown&#x27;));
+        }
+
+        const proceed=window.confirm(
+          &#x27;⚠️ WRONG LEAD / PDF WARNING\n\n&#x27;
+          +reasons.join(&#x27;\n&#x27;)
+          +&#x27;\n\nPlease check the lead manually.\n\n&#x27;
+          +&#x27;OK = Proceed Anyway\nCancel = Stop&#x27;
+        );
+
+        if(!proceed) return;
+
+        manualMismatchOverride=true;
+        console.warn(&#x27;[TritoX TM] Manual mismatch override approved for:&#x27;,
+          data._name,&#x27;open lead:&#x27;,identityCheck.leadName,identityCheck.leadId);
+      }
+
+      // Show confirmation popup
+      const oldOverlay=document.getElementById(&#x27;tritox-fill-overlay&#x27;);
+      if(oldOverlay) oldOverlay.remove();
+      const overlay = document.createElement(&#x27;div&#x27;);
+      overlay.id=&#x27;tritox-fill-overlay&#x27;;
+      overlay.dataset.tritoxTs=String(buttonDataTs);
+      overlay.style.cssText = &#x27;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;&#x27;;
+      const box = document.createElement(&#x27;div&#x27;);
+      box.style.cssText = &#x27;background:#fff;border-radius:16px;padding:28px 32px;max-width:380px;width:90%;text-align:center;font-family:sans-serif;box-shadow:0 20px 60px rgba(0,0,0,0.3);&#x27;;
+      box.innerHTML = &#x27;&lt;div style=&quot;font-size:32px;margin-bottom:12px;&quot;&gt;⚠️&lt;/div&gt;&#x27;
+        +&#x27;&lt;div style=&quot;font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:8px;&quot;&gt;Confirm Fill + PDF Attachment&lt;/div&gt;&#x27;
+        +&#x27;&lt;div style=&quot;font-size:13px;color:#666;margin-bottom:6px;&quot;&gt;You are about to fill and attach the quote PDF for:&lt;/div&gt;&#x27;
+        +&#x27;&lt;div style=&quot;font-size:15px;font-weight:700;color:#7b2fff;margin-bottom:10px;padding:10px;background:#f0e8ff;border-radius:8px;&quot;&gt;&#x27;+data._name+&#x27;&lt;/div&gt;&#x27;
+        +(manualMismatchOverride
+          ? &#x27;&lt;div style=&quot;font-size:12px;color:#b45309;margin-bottom:8px;font-weight:700;padding:8px;background:#fff7ed;border:1px solid #fdba74;border-radius:7px;&quot;&gt;⚠ Manual override — verify this is the correct AgencyZoom lead before filling.&lt;/div&gt;&#x27;
+          : (identityCheck.idMatch===true
+            ? &#x27;&lt;div style=&quot;font-size:12px;color:#15803d;margin-bottom:6px;font-weight:700;&quot;&gt;✅ Lead ID matched: &#x27;+identityCheck.leadId+&#x27;&lt;/div&gt;&#x27;
+            : (identityCheck.nameMatch===true
+              ? &#x27;&lt;div style=&quot;font-size:12px;color:#15803d;margin-bottom:6px;font-weight:700;&quot;&gt;✅ Customer matched — binding Lead ID: &#x27;+(identityCheck.leadId||&#x27;Not detected&#x27;)+&#x27;&lt;/div&gt;&#x27;
+              : &#x27;&lt;div style=&quot;font-size:12px;color:#b45309;margin-bottom:6px;font-weight:700;&quot;&gt;⚠ AgencyZoom customer/ID could not be verified automatically.&lt;/div&gt;&#x27;)))
+        +&#x27;&lt;div style=&quot;font-size:12px;color:#666;margin-bottom:20px;&quot;&gt;AgencyZoom Lead ID: &#x27;+(identityCheck.leadId||&#x27;Not detected&#x27;)+(identityCheck.expectedId?&#x27; | Bound ID: &#x27;+identityCheck.expectedId:&#x27;&#x27;)+&#x27;&lt;/div&gt;&#x27;
+        +&#x27;&lt;div style=&quot;display:flex;gap:10px;justify-content:center;&quot;&gt;&#x27;
+        +&#x27;&lt;button id=&quot;tritox-cancel&quot; style=&quot;flex:1;padding:10px;border:2px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#666;&quot;&gt;❌ Cancel&lt;/button&gt;&#x27;
+        +&#x27;&lt;button id=&quot;tritox-confirm&quot; style=&quot;flex:1;padding:10px;border:none;background:linear-gradient(135deg,#00d4ff,#7b2fff);border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;&quot;&gt;✅ Fill + Attach&lt;/button&gt;&#x27;
+        +&#x27;&lt;/div&gt;&#x27;;
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      // Cancel
+      document.getElementById(&#x27;tritox-cancel&#x27;).addEventListener(&#x27;click&#x27;, function(){
+        overlay.remove();
+        expireFillPopup(buttonDataTs);
+      });
+
+      // Confirm
+      document.getElementById(&#x27;tritox-confirm&#x27;).addEventListener(&#x27;click&#x27;, async function(){
+        const finalIdentity=validateLeadIdentity(data);
+        if(finalIdentity.mismatch &amp;&amp; !manualMismatchOverride){
+          const reasons=[];
+          if(finalIdentity.idMatch===false){
+            reasons.push(&#x27;Bound lead ID: &#x27;+finalIdentity.expectedId+&#x27; | Open lead ID: &#x27;+finalIdentity.leadId);
+          }else if(finalIdentity.idMatch===null &amp;&amp; finalIdentity.nameMatch===false){
+            reasons.push(&#x27;PDF customer: &#x27;+(finalIdentity.pdfName||&#x27;Unknown&#x27;)+&#x27; | AgencyZoom lead: &#x27;+(finalIdentity.leadName||&#x27;Unknown&#x27;));
+          }
+
+          const proceedFinal=window.confirm(
+            &#x27;⚠️ LEAD CHANGED / PDF MISMATCH\n\n&#x27;
+            +reasons.join(&#x27;\n&#x27;)
+            +&#x27;\n\nPlease verify manually.\n\n&#x27;
+            +&#x27;OK = Proceed Anyway\nCancel = Stop&#x27;
+          );
+
+          if(!proceedFinal) return;
+          manualMismatchOverride=true;
+        }
+
+        const tritoxStart=performance.now();
+        overlay.remove();
+        btn.style.background=&#x27;linear-gradient(135deg,#0085ff,#7b2fff)&#x27;;
+        btn.innerHTML=&#x27;⏳ Attaching PDF…&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:400;opacity:0.9;&quot;&gt;&#x27;+data._name+&#x27;&lt;/span&gt;&#x27;;
+
+        // v4.22 ULTRAFAST: keep the lead on Main, fill immediately, and run
+        // PDF upload + tag save in parallel. This removes the slow Files-tab
+        // verification/repaint cycle that previously consumed most of the time.
+        if(!document.getElementById(&#x27;customfields-cf30203&#x27;)){
+          await openLeadTab(&#x27;Main&#x27;);
+          await waitFor(function(){return document.getElementById(&#x27;customfields-cf30203&#x27;);},800);
+        }
+        // Always refresh the correct ALTA record immediately before filling.
+        // This makes company/date/Star-BW work even when QC was processed before
+        // the latest ALTA auto-save or when several leads are handled in a batch.
+        mergeAltaMetadataAtFill(data);
+        fillFields(data);
+
+        // Start PDF upload immediately. Give AgencyZoom a very short moment to
+        // commit the Main-page custom-field/select changes before opening Add Tag.
+        // This prevents the Star field/selectpicker update from racing the tag modal.
+        const pdfPromise=attachPdfFast(data);
+        await wait(180);
+        let tagResult=await applyQuoteTags(data);
+        if(!tagResult.ok){
+          // One fast retry handles transient AgencyZoom re-renders without
+          // changing the user&#x27;s working field/PDF flow.
+          await wait(140);
+          tagResult=await applyQuoteTags(data);
+        }
+        const attachResult=await pdfPromise;
+
+        // Separate-script change: after all existing field/PDF/tag work is done,
+        // automatically save the AgencyZoom Main form by clicking Update.
+        await wait(120);
+        const updateResult=await clickAgencyZoomUpdate();
+
+        console.log(&#x27;[TritoX TM] Total automation time:&#x27;, Math.round(performance.now()-tritoxStart)+&#x27;ms&#x27;, {pdf:attachResult, tags:tagResult, update:updateResult});
+        // Store timestamp of this fill to prevent reappearing
+        try{
+          const d = JSON.parse(GM_getValue(&#x27;tritox_az_data&#x27;,&#x27;{}&#x27;));
+          filledTs = d._ts || Date.now();
+        }catch(e){ filledTs = Date.now(); }
+        GM_setValue(&#x27;tritox_az_data&#x27;,&#x27;&#x27;);
+        if(attachResult.ok &amp;&amp; data._filename){
+          GM_deleteValue(pdfStorageKey(data._filename));
+        }
+
+        // Show done state with close button and countdown
+        let secs = 1;
+        btn.style.background = attachResult.ok &amp;&amp; tagResult.ok ? &#x27;linear-gradient(135deg,#00e887,#00b359)&#x27; : &#x27;#a65b00&#x27;;
+        btn.style.minWidth = &#x27;180px&#x27;;
+
+        function updateBtn(){
+          btn.innerHTML = (attachResult.ok &amp;&amp; tagResult.ok?&#x27;✅ Filled + Verified PDF + Tags&#x27;:&#x27;⚠️ Filled — Review PDF / Tags&#x27;)+&#x27;&lt;br&gt;&#x27;
+            +&#x27;&lt;span style=&quot;font-size:11px;font-weight:400;opacity:0.9;&quot;&gt;&#x27; + data._name + &#x27;&lt;/span&gt;&lt;br&gt;&#x27;
+            +&#x27;&lt;span style=&quot;font-size:10px;font-weight:400;opacity:0.9;&quot;&gt;&#x27;+attachResult.message+&#x27;&lt;/span&gt;&lt;br&gt;&#x27;
+            +&#x27;&lt;span style=&quot;font-size:10px;font-weight:400;opacity:0.9;&quot;&gt;&#x27;+tagResult.message+&#x27;&lt;/span&gt;&lt;br&gt;&#x27;
+            +&#x27;&lt;span style=&quot;font-size:10px;font-weight:400;opacity:0.9;&quot;&gt;&#x27;+updateResult.message+&#x27;&lt;/span&gt;&lt;br&gt;&#x27;
+            +&#x27;&lt;div style=&quot;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;&quot;&gt;&#x27;
+            +&#x27;&lt;span style=&quot;font-size:10px;opacity:0.8;&quot;&gt;Auto close in &#x27;+secs+&#x27;s&lt;/span&gt;&#x27;
+            +&#x27;&lt;button id=&quot;tritox-close-btn&quot; style=&quot;background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:700;&quot;&gt;✕ Close&lt;/button&gt;&#x27;
+            +&#x27;&lt;/div&gt;&#x27;;
+
+          // Attach close button listener after innerHTML update
+          const closeBtn = document.getElementById(&#x27;tritox-close-btn&#x27;);
+          if(closeBtn){
+            closeBtn.addEventListener(&#x27;click&#x27;, function(e){
+              e.stopPropagation();
+              btn.remove();
+            });
+          }
+        }
+
+        updateBtn();
+
+        // Countdown timer
+        const timer = setInterval(function(){
+          secs--;
+          if(secs &lt;= 0){
+            clearInterval(timer);
+            btn.remove();
+          } else {
+            updateBtn();
+          }
+        }, 400);
+      });
+
+      // Click outside to cancel
+      overlay.addEventListener(&#x27;click&#x27;, function(e){
+        if(e.target === overlay){
+          overlay.remove();
+          expireFillPopup(buttonDataTs);
+        }
+      });
+    });
+
+    document.body.appendChild(btn);
+
+    // If untouched, disappear after 7 seconds and do not recreate this same
+    // lead. Processing a new PDF creates a newer timestamp and shows immediately.
+    autoHideTimer=setTimeout(function(){
+      if(btn.isConnected) btn.remove();
+      expiredTs=Math.max(expiredTs,buttonDataTs);
+      GM_setValue(&#x27;tritox_popup_expired_ts&#x27;,expiredTs);
+    },7000);
+
+  }
+
+  function pdfStorageKey(name){
+    let h=2166136261;
+    const s=String(name||&#x27;quote.pdf&#x27;).toLowerCase();
+    for(let i=0;i&lt;s.length;i++){
+      h^=s.charCodeAt(i);
+      h=Math.imul(h,16777619);
+    }
+    return &#x27;tritox_pdf_&#x27;+(h&gt;&gt;&gt;0).toString(16);
+  }
+
+  function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}
+
+  async function clickAgencyZoomUpdate(){
+    function findUpdateButton(){
+      const selectors=[
+        &#x27;#referral-container button.btn.btn-primary.action[onclick*=&quot;leadDetailTab.doSave&quot;]&#x27;,
+        &#x27;#referral-container button[onclick*=&quot;leadDetailTab.doSave&quot;]&#x27;,
+        &#x27;button.btn.btn-primary.action[onclick*=&quot;leadDetailTab.doSave&quot;]&#x27;,
+        &#x27;button[onclick*=&quot;leadDetailTab.doSave&quot;]&#x27;
+      ];
+      for(const selector of selectors){
+        const buttons=Array.from(document.querySelectorAll(selector));
+        const found=buttons.find(function(btn){
+          try{
+            const r=btn.getBoundingClientRect();
+            const visible=r.width&gt;0 &amp;&amp; r.height&gt;0;
+            const text=String(btn.textContent||btn.value||&#x27;&#x27;).trim().toLowerCase();
+            return visible &amp;&amp; text===&#x27;update&#x27; &amp;&amp; !btn.disabled &amp;&amp; btn.getAttribute(&#x27;aria-disabled&#x27;)!==&#x27;true&#x27;;
+          }catch(e){ return false; }
+        });
+        if(found) return found;
+      }
+
+      const roots=[
+        document.getElementById(&#x27;referral-container&#x27;),
+        document.querySelector(&#x27;#detailDockform&#x27;),
+        document
+      ].filter(Boolean);
+      for(const root of roots){
+        const found=Array.from(root.querySelectorAll(&#x27;button,input[type=&quot;button&quot;],input[type=&quot;submit&quot;]&#x27;)).find(function(btn){
+          try{
+            const r=btn.getBoundingClientRect();
+            const visible=r.width&gt;0 &amp;&amp; r.height&gt;0;
+            const text=String(btn.textContent||btn.value||&#x27;&#x27;).trim().toLowerCase();
+            return visible &amp;&amp; text===&#x27;update&#x27; &amp;&amp; !btn.disabled &amp;&amp; btn.getAttribute(&#x27;aria-disabled&#x27;)!==&#x27;true&#x27;;
+          }catch(e){ return false; }
+        });
+        if(found) return found;
+      }
+      return null;
+    }
+
+    const start=Date.now();
+    let btn=null;
+    while(Date.now()-start&lt;2500){
+      btn=findUpdateButton();
+      if(btn) break;
+      await wait(80);
+    }
+    if(!btn) return {ok:false,message:&#x27;Update button was not found&#x27;};
+
+    try{ btn.scrollIntoView({block:&#x27;center&#x27;,inline:&#x27;nearest&#x27;}); }catch(e){}
+    await wait(80);
+
+    try{
+      btn.focus();
+      btn.click();
+      console.log(&#x27;[TritoX TM] AgencyZoom Update clicked automatically&#x27;);
+      return {ok:true,message:&#x27;Update clicked automatically&#x27;};
+    }catch(e){
+      console.warn(&#x27;[TritoX TM] Automatic Update click failed:&#x27;,e);
+      return {ok:false,message:&#x27;Update click failed&#x27;};
+    }
+  }
+
+  async function waitFor(getter,timeout){
+    const start=Date.now();
+    while(Date.now()-start&lt;timeout){
+      const value=getter();
+      if(value) return value;
+      await wait(250);
+    }
+    return null;
+  }
+
+  function findLeadTab(label){
+    const wanted=String(label).toLowerCase();
+    const match=Array.from(document.querySelectorAll(&#x27;#referral-container a,#referral-container button,#referral-container [role=&quot;tab&quot;],#referral-container li,#referral-container span,#referral-container div&#x27;))
+      .find(function(el){return (el.textContent||&#x27;&#x27;).trim().toLowerCase()===wanted;})||null;
+    return match ? (match.closest(&#x27;a,button,li,[role=&quot;tab&quot;]&#x27;)||match) : null;
+  }
+
+  async function openLeadTab(label){
+    const tab=findLeadTab(label);
+    if(!tab) return false;
+    tab.click();
+    await wait(900);
+    return true;
+  }
+
+  function payloadToFile(payload){
+    const parts=String(payload.dataUrl||&#x27;&#x27;).split(&#x27;,&#x27;);
+    if(parts.length&lt;2) throw new Error(&#x27;Stored PDF data is incomplete&#x27;);
+    const bytes=atob(parts[1]);
+    const array=new Uint8Array(bytes.length);
+    for(let i=0;i&lt;bytes.length;i++) array[i]=bytes.charCodeAt(i);
+    return new File([array],payload.name,{
+      type:payload.type||&#x27;application/pdf&#x27;,
+      lastModified:payload.lastModified||Date.now()
     });
   }
-}
 
-
-function showTMScript(){
-  const script = "// ==UserScript==\n// @name         TritoX AgencyZoom Auto-Fill\n// @namespace    http://tampermonkey.net/\n// @version      4.46.18-sheet-lead-id-bridge\n// @description  Stable rollback: original QC field fill + PDF + working automatic tag save\n// @match        https://app.agencyzoom.com/*\n// @match        https://alta.farmers.com/*\n// @match        https://tritoxtech.github.io/*\n// @match        https://saravanatritox-cloud.github.io/aaron/*\n// @grant        GM_setValue\n// @grant        GM_getValue\n// @grant        GM_deleteValue\n// @grant        GM_addStyle\n// @grant        unsafeWindow\n// ==/UserScript==\n\n(function(){\n  'use strict';\n\n  console.log('[TritoX TM] v4.46.18 sheet lead-ID bridge hostname:', window.location.hostname);\n\n\n  // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  // ALTA \u2014 capture extra lead metadata once and keep it while navigating pages.\n  // Customer name + ALTA ID are read automatically; the user only confirms the\n  // carrier, renewal date and Star/BW value.\n  // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  if(window.location.hostname === 'alta.farmers.com'){\n    const CARRIERS=[\n      'AAA','Allstate','Auto-Owners Insurance','Bristol West','Farm Bureau','GEICO',\n      'Liberty Mutual','Nationwide','Progressive','State Farm','Travelers','USAA'\n    ];\n\n    function cleanText(v){ return String(v||'').replace(/\\s+/g,' ').trim(); }\n    function normName(v){ return cleanText(v).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }\n\n    function altaIdentity(){\n      const text=document.body ? document.body.innerText : '';\n      const idm=text.match(/Alta\\s*#\\s*(\\d{8,})/i);\n      const id=idm?idm[1]:'';\n      let name='';\n      const nm=text.match(/(?:^|\\n)\\s*([^\\n]{2,80}?)\\s*-\\s*Auto\\s*(?:\\n|$)/i);\n      if(nm) name=cleanText(nm[1]);\n      if(!name){\n        const nm2=text.match(/([A-Za-z][A-Za-z .'-]{2,70})\\s*-\\s*Auto\\s+Alta\\s*#/i);\n        if(nm2) name=cleanText(nm2[1]);\n      }\n      return {name,id};\n    }\n\n    const ALTA_META_TTL=7200000; // same 2-hour validity window as Aaron autofill popup\n\n    function priorInsuranceSnapshot(){\n      const text=document.body ? document.body.innerText : '';\n      const start=text.search(/Prior insurance information/i);\n      if(start<0) return {visible:false,inEffect:false,company:'',renewalDate:''};\n      const chunk=text.slice(start,start+3000);\n\n      // ALTA can show several prior policies. Always use the TOP/FIRST policy\n      // that is explicitly marked \"In Effect\". Do not choose a carrier merely\n      // because its name appears somewhere later in the prior-insurance list.\n      const lines=chunk.split(/\\n+/).map(function(v){return cleanText(v);}).filter(Boolean);\n      let company='';\n      let renewalDate='';\n      let foundInEffect=false;\n\n      for(let i=0;i<lines.length;i++){\n        if(!/\\bIn Effect\\b/i.test(lines[i])) continue;\n        foundInEffect=true;\n\n        // Build a small row window around this FIRST In Effect marker. In ALTA,\n        // the carrier/status/date may be on one line or split across nearby lines.\n        const from=Math.max(0,i-2);\n        const to=Math.min(lines.length,i+4);\n        const row=lines.slice(from,to).join(' ');\n\n        // Prefer the carrier whose text is physically closest to this row.\n        // This preserves ALTA's on-screen order (top row wins).\n        let best=null;\n        for(const carrier of CARRIERS){\n          const rx=new RegExp('\\\\b'+carrier.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+'\\\\b','i');\n          const m=rx.exec(row);\n          if(m && (!best || m.index<best.index)) best={name:carrier,index:m.index};\n        }\n        if(best) company=best.name;\n\n        if(!company){\n          // Generic fallback: take text immediately before \"In Effect\" from\n          // the same line, then clean off table labels/numbers if present.\n          const same=lines[i].match(/^(.{2,80}?)\\s+In Effect\\b/i);\n          if(same){\n            let candidate=cleanText(same[1]);\n            candidate=candidate.replace(/^(?:Prior insurance information|Driver|Drivers|Vehicles|Tenure|Coverage Term|BI|PD)\\s*/i,'').trim();\n            candidate=candidate.replace(/^\\d+\\s+/,'').trim();\n            if(candidate) company=candidate;\n          }\n        }\n\n        // Renewal date must come from the SAME first In Effect policy.\n        // ALTA often renders the carrier/status on one DOM line and the\n        // Coverage Term several lines later, so the old 4-line window could\n        // miss the date even though the top policy was detected correctly.\n        let dm=row.match(/\\b(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\s*-\\s*(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\b/);\n        if(!dm){\n          const firstEffectPos=chunk.search(/\\bIn Effect\\b/i);\n          if(firstEffectPos>=0){\n            const afterFirst=chunk.slice(firstEffectPos);\n            const nextRel=afterFirst.slice(1).search(/\\bIn Effect\\b/i);\n            const firstPolicyText=nextRel>=0\n              ? afterFirst.slice(0,nextRel+1)\n              : afterFirst.slice(0,700);\n            dm=firstPolicyText.match(/\\b(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\s*-\\s*(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\b/);\n          }\n        }\n        if(dm) renewalDate=dm[2];\n        break; // critical: never fall through to Progressive/another lower row\n      }\n\n      if(!foundInEffect) return {visible:true,inEffect:false,company:'',renewalDate:''};\n      return {visible:true,inEffect:true,company:company,renewalDate:renewalDate};\n    }\n\n    function detectCarrier(){ return priorInsuranceSnapshot().company; }\n    function detectRenewalDate(){ return priorInsuranceSnapshot().renewalDate; }\n\n    function isBwCoveragePage(){\n      // ALTA's Bristol West coverage route is explicit. Check pathname first so\n      // page text, stale SPA content, or quote labels can never override BW.\n      return /\\/quote\\/auto\\/coverages-review-bw(?:\\/)?$/i.test(location.pathname) ||\n        /\\/quote\\/auto\\/coverages-review-bw(?:[/?#]|$)/i.test(location.href);\n    }\n\n    function onAutoCoverageSection(){\n      return isBwCoveragePage() || /\\/quote\\/auto\\/coverages-review(?:\\/)?$/i.test(location.pathname) ||\n        /\\/quote\\/auto\\/coverages-review(?:[/?#]|$)/i.test(location.href);\n    }\n\n    // \u2500\u2500 ALTA coverage presets \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    // Apply only after the Auto coverages page has rendered. Farmers and\n    // Bristol West use separate presets. The selected values remain visible in\n    // ALTA because the real page controls are changed and normal change events\n    // are dispatched.\n    const FARMERS_COVERAGE_PRESET=[\n      ['Bodily injury','$100,000/$300,000'],\n      ['Property damage','$100,000'],\n      ['UM/UIM - bodily injury','$100,000/$300,000']\n    ];\n    const BW_COVERAGE_PRESET=[\n      ['Bodily injury','$100,000/$300,000'],\n      ['Property damage','$100,000'],\n      ['Limited property damage','$3,000'],\n      ['Uninsured motorist - bodily injury','$100,000/$300,000'],\n      ['Underinsured motorist - bodily injury','$100,000/$300,000']\n    ];\n\n    function covNorm(v){\n      return cleanText(v).toLowerCase().replace(/\\$/g,'').replace(/,/g,'').replace(/\\s+/g,'').replace(/[\u2013\u2014]/g,'-');\n    }\n    function covLabelNorm(v){\n      return cleanText(v).toLowerCase().replace(/[^a-z0-9/]+/g,' ').trim();\n    }\n    function visibleEl(el){\n      if(!el) return false;\n      try{\n        const r=el.getBoundingClientRect();\n        const s=getComputedStyle(el);\n        return r.width>0 && r.height>0 && s.display!=='none' && s.visibility!=='hidden';\n      }catch(e){ return false; }\n    }\n\n    function coverageSelectForLabel(label){\n      const wanted=covLabelNorm(label);\n      let best=null;\n      for(const sel of Array.from(document.querySelectorAll('select'))){\n        if(!visibleEl(sel) && !visibleEl(sel.parentElement)) continue;\n        let node=sel.parentElement;\n        for(let depth=0;node && depth<6;depth++,node=node.parentElement){\n          const txt=covLabelNorm(node.innerText||'');\n          if(txt.includes(wanted)){\n            const noise=Math.max(0,txt.length-wanted.length);\n            const score=depth*100+noise;\n            if(!best || score<best.score) best={el:sel,score:score};\n            break;\n          }\n        }\n      }\n      return best?best.el:null;\n    }\n\n    function optionForValue(select,wanted){\n      const wn=covNorm(wanted);\n      const opts=Array.from(select.options||[]);\n      return opts.find(function(o){return covNorm(o.textContent||o.label||o.value)===wn;}) ||\n        opts.find(function(o){return covNorm(o.value)===wn;}) || null;\n    }\n\n    function setCoverageNative(select,wanted){\n      if(!select) return false;\n      const opt=optionForValue(select,wanted);\n      if(!opt) return false;\n      if(String(select.value)===String(opt.value) && opt.selected) return true;\n      try{\n        const setter=Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,'value');\n        if(setter&&setter.set) setter.set.call(select,opt.value); else select.value=opt.value;\n        Array.from(select.options||[]).forEach(function(o){o.selected=(o===opt);});\n        select.dispatchEvent(new Event('input',{bubbles:true}));\n        select.dispatchEvent(new Event('change',{bubbles:true}));\n        select.dispatchEvent(new Event('blur',{bubbles:true}));\n        return true;\n      }catch(e){\n        console.warn('[TritoX TM] ALTA coverage native select failed:',wanted,e);\n        return false;\n      }\n    }\n\n    function coverageContainerForLabel(label){\n      const wanted=covLabelNorm(label);\n      const els=Array.from(document.querySelectorAll('label,div,span,p,td'));\n      let best=null;\n      for(const el of els){\n        if(!visibleEl(el)) continue;\n        const own=covLabelNorm(el.textContent||'');\n        if(own!==wanted) continue;\n        let node=el.parentElement;\n        for(let depth=0;node && depth<5;depth++,node=node.parentElement){\n          const controls=node.querySelectorAll('select,button,[role=\"combobox\"],input');\n          if(controls.length){\n            const score=depth*100+(node.innerText||'').length;\n            if(!best||score<best.score) best={el:node,score:score};\n            break;\n          }\n        }\n      }\n      return best?best.el:null;\n    }\n\n    async function setCoverageFallback(label,wanted){\n      const row=coverageContainerForLabel(label);\n      if(!row) return false;\n      const control=Array.from(row.querySelectorAll('button,[role=\"combobox\"]')).find(visibleEl);\n      if(!control) return false;\n      try{ control.click(); }catch(e){ return false; }\n      await new Promise(function(resolve){setTimeout(resolve,60);});\n      const wn=covNorm(wanted);\n      const options=Array.from(document.querySelectorAll('[role=\"option\"],mat-option,.mat-option,.dropdown-menu li a,.dropdown-menu li button,li[role=\"option\"]'))\n        .filter(visibleEl);\n      const target=options.find(function(el){return covNorm(el.textContent||'')===wn;});\n      if(!target) return false;\n      try{ target.click(); return true; }catch(e){ return false; }\n    }\n\n    let coveragePresetBusy=false;\n    let coveragePresetDoneSig='';\n    async function applyAltaCoverageDefaults(){\n      if(!onAutoCoverageSection() || coveragePresetBusy) return;\n      const ident=altaIdentity();\n      const sig=(ident.id||'')+'|'+location.pathname;\n      if(sig===coveragePresetDoneSig) return;\n      coveragePresetBusy=true;\n      try{\n        const preset=isBwCoveragePage()?BW_COVERAGE_PRESET:FARMERS_COVERAGE_PRESET;\n        let allDone=true;\n        for(const pair of preset){\n          const label=pair[0],wanted=pair[1];\n          const sel=coverageSelectForLabel(label);\n          let ok=false;\n          if(sel){\n            const opt=optionForValue(sel,wanted);\n            if(opt && covNorm(sel.options[sel.selectedIndex]&&sel.options[sel.selectedIndex].textContent)===covNorm(wanted)) ok=true;\n            else ok=setCoverageNative(sel,wanted);\n          }\n          if(!ok) ok=await setCoverageFallback(label,wanted);\n          if(!ok) allDone=false;\n          await new Promise(function(resolve){setTimeout(resolve,30);});\n        }\n        if(allDone){\n          coveragePresetDoneSig=sig;\n          console.log('[TritoX TM] ALTA coverage preset applied:',isBwCoveragePage()?'BW':'Farmers');\n        }\n      }finally{\n        coveragePresetBusy=false;\n      }\n    }\n\n    function detectStar(){\n      // Rating is detected ONLY on ALTA's Auto coverages page.\n      if(!onAutoCoverageSection()) return '';\n\n      // IMPORTANT: resolve Bristol West from the route BEFORE scanning text.\n      // The BW page can contain numbers such as Opt. 1 / Opt. 3 and other\n      // content that must never be interpreted as a Farmers star rating.\n      if(isBwCoveragePage()) return 'BW';\n\n      const text=document.body ? document.body.innerText : '';\n\n      // Farmers rating banner: 1 Star / 2 Stars / 3 Stars.\n      const m=text.match(/\\b([123])\\s*Stars?\\b/i);\n      if(m) return m[1];\n\n      // Bristol West coverage layout does not show a Star badge. In the BW\n      // layout ALTA shows the Bristol West PIP deductible row without the\n      // separate Farmers PIP deductible row that is present on Farmers quotes.\n      const hasBWPip=/Bristol\\s+West\\s+PIP\\s+deductible/i.test(text);\n      const hasFarmersPip=/Farmers\\s+PIP\\s+deductible/i.test(text);\n      if(hasBWPip && !hasFarmersPip) return 'BW';\n\n      // Extra safety: inspect the visible quote banner/logo for Bristol West\n      // branding. This helps if ALTA changes the PIP labels later.\n      const brandEls=Array.from(document.querySelectorAll('img,[aria-label],[title],[data-testid],[class],[id]')).filter(function(el){\n        try{\n          const r=el.getBoundingClientRect();\n          return r.width>0 && r.height>0 && r.top<260 && r.bottom>0;\n        }catch(e){ return false; }\n      });\n      const bwBrand=brandEls.some(function(el){\n        const bits=[\n          el.getAttribute&&el.getAttribute('alt'),\n          el.getAttribute&&el.getAttribute('title'),\n          el.getAttribute&&el.getAttribute('aria-label'),\n          el.getAttribute&&el.getAttribute('data-testid'),\n          el.id, el.className,\n          el.getAttribute&&el.getAttribute('src'),\n          el.style&&el.style.backgroundImage\n        ].map(function(v){return String(v||'');}).join(' ');\n        return /bristol\\s*west|bristolwest|(?:^|[^a-z])bw(?:[^a-z]|$)/i.test(bits);\n      });\n      if(bwBrand) return 'BW';\n\n      return '';\n    }\n\n    function storageKey(id){ return 'tritox_alta_lead_'+String(id||'unknown'); }\n    const ALTA_INDEX_KEY='tritox_alta_index';\n\n    function readAltaIndex(){\n      try{\n        const raw=GM_getValue(ALTA_INDEX_KEY,'{}');\n        const index=JSON.parse(raw||'{}')||{};\n        let changed=false;\n        Object.keys(index).forEach(function(id){\n          const m=index[id]||{};\n          if(!m._savedAt || Date.now()-Number(m._savedAt)>ALTA_META_TTL){\n            delete index[id];\n            changed=true;\n          }\n        });\n        if(changed) GM_setValue(ALTA_INDEX_KEY,JSON.stringify(index));\n        return index;\n      }catch(e){ return {}; }\n    }\n\n    function readSaved(id){\n      try{\n        const index=readAltaIndex();\n        if(index[id]) return index[id];\n        const obj=JSON.parse(GM_getValue(storageKey(id),'{}'))||{};\n        if(obj._savedAt && Date.now()-obj._savedAt>ALTA_META_TTL) return {};\n        return obj;\n      }catch(e){return {};}\n    }\n\n    function saveMeta(meta){\n      if(!meta || !meta.altaId) return;\n      meta._savedAt=Date.now();\n\n      // Keep every lead separately so 4-6 quotes can be worked in parallel.\n      // Nothing is overwritten just because another ALTA lead becomes current.\n      const index=readAltaIndex();\n      index[String(meta.altaId)]=meta;\n      GM_setValue(ALTA_INDEX_KEY,JSON.stringify(index));\n\n      // Per-ID key retained for backwards compatibility/debugging.\n      GM_setValue(storageKey(meta.altaId),JSON.stringify(meta));\n      GM_setValue('tritox_alta_latest',JSON.stringify(meta));\n      console.log('[TritoX TM] ALTA metadata auto-saved:',meta,'cached leads:',Object.keys(index).length);\n    }\n\n    // \u2500\u2500 Dummy In-force Insurance \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    // User-triggered only. It never runs automatically.\n    // Defaults:\n    //   Company: AAA\n    //   BI: $100,000/$300,000\n    //   Expiration: 6 months from today's browser date\n    //   Insured with company: 6 - 11 Months\n    //   More than 6 months continuous insurance: Yes (auto-selected by ALTA from tenure)\n    function txVisible(el){\n      if(!el) return false;\n      try{\n        const r=el.getBoundingClientRect();\n        const s=getComputedStyle(el);\n        return r.width>0 && r.height>0 && s.display!=='none' && s.visibility!=='hidden';\n      }catch(e){ return false; }\n    }\n\n    function txNorm(v){\n      return cleanText(v)\n        .toLowerCase()\n        .replace(/[\u2013\u2014]/g,'-')\n        .replace(/\\s*\\/\\s*/g,'/')\n        .replace(/\\s*-\\s*/g,'-')\n        .replace(/\\s+/g,' ')\n        .trim();\n    }\n\n    function txPageWindow(){\n      try{ return typeof unsafeWindow!=='undefined' ? unsafeWindow : window; }\n      catch(e){ return window; }\n    }\n\n    function txNativeSetInput(input,value){\n      if(!input) return false;\n      try{\n        const pw=txPageWindow();\n        const proto=input.tagName==='TEXTAREA'\n          ? pw.HTMLTextAreaElement.prototype\n          : pw.HTMLInputElement.prototype;\n        const desc=Object.getOwnPropertyDescriptor(proto,'value');\n        if(desc&&desc.set) desc.set.call(input,String(value)); else input.value=String(value);\n\n        const E=pw.Event||Event;\n        const IE=pw.InputEvent||InputEvent;\n        try{ input.dispatchEvent(new IE('input',{bubbles:true,cancelable:true,data:String(value),inputType:'insertText'})); }\n        catch(e){ input.dispatchEvent(new E('input',{bubbles:true})); }\n        input.dispatchEvent(new E('change',{bubbles:true}));\n        return true;\n      }catch(e){\n        try{ input.value=String(value); input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true})); return true; }\n        catch(_e){ return false; }\n      }\n    }\n\n    function txFindButton(rx,root){\n      root=root||document;\n      return Array.from(root.querySelectorAll('button,a,[role=\"button\"],input[type=\"button\"],input[type=\"submit\"]'))\n        .filter(txVisible)\n        .find(function(el){\n          const t=cleanText(el.textContent||el.value||el.getAttribute('aria-label')||'');\n          return rx.test(t);\n        })||null;\n    }\n\n    function txFindDrawer(){\n      const candidates=Array.from(document.querySelectorAll('aside,[role=\"dialog\"],.drawer,.modal,[class*=\"drawer\"],[class*=\"panel\"],div'))\n        .filter(txVisible)\n        .filter(function(el){\n          const t=cleanText(el.innerText||'');\n          return /^In-force policy\\b/i.test(t) || (/\\bIn-force policy\\b/i.test(t) && /Current insurance company/i.test(t));\n        });\n      if(!candidates.length) return null;\n      // Prefer the smallest visible container containing the complete form.\n      candidates.sort(function(a,b){\n        return (a.getBoundingClientRect().width*a.getBoundingClientRect().height)-\n               (b.getBoundingClientRect().width*b.getBoundingClientRect().height);\n      });\n      return candidates[0];\n    }\n\n    function txWaitFor(getter,timeout){\n      return new Promise(function(resolve){\n        let finished=false;\n        let observer=null;\n        let fallbackTimer=null;\n        let timeoutTimer=null;\n\n        function finish(value){\n          if(finished) return;\n          finished=true;\n          try{ if(observer) observer.disconnect(); }catch(e){}\n          try{ if(fallbackTimer) clearInterval(fallbackTimer); }catch(e){}\n          try{ if(timeoutTimer) clearTimeout(timeoutTimer); }catch(e){}\n          resolve(value||null);\n        }\n\n        function check(){\n          if(finished) return;\n          try{\n            const v=getter();\n            if(v){ finish(v); return; }\n          }catch(e){}\n        }\n\n        check();\n        if(finished) return;\n\n        // MutationObserver continues reacting to DOM changes when the ALTA tab\n        // is in the background, unlike very short setTimeout polling loops which\n        // Chrome heavily throttles.\n        try{\n          observer=new MutationObserver(check);\n          observer.observe(document.documentElement,{\n            childList:true,\n            subtree:true,\n            attributes:true,\n            characterData:true\n          });\n        }catch(e){}\n\n        // Slow fallback only; this is not the main driver.\n        fallbackTimer=setInterval(check,500);\n        timeoutTimer=setTimeout(function(){ finish(null); },timeout||4000);\n      });\n    }\n\n    function txLabelNode(drawer,labelText){\n      const wanted=txNorm(labelText).replace(/\\s*\\*\\s*$/,'');\n      const nodes=Array.from(drawer.querySelectorAll('label,div,span,p'))\n        .filter(txVisible)\n        .filter(function(node){\n          const own=txNorm(node.textContent||'').replace(/\\s*\\*\\s*$/,'');\n          return own===wanted || own.startsWith(wanted);\n        });\n      if(!nodes.length) return null;\n      nodes.sort(function(a,b){\n        const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();\n        const aExact=txNorm(a.textContent||'').replace(/\\s*\\*\\s*$/,'')===wanted ? 0 : 1;\n        const bExact=txNorm(b.textContent||'').replace(/\\s*\\*\\s*$/,'')===wanted ? 0 : 1;\n        if(aExact!==bExact) return aExact-bExact;\n        const aArea=ar.width*ar.height, bArea=br.width*br.height;\n        return aArea-bArea;\n      });\n      return nodes[0];\n    }\n\n    function txVisibleTextInputs(drawer){\n      return Array.from(drawer.querySelectorAll('input')).filter(function(el){\n        return txVisible(el) && !/radio|checkbox|hidden|button|submit/i.test(el.type||'');\n      }).sort(function(a,b){\n        return a.getBoundingClientRect().top-b.getBoundingClientRect().top;\n      });\n    }\n\n    function txClickLikeUser(el){\n      if(!el) return false;\n      try{ el.scrollIntoView({block:'center',inline:'nearest'}); }catch(e){}\n      try{ el.focus(); }catch(e){}\n      try{\n        ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(function(type){\n          let evt;\n          try{\n            evt = type.indexOf('pointer')===0\n              ? new PointerEvent(type,{bubbles:true,cancelable:true,view:window,pointerType:'mouse',isPrimary:true})\n              : new MouseEvent(type,{bubbles:true,cancelable:true,view:window});\n          }catch(e){\n            evt = new Event(type,{bubbles:true,cancelable:true});\n          }\n          el.dispatchEvent(evt);\n        });\n        return true;\n      }catch(e){\n        try{ el.click(); return true; }catch(_e){ return false; }\n      }\n    }\n\n    function txSetInput(input,value){\n      if(!input) return false;\n      try{\n        input.focus();\n        const ok=txNativeSetInput(input,value);\n        try{ input.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,key:'Tab'})); }catch(e){}\n        try{ input.blur(); }catch(e){}\n        return ok;\n      }catch(e){\n        console.warn('[TritoX TM] Dummy insurance input set failed:',e);\n        return false;\n      }\n    }\n\n    async function txTypeIntoInput(input,value){\n      if(!input) return false;\n      try{\n        txClickLikeUser(input);\n        // Clear through native setter first.\n        const desc=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');\n        if(desc&&desc.set) desc.set.call(input,''); else input.value='';\n        try{\n          input.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'deleteContentBackward'}));\n        }catch(e){ input.dispatchEvent(new Event('input',{bubbles:true})); }\n        await new Promise(function(resolve){setTimeout(resolve,100);});\n\n        let current='';\n        for(const ch of String(value)){\n          try{ input.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,cancelable:true,key:ch})); }catch(e){}\n          current+=ch;\n          if(desc&&desc.set) desc.set.call(input,current); else input.value=current;\n          try{\n            input.dispatchEvent(new InputEvent('input',{\n              bubbles:true,cancelable:true,data:ch,inputType:'insertText'\n            }));\n          }catch(e){ input.dispatchEvent(new Event('input',{bubbles:true})); }\n          try{ input.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,cancelable:true,key:ch})); }catch(e){}\n          await new Promise(function(resolve){setTimeout(resolve,120);});\n        }\n        input.dispatchEvent(new Event('change',{bubbles:true}));\n        return txNorm(input.value)===txNorm(value);\n      }catch(e){\n        return txSetInput(input,value);\n      }\n    }\n\n    function txFindFieldRow(drawer,labelText){\n      const label=txLabelNode(drawer,labelText);\n      if(!label) return null;\n      const lr=label.getBoundingClientRect();\n      const center=lr.top+lr.height/2;\n\n      // Find the smallest ancestor that still looks like one horizontal form row.\n      let node=label.parentElement;\n      let best=null;\n      for(let depth=0;node && node!==drawer.parentElement && depth<7;depth++,node=node.parentElement){\n        const r=node.getBoundingClientRect();\n        const controls=node.querySelectorAll(\n          'input,select,button,[role=\"combobox\"],[aria-haspopup=\"listbox\"],[tabindex]'\n        );\n        if(controls.length){\n          const heightPenalty=r.height>110 ? 500 : 0;\n          const score=depth*50+heightPenalty+r.height;\n          if(!best || score<best.score) best={root:node,score:score};\n        }\n      }\n\n      // If ancestry is noisy, create a synthetic row by using the drawer and\n      // selecting controls closest to the label's Y coordinate.\n      return {root:best?best.root:drawer,label:label,labelRect:lr,center:center};\n    }\n\n    function txRowControls(drawer,labelText){\n      const row=txFindFieldRow(drawer,labelText);\n      if(!row) return [];\n      const lr=row.labelRect;\n      const cy=row.center;\n      const candidates=Array.from(drawer.querySelectorAll(\n        'input,select,button,[role=\"combobox\"],[aria-haspopup=\"listbox\"],[tabindex]'\n      )).filter(function(el){\n        if(!txVisible(el)) return false;\n        if(el.closest('#tritox-alta-panel')) return false;\n        if(el.tagName==='INPUT' && /hidden/i.test(el.type||'')) return false;\n        const r=el.getBoundingClientRect();\n        const ey=r.top+r.height/2;\n        return Math.abs(ey-cy)<=55 && r.right>lr.right-20;\n      });\n\n      return candidates.sort(function(a,b){\n        const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();\n        const ay=Math.abs((ar.top+ar.height/2)-cy);\n        const by=Math.abs((br.top+br.height/2)-cy);\n        if(ay!==by) return ay-by;\n        // Prefer larger field controls over small icon buttons.\n        return (br.width*br.height)-(ar.width*ar.height);\n      });\n    }\n\n    function txExactVisibleText(text){\n      const wanted=txNorm(text);\n      const selectors='[role=\"option\"],[role=\"menuitem\"],mat-option,.mat-option,.dropdown-item,.dropdown-menu li a,.dropdown-menu li button,li,button,a,div,span';\n      const candidates=Array.from(document.querySelectorAll(selectors)).filter(txVisible).filter(function(el){\n        return txNorm(el.textContent||'')===wanted;\n      });\n      if(!candidates.length) return null;\n      // Prefer the smallest exact text node in a popup/overlay.\n      candidates.sort(function(a,b){\n        const aa=a.getBoundingClientRect(), bb=b.getBoundingClientRect();\n        const aOverlay=a.closest('[role=\"listbox\"],[role=\"menu\"],.cdk-overlay-container,.dropdown-menu,.modal,.drawer')?0:1;\n        const bOverlay=b.closest('[role=\"listbox\"],[role=\"menu\"],.cdk-overlay-container,.dropdown-menu,.modal,.drawer')?0:1;\n        if(aOverlay!==bOverlay) return aOverlay-bOverlay;\n        return (aa.width*aa.height)-(bb.width*bb.height);\n      });\n      return candidates[0];\n    }\n\n    async function txOpenAndPick(drawer,labelText,wanted){\n      const controls=txRowControls(drawer,labelText);\n      let control=controls.find(function(el){\n        if(el.tagName==='INPUT' && !/button|submit/i.test(el.type||'')) return false;\n        const r=el.getBoundingClientRect();\n        return r.width>80 && (el.tagName==='SELECT' ||\n          el.getAttribute('role')==='combobox' ||\n          el.getAttribute('aria-haspopup')==='listbox' ||\n          el.tagName==='BUTTON' ||\n          el.hasAttribute('tabindex'));\n      }) || controls.find(function(el){\n        return el.tagName==='SELECT' || el.getAttribute('role')==='combobox';\n      });\n\n      if(!control) return false;\n\n      if(control.tagName==='SELECT'){\n        const wn=txNorm(wanted);\n        const opts=Array.from(control.options||[]);\n        const opt=opts.find(function(o){return txNorm(o.textContent||o.label||o.value)===wn;}) ||\n                  opts.find(function(o){return txNorm(o.textContent||'').includes(wn);});\n        if(!opt) return false;\n        try{\n          const desc=Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,'value');\n          if(desc&&desc.set) desc.set.call(control,opt.value); else control.value=opt.value;\n          opts.forEach(function(o){o.selected=(o===opt);});\n          control.dispatchEvent(new Event('input',{bubbles:true}));\n          control.dispatchEvent(new Event('change',{bubbles:true}));\n          control.dispatchEvent(new Event('blur',{bubbles:true}));\n          await new Promise(function(resolve){setTimeout(resolve,120);});\n          return txNorm(control.options[control.selectedIndex]&&control.options[control.selectedIndex].textContent||control.value).includes(wn);\n        }catch(e){ return false; }\n      }\n\n      txClickLikeUser(control);\n      let opt=await txWaitFor(function(){ return txExactVisibleText(wanted); },2200);\n      if(!opt){\n        // If the clickable field itself was not the dropdown trigger, try the\n        // widest other control on the same row.\n        for(const other of controls){\n          if(other===control) continue;\n          const r=other.getBoundingClientRect();\n          if(r.width<70) continue;\n          txClickLikeUser(other);\n          opt=await txWaitFor(function(){ return txExactVisibleText(wanted); },900);\n          if(opt) break;\n        }\n      }\n      if(!opt) return false;\n      txClickLikeUser(opt);\n      await new Promise(function(resolve){setTimeout(resolve,45);});\n      return true;\n    }\n\n    async function txPickAutocomplete(drawer,labelText,value){\n      const controls=txRowControls(drawer,labelText);\n      let input=controls.find(function(el){\n        return el.tagName==='INPUT' && !/radio|checkbox|hidden|button|submit/i.test(el.type||'');\n      });\n      if(!input){\n        const inputs=txVisibleTextInputs(drawer);\n        input=inputs[0]||null;\n      }\n      if(!input) return false;\n\n      await txTypeIntoInput(input,value);\n      await new Promise(function(resolve){setTimeout(resolve,350);});\n\n      let opt=txExactVisibleText(value);\n\n      // Force ALTA's carrier lookup with the search icon / button on the row.\n      if(!opt){\n        const searchButton=controls.find(function(el){\n          if(el===input) return false;\n          const r=el.getBoundingClientRect();\n          return (el.tagName==='BUTTON' || el.getAttribute('role')==='button' || el.hasAttribute('tabindex')) &&\n                 r.width<=90;\n        });\n        if(searchButton){\n          txClickLikeUser(searchButton);\n          opt=await txWaitFor(function(){ return txExactVisibleText(value); },2200);\n        }\n      }\n\n      if(opt){\n        txClickLikeUser(opt);\n        await new Promise(function(resolve){setTimeout(resolve,120);});\n      }else{\n        // Keyboard selection fallback.\n        try{\n          input.focus();\n          input.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,cancelable:true,key:'ArrowDown'}));\n          input.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,cancelable:true,key:'ArrowDown'}));\n          await new Promise(function(resolve){setTimeout(resolve,120);});\n          input.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,cancelable:true,key:'Enter'}));\n          input.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,cancelable:true,key:'Enter'}));\n        }catch(e){}\n        await new Promise(function(resolve){setTimeout(resolve,120);});\n      }\n\n      // Do not only trust the internal value during the transient autocomplete\n      // rerender. Require visible AAA text either in the input or its row.\n      const rowText=controls.map(function(el){return cleanText(el.value||el.textContent||'');}).join(' ');\n      return txNorm(input.value)===txNorm(value) || /\\bAAA\\b/i.test(rowText);\n    }\n\n    async function txFillDate(drawer,value){\n      const controls=txRowControls(drawer,'Policy expiration date');\n      let input=controls.find(function(el){\n        return el.tagName==='INPUT' && !/radio|checkbox|hidden|button|submit/i.test(el.type||'');\n      });\n      if(!input){\n        const inputs=txVisibleTextInputs(drawer);\n        input=inputs.find(function(el){ return /date|mm\\/dd/i.test((el.type||'')+' '+(el.placeholder||'')); }) ||\n              inputs[1] || null;\n      }\n      if(!input) return false;\n      txSetInput(input,value);\n      await new Promise(function(resolve){setTimeout(resolve,70);});\n      try{\n        input.focus();\n        input.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,key:'Tab'}));\n        input.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,key:'Tab'}));\n        input.blur();\n      }catch(e){}\n      await new Promise(function(resolve){setTimeout(resolve,120);});\n      return txNorm(input.value)===txNorm(value);\n    }\n\n    async function txChooseContinuousYes(drawer){\n      // Click the visible Yes text first. ALTA may use a custom radio control\n      // where the real input is hidden.\n      const yesNodes=Array.from(drawer.querySelectorAll('label,span,div,button'))\n        .filter(txVisible)\n        .filter(function(el){ return txNorm(el.textContent||'')==='yes'; })\n        .sort(function(a,b){\n          const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();\n          return (ar.width*ar.height)-(br.width*br.height);\n        });\n      if(yesNodes.length){\n        txClickLikeUser(yesNodes[0]);\n        await new Promise(function(resolve){setTimeout(resolve,70);});\n      }\n\n      const radios=Array.from(drawer.querySelectorAll('input[type=\"radio\"]'));\n      if(radios.length){\n        for(const radio of radios){\n          let txt='';\n          try{\n            const lab=radio.id ? drawer.querySelector('label[for=\"'+CSS.escape(radio.id)+'\"]') : null;\n            txt=txNorm((lab&&lab.textContent)||(radio.parentElement&&radio.parentElement.textContent)||'');\n          }catch(e){}\n          if(/\\byes\\b/.test(txt) && !/\\bno\\b/.test(txt)){\n            try{radio.checked=true;}catch(e){}\n            radio.dispatchEvent(new Event('input',{bubbles:true}));\n            radio.dispatchEvent(new Event('change',{bubbles:true}));\n            return true;\n          }\n        }\n        // Fixed current layout: Yes is the first radio.\n        try{\n          radios[0].checked=true;\n          radios[0].dispatchEvent(new Event('input',{bubbles:true}));\n          radios[0].dispatchEvent(new Event('change',{bubbles:true}));\n        }catch(e){}\n        return true;\n      }\n\n      // If there are no native radios but Yes was clicked, treat that click as success.\n      return yesNodes.length>0;\n    }\n\n    function txSixMonthsFromToday(){\n      const d=new Date();\n      const day=d.getDate();\n      d.setDate(1);\n      d.setMonth(d.getMonth()+6);\n      const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();\n      d.setDate(Math.min(day,lastDay));\n      const mm=String(d.getMonth()+1).padStart(2,'0');\n      const dd=String(d.getDate()).padStart(2,'0');\n      return mm+'/'+dd+'/'+d.getFullYear();\n    }\n\n\n    function txDrawerRect(drawer){\n      try{ return drawer.getBoundingClientRect(); }\n      catch(e){ return {left:0,right:window.innerWidth,top:0,bottom:window.innerHeight,width:window.innerWidth,height:window.innerHeight}; }\n    }\n\n    function txPointControl(drawer,labelText){\n      const label=txLabelNode(drawer,labelText);\n      if(!label) return null;\n      const dr=txDrawerRect(drawer);\n      const lr=label.getBoundingClientRect();\n      const y=Math.round(lr.top+lr.height/2);\n\n      // Probe several X positions across the input area. This works even when\n      // ALTA renders a custom div-based control rather than input/select.\n      const xs=[\n        Math.round(dr.right-90),\n        Math.round(dr.right-150),\n        Math.round(dr.left+dr.width*0.78),\n        Math.round(dr.left+dr.width*0.68)\n      ];\n\n      for(const x of xs){\n        let el=null;\n        try{ el=document.elementFromPoint(x,y); }catch(e){}\n        if(!el) continue;\n        if(el.closest && el.closest('#tritox-alta-panel')) continue;\n\n        // Walk upward until we reach a sensible clickable/editable control.\n        let n=el;\n        for(let depth=0;n && n!==drawer && depth<6;depth++,n=n.parentElement){\n          const role=(n.getAttribute&&n.getAttribute('role'))||'';\n          const tag=n.tagName||'';\n          if(tag==='INPUT' || tag==='SELECT' || tag==='TEXTAREA' ||\n             tag==='BUTTON' || role==='combobox' || role==='button' ||\n             (n.getAttribute&&n.getAttribute('aria-haspopup')==='listbox')){\n            return n;\n          }\n        }\n        return el;\n      }\n      return null;\n    }\n\n    function txFirstEditableInDrawer(drawer,skip){\n      return Array.from(drawer.querySelectorAll('input,textarea,[contenteditable=\"true\"]'))\n        .filter(function(el){\n          if(!txVisible(el)) return false;\n          if(skip && skip.includes(el)) return false;\n          if(el.tagName==='INPUT' && /radio|checkbox|hidden|button|submit/i.test(el.type||'')) return false;\n          return true;\n        })\n        .sort(function(a,b){\n          return a.getBoundingClientRect().top-b.getBoundingClientRect().top;\n        })[0] || null;\n    }\n\n    async function txHumanFillTextControl(control,value){\n      if(!control) return false;\n\n      // If elementFromPoint landed on a wrapper, prefer its editable descendant.\n      if(control.tagName!=='INPUT' && control.tagName!=='TEXTAREA' &&\n         control.getAttribute('contenteditable')!=='true'){\n        const child=control.querySelector && control.querySelector('input,textarea,[contenteditable=\"true\"]');\n        if(child && txVisible(child)) control=child;\n      }\n\n      txClickLikeUser(control);\n      await new Promise(function(resolve){setTimeout(resolve,30);});\n\n      try{\n        if(control.tagName==='INPUT' || control.tagName==='TEXTAREA'){\n          control.focus();\n          try{ control.select(); }catch(e){}\n          // execCommand fires browser-style input events in many Angular controls.\n          let usedExec=false;\n          try{\n            usedExec=document.execCommand && document.execCommand('insertText',false,String(value));\n          }catch(e){}\n          if(!usedExec || txNorm(control.value)!==txNorm(value)){\n            txSetInput(control,value);\n          }\n          control.dispatchEvent(new Event('input',{bubbles:true}));\n          control.dispatchEvent(new Event('change',{bubbles:true}));\n          return txNorm(control.value)===txNorm(value);\n        }\n\n        if(control.getAttribute('contenteditable')==='true'){\n          control.focus();\n          control.textContent='';\n          try{ document.execCommand('insertText',false,String(value)); }\n          catch(e){ control.textContent=String(value); }\n          control.dispatchEvent(new Event('input',{bubbles:true}));\n          control.dispatchEvent(new Event('change',{bubbles:true}));\n          return txNorm(control.textContent)===txNorm(value);\n        }\n      }catch(e){}\n      return false;\n    }\n\n    async function txSpatialPick(drawer,labelText,wanted){\n      const control=txPointControl(drawer,labelText);\n      if(!control) return false;\n\n      // Native select path.\n      if(control.tagName==='SELECT'){\n        const wn=txNorm(wanted);\n        const opts=Array.from(control.options||[]);\n        const opt=opts.find(function(o){return txNorm(o.textContent||o.label||o.value)===wn;});\n        if(!opt) return false;\n        try{\n          const desc=Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,'value');\n          if(desc&&desc.set) desc.set.call(control,opt.value); else control.value=opt.value;\n          opts.forEach(function(o){o.selected=(o===opt);});\n          control.dispatchEvent(new Event('input',{bubbles:true}));\n          control.dispatchEvent(new Event('change',{bubbles:true}));\n          return true;\n        }catch(e){}\n      }\n\n      txClickLikeUser(control);\n      await new Promise(function(resolve){setTimeout(resolve,80);});\n\n      let opt=await txWaitFor(function(){ return txExactVisibleText(wanted); },2200);\n      if(!opt){\n        // Some ALTA menus are rendered as plain text items without role attributes.\n        const wn=txNorm(wanted);\n        const all=Array.from(document.querySelectorAll('div,span,li,button,a'))\n          .filter(txVisible)\n          .filter(function(el){\n            if(el.closest && el.closest('#tritox-alta-panel')) return false;\n            return txNorm(el.textContent||'')===wn;\n          })\n          .sort(function(a,b){\n            const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();\n            return (ar.width*ar.height)-(br.width*br.height);\n          });\n        opt=all[0]||null;\n      }\n      if(!opt) return false;\n      txClickLikeUser(opt);\n      await new Promise(function(resolve){setTimeout(resolve,80);});\n      return true;\n    }\n\n\n    function txControlAtRowCenter(drawer,labelText){\n      const label=txLabelNode(drawer,labelText);\n      if(!label) return null;\n      const dr=drawer.getBoundingClientRect();\n      const lr=label.getBoundingClientRect();\n      const y=Math.round(lr.top+lr.height/2);\n\n      // Target the middle of the field itself, not the search/caret icon.\n      const xs=[\n        Math.round(dr.left+dr.width*0.68),\n        Math.round(dr.left+dr.width*0.73),\n        Math.round(dr.left+dr.width*0.63)\n      ];\n\n      for(const x of xs){\n        let el=null;\n        try{ el=document.elementFromPoint(x,y); }catch(e){}\n        if(!el || (el.closest&&el.closest('#tritox-alta-panel'))) continue;\n\n        // Prefer a descendant/ancestor that is the actual control.\n        if(el.matches&&el.matches('input,select,textarea,[role=\"combobox\"],button,[aria-haspopup=\"listbox\"]')) return el;\n        const child=el.querySelector&&el.querySelector('input,select,textarea,[role=\"combobox\"],button,[aria-haspopup=\"listbox\"]');\n        if(child&&txVisible(child)) return child;\n        const up=el.closest&&el.closest('input,select,textarea,[role=\"combobox\"],button,[aria-haspopup=\"listbox\"]');\n        if(up&&txVisible(up)) return up;\n        return el;\n      }\n      return null;\n    }\n\n    function txVisibleValueForRow(drawer,labelText){\n      const c=txControlAtRowCenter(drawer,labelText);\n      if(!c) return '';\n      if(c.tagName==='INPUT'||c.tagName==='TEXTAREA'||c.tagName==='SELECT') return cleanText(c.value||c.textContent||'');\n      return cleanText(c.textContent||c.getAttribute('aria-valuetext')||c.getAttribute('aria-label')||'');\n    }\n\n    async function txPickRowOption(drawer,labelText,wanted){\n      let control=txControlAtRowCenter(drawer,labelText);\n      if(!control) return false;\n\n      if(control.tagName==='SELECT'){\n        const wn=txNorm(wanted);\n        const opts=Array.from(control.options||[]);\n        const opt=opts.find(function(o){return txNorm(o.textContent||o.label||o.value)===wn;});\n        if(!opt) return false;\n        try{\n          const pw=txPageWindow();\n          const desc=Object.getOwnPropertyDescriptor(pw.HTMLSelectElement.prototype,'value');\n          if(desc&&desc.set) desc.set.call(control,opt.value); else control.value=opt.value;\n          opts.forEach(function(o){o.selected=(o===opt);});\n          control.dispatchEvent(new pw.Event('input',{bubbles:true}));\n          control.dispatchEvent(new pw.Event('change',{bubbles:true}));\n          await new Promise(function(resolve){setTimeout(resolve,180);});\n          return true;\n        }catch(e){ return false; }\n      }\n\n      txClickLikeUser(control);\n      await new Promise(function(resolve){setTimeout(resolve,120);});\n\n      const wn=txNorm(wanted);\n      let option=await txWaitFor(function(){\n        const candidates=Array.from(document.querySelectorAll(\n          '[role=\"option\"],[role=\"menuitem\"],mat-option,.mat-option,.dropdown-item,.dropdown-menu li a,.dropdown-menu li button,li,button,a,div,span'\n        )).filter(txVisible).filter(function(el){\n          if(el.closest&&el.closest('#tritox-alta-panel')) return false;\n          const t=txNorm(el.textContent||'');\n          return t===wn;\n        });\n        if(!candidates.length) return null;\n        candidates.sort(function(a,b){\n          const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();\n          return (ar.width*ar.height)-(br.width*br.height);\n        });\n        return candidates[0];\n      },2500);\n\n      if(!option) return false;\n      txClickLikeUser(option);\n      await new Promise(function(resolve){setTimeout(resolve,120);});\n      return true;\n    }\n\n    async function txFillCarrierDirect(drawer,value){\n      let input=txControlAtRowCenter(drawer,'Current insurance company');\n      if(input && input.tagName!=='INPUT'){\n        const child=input.querySelector&&input.querySelector('input');\n        if(child&&txVisible(child)) input=child;\n      }\n      if(!input || input.tagName!=='INPUT'){\n        input=txVisibleTextInputs(drawer)[0]||null;\n      }\n      if(!input) return false;\n\n      txClickLikeUser(input);\n      await new Promise(function(resolve){setTimeout(resolve,30);});\n      txNativeSetInput(input,'');\n      await new Promise(function(resolve){setTimeout(resolve,80);});\n      txNativeSetInput(input,value);\n      await new Promise(function(resolve){setTimeout(resolve,280);});\n\n      // Click the lookup icon on the same row if present.\n      const row=txFindFieldRow(drawer,'Current insurance company');\n      if(row){\n        const cy=row.center;\n        const lr=row.labelRect;\n        const search=Array.from(drawer.querySelectorAll('button,[role=\"button\"],[tabindex],svg'))\n          .filter(txVisible)\n          .find(function(el){\n            const r=el.getBoundingClientRect();\n            return Math.abs((r.top+r.height/2)-cy)<45 && r.left>lr.right && r.width<80;\n          });\n        if(search){\n          txClickLikeUser(search);\n          await new Promise(function(resolve){setTimeout(resolve,300);});\n        }\n      }\n\n      // Select exact AAA option if ALTA opens a lookup/autocomplete list.\n      const wn=txNorm(value);\n      const option=await txWaitFor(function(){\n        const candidates=Array.from(document.querySelectorAll(\n          '[role=\"option\"],[role=\"menuitem\"],mat-option,.mat-option,.dropdown-item,.dropdown-menu li a,.dropdown-menu li button,li,button,a,div,span'\n        )).filter(txVisible).filter(function(el){\n          if(el.closest&&el.closest('#tritox-alta-panel')) return false;\n          return txNorm(el.textContent||'')===wn;\n        });\n        if(!candidates.length) return null;\n        candidates.sort(function(a,b){\n          const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();\n          return (ar.width*ar.height)-(br.width*br.height);\n        });\n        return candidates[0];\n      },1400);\n\n      if(option){\n        txClickLikeUser(option);\n        await new Promise(function(resolve){setTimeout(resolve,90);});\n      }\n\n      // Final page-world value refresh in case selecting the lookup rerendered input.\n      const fresh=txControlAtRowCenter(drawer,'Current insurance company');\n      const finalInput=(fresh&&fresh.tagName==='INPUT')?fresh:(txVisibleTextInputs(drawer)[0]||input);\n      if(finalInput && txNorm(finalInput.value)!==wn){\n        txNativeSetInput(finalInput,value);\n        await new Promise(function(resolve){setTimeout(resolve,120);});\n      }\n      return finalInput && txNorm(finalInput.value)===wn;\n    }\n\n    async function txFillDateDirect(drawer,value){\n      let input=txControlAtRowCenter(drawer,'Policy expiration date');\n      if(input && input.tagName!=='INPUT'){\n        const child=input.querySelector&&input.querySelector('input');\n        if(child&&txVisible(child)) input=child;\n      }\n      if(!input || input.tagName!=='INPUT'){\n        const inputs=txVisibleTextInputs(drawer);\n        input=inputs.find(function(el){return /date|mm\\/dd/i.test((el.type||'')+' '+(el.placeholder||''));}) || inputs[1] || null;\n      }\n      if(!input) return false;\n\n      let internal=value;\n      if((input.type||'').toLowerCase()==='date'){\n        const m=String(value).match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/);\n        if(m) internal=m[3]+'-'+m[1]+'-'+m[2];\n      }\n      txClickLikeUser(input);\n      txNativeSetInput(input,internal);\n      await new Promise(function(resolve){setTimeout(resolve,180);});\n      return !!input.value;\n    }\n\n    async function txSpatialCarrier(drawer,value){\n      let control=txPointControl(drawer,'Current insurance company');\n      if(!control || (control.tagName!=='INPUT' && control.tagName!=='TEXTAREA')){\n        const inputs=txVisibleTextInputs(drawer);\n        control=inputs[0]||control;\n      }\n      if(!control) return false;\n\n      await txHumanFillTextControl(control,value);\n      await new Promise(function(resolve){setTimeout(resolve,120);});\n\n      // Click search icon if present on the same row.\n      const row=txFindFieldRow(drawer,'Current insurance company');\n      if(row){\n        const lr=row.labelRect;\n        const cy=row.center;\n        const search=Array.from(drawer.querySelectorAll('button,[role=\"button\"],[tabindex]'))\n          .filter(txVisible)\n          .find(function(el){\n            const r=el.getBoundingClientRect();\n            return Math.abs((r.top+r.height/2)-cy)<45 && r.left>lr.right && r.width<90;\n          });\n        if(search){\n          txClickLikeUser(search);\n          await new Promise(function(resolve){setTimeout(resolve,250);});\n        }\n      }\n\n      let opt=await txWaitFor(function(){ return txExactVisibleText(value); },1100);\n      if(opt){\n        txClickLikeUser(opt);\n        await new Promise(function(resolve){setTimeout(resolve,180);});\n      }else{\n        // Keyboard selection fallback after the lookup has been triggered.\n        try{\n          control.focus();\n          control.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,key:'ArrowDown'}));\n          control.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,key:'ArrowDown'}));\n          await new Promise(function(resolve){setTimeout(resolve,100);});\n          control.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,key:'Enter'}));\n          control.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,key:'Enter'}));\n        }catch(e){}\n      }\n\n      await new Promise(function(resolve){setTimeout(resolve,90);});\n      return true;\n    }\n\n\n    // Exact selectors from the current ALTA In-force policy drawer.\n    function txInsuranceRow(drawer,labelText){\n      const wanted=txNorm(labelText);\n\n      // Normal rows used by BI / tenure.\n      const direct=Array.from(drawer.querySelectorAll('.prior-insurance-bi-limit'))\n        .find(function(row){\n          const title=row.querySelector('.prior-insurance-bi-limit-title');\n          return title && txNorm(title.textContent||'').startsWith(wanted);\n        });\n      if(direct) return direct;\n\n      // Current insurance company uses a different wrapper in the latest ALTA\n      // layout. Find its title first, then climb until the matching input/button\n      // is inside the same visual row.\n      const title=Array.from(drawer.querySelectorAll('.prior-insurance-bi-limit-title,div,span,label'))\n        .filter(txVisible)\n        .find(function(el){\n          return txNorm(el.textContent||'').startsWith(wanted);\n        });\n      if(!title) return null;\n\n      let p=title.parentElement;\n      for(let depth=0;p && p!==drawer.parentElement && depth<7;depth++,p=p.parentElement){\n        if(p.querySelector && p.querySelector('input,button,[role=\"button\"],mat-icon')){\n          return p;\n        }\n      }\n      return title.parentElement || null;\n    }\n\n    function txCompanyInputExact(drawer){\n      // Exact ALTA structure supplied from DevTools:\n      // <input class=\"mat-mdc-autocomplete-trigger ...\" role=\"combobox\" ...>\n      // inside a mat-form-field whose mat-label is \"Current insurance company\".\n      const inputs=Array.from(drawer.querySelectorAll(\n        'input.mat-mdc-autocomplete-trigger[role=\"combobox\"], input[role=\"combobox\"][aria-autocomplete=\"list\"]'\n      )).filter(txVisible);\n\n      for(const input of inputs){\n        const form=input.closest('mat-form-field');\n        const label=form && form.querySelector('mat-label');\n        if(label && /current insurance company/i.test(cleanText(label.textContent||''))){\n          return input;\n        }\n      }\n\n      // Fallback if ALTA changes generated Angular classes/IDs.\n      return inputs[0] || null;\n    }\n\n    function txExactSelectedText(control){\n      if(!control) return '';\n      return cleanText(\n        (control.querySelector && control.querySelector('.mat-mdc-select-value-text') &&\n          control.querySelector('.mat-mdc-select-value-text').textContent) ||\n        control.textContent || ''\n      );\n    }\n\n    async function txPickMatSelectExact(selectId,wanted){\n      const control=document.getElementById(selectId);\n      if(!control || !txVisible(control)) return false;\n\n      txClickLikeUser(control);\n\n      const option=await txWaitFor(function(){\n        const wn=txNorm(wanted);\n        const opts=Array.from(document.querySelectorAll('mat-option,[role=\"option\"]'))\n          .filter(txVisible);\n        return opts.find(function(el){\n          return txNorm(el.textContent||'')===wn;\n        }) || null;\n      },3000);\n\n      if(!option) return false;\n      txClickLikeUser(option);\n\n      const selected=await txWaitFor(function(){\n        const text=txNorm(txExactSelectedText(control));\n        return (text===txNorm(wanted) || text.includes(txNorm(wanted))) ? control : null;\n      },1500);\n\n      return !!selected;\n    }\n\n    async function txFillPolicyExpiryExact(value){\n      const input=document.querySelector(\n        'mat-form-field#policyExpiryDate input#policyExpiryDate[type=\"tel\"], input#policyExpiryDate[type=\"tel\"]'\n      );\n      if(!input || !txVisible(input)) return false;\n\n      const m=String(value).match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/);\n      const digits=m ? (m[1]+m[2]+m[3]) : String(value).replace(/\\D/g,'');\n      const pw=txPageWindow();\n\n      try{\n        const desc=Object.getOwnPropertyDescriptor(pw.HTMLInputElement.prototype,'value');\n        try{ input.focus(); }catch(e){}\n        try{ input.dispatchEvent(new pw.FocusEvent('focusin',{bubbles:true,composed:true})); }catch(e){}\n\n        // First try the whole masked date in a single Angular input event.\n        if(desc&&desc.set) desc.set.call(input,digits); else input.value=digits;\n        try{\n          input.dispatchEvent(new pw.InputEvent('input',{\n            bubbles:true,composed:true,data:digits,inputType:'insertText'\n          }));\n        }catch(e){\n          input.dispatchEvent(new pw.Event('input',{bubbles:true,composed:true}));\n        }\n        input.dispatchEvent(new pw.Event('change',{bubbles:true,composed:true}));\n\n        let ok=await txWaitFor(function(){\n          return String(input.value||'').trim() ? input : null;\n        },500);\n\n        // Fallback: fire the progressive Angular events synchronously, with no\n        // tiny timers that would be clamped in a background Chrome tab.\n        if(!ok){\n          let typed='';\n          if(desc&&desc.set) desc.set.call(input,''); else input.value='';\n          for(const ch of digits){\n            typed+=ch;\n            if(desc&&desc.set) desc.set.call(input,typed); else input.value=typed;\n            try{\n              input.dispatchEvent(new pw.InputEvent('input',{\n                bubbles:true,composed:true,data:ch,inputType:'insertText'\n              }));\n            }catch(e){\n              input.dispatchEvent(new pw.Event('input',{bubbles:true,composed:true}));\n            }\n            try{\n              input.dispatchEvent(new pw.KeyboardEvent('keyup',{\n                bubbles:true,composed:true,key:ch\n              }));\n            }catch(e){}\n          }\n          input.dispatchEvent(new pw.Event('change',{bubbles:true,composed:true}));\n          ok=await txWaitFor(function(){\n            return String(input.value||'').trim() ? input : null;\n          },600);\n        }\n\n        return !!ok;\n      }catch(e){\n        console.warn('[TritoX TM] exact policy expiry fill failed',e);\n        return false;\n      }\n    }\n\n    async function txFillCompanyExact(drawer,value){\n      const pw=txPageWindow();\n      const pd=pw.document;\n      const wanted=txNorm(value);\n\n      function findInput(){\n        const inputs=Array.from(pd.querySelectorAll(\n          'input.mat-mdc-autocomplete-trigger[role=\"combobox\"], input[role=\"combobox\"][aria-autocomplete=\"list\"]'\n        )).filter(function(el){\n          try{\n            const r=el.getBoundingClientRect();\n            return r.width>0 && r.height>0;\n          }catch(e){ return false; }\n        });\n\n        for(const input of inputs){\n          const form=input.closest && input.closest('mat-form-field');\n          const label=form && form.querySelector('mat-label');\n          if(label && /current insurance company/i.test(String(label.textContent||''))){\n            return input;\n          }\n        }\n        return inputs[0] || null;\n      }\n\n      function findExactOption(){\n        const roots=Array.from(pd.querySelectorAll(\n          '.cdk-overlay-pane,.mat-mdc-autocomplete-panel,[role=\"listbox\"]'\n        )).filter(function(el){\n          try{\n            const r=el.getBoundingClientRect();\n            return r.width>0 && r.height>0;\n          }catch(e){ return false; }\n        });\n\n        for(const root of roots){\n          const opts=Array.from(root.querySelectorAll(\n            'mat-option,[role=\"option\"],.mat-mdc-option,.mat-option'\n          )).filter(function(el){\n            try{\n              const r=el.getBoundingClientRect();\n              return r.width>0 && r.height>0;\n            }catch(e){ return false; }\n          });\n\n          let opt=opts.find(function(el){\n            return txNorm(el.textContent||'')===wanted;\n          });\n          if(opt) return opt;\n\n          opt=opts.find(function(el){\n            const t=txNorm(el.textContent||'');\n            return t.startsWith(wanted+' ') || t.startsWith(wanted+'-');\n          });\n          if(opt) return opt;\n        }\n        return null;\n      }\n\n      function clickPage(el){\n        if(!el) return;\n        try{\n          el.dispatchEvent(new pw.MouseEvent('mousedown',{bubbles:true,cancelable:true,view:pw}));\n          el.dispatchEvent(new pw.MouseEvent('mouseup',{bubbles:true,cancelable:true,view:pw}));\n          el.dispatchEvent(new pw.MouseEvent('click',{bubbles:true,cancelable:true,view:pw}));\n        }catch(e){\n          try{ pw.HTMLElement.prototype.click.call(el); }\n          catch(_e){ try{ el.click(); }catch(__e){} }\n        }\n      }\n\n      function setPageValue(input,text){\n        const desc=Object.getOwnPropertyDescriptor(pw.HTMLInputElement.prototype,'value');\n        if(desc && desc.set) desc.set.call(input,String(text));\n        else input.value=String(text);\n\n        try{\n          input.dispatchEvent(new pw.InputEvent('input',{\n            bubbles:true,\n            composed:true,\n            cancelable:false,\n            data:String(text),\n            inputType:'insertText'\n          }));\n        }catch(e){\n          input.dispatchEvent(new pw.Event('input',{bubbles:true,composed:true}));\n        }\n        input.dispatchEvent(new pw.Event('change',{bubbles:true,composed:true}));\n      }\n\n      function isSelected(input){\n        if(!input) return false;\n        const form=input.closest && input.closest('mat-form-field');\n        const invalid=\n          input.classList.contains('ng-invalid') ||\n          input.getAttribute('aria-invalid')==='true' ||\n          !!(form && (\n            form.classList.contains('mat-form-field-invalid') ||\n            form.classList.contains('mat-mdc-form-field-invalid')\n          ));\n        return txNorm(input.value||'')===wanted && !invalid;\n      }\n\n      let input=findInput();\n      if(!input) return false;\n\n      // Use ALTA's page realm and event-driven DOM waits so this continues even\n      // after the user switches to another Chrome tab.\n      try{ input.focus(); }catch(e){}\n      try{ input.dispatchEvent(new pw.FocusEvent('focusin',{bubbles:true,composed:true})); }catch(e){}\n      setPageValue(input,'');\n      setPageValue(input,value);\n\n      if(input.getAttribute('aria-expanded')!=='true'){\n        clickPage(input);\n      }\n\n      let option=await txWaitFor(function(){\n        input=findInput()||input;\n        return findExactOption();\n      },1800);\n\n      if(option){\n        clickPage(option);\n\n        // Wait for ALTA to commit the selected autocomplete value instead of a\n        // fixed foreground-only sleep.\n        await txWaitFor(function(){\n          input=findInput()||input;\n          return txNorm(input.value||'')===wanted ? input : null;\n        },900);\n      }else{\n        // Final Material fallback: when the panel is open, ArrowDown + Enter\n        // selects the first autocomplete result.\n        try{\n          input.focus();\n          input.dispatchEvent(new pw.KeyboardEvent('keydown',{\n            bubbles:true,composed:true,cancelable:true,key:'ArrowDown',code:'ArrowDown'\n          }));\n          input.dispatchEvent(new pw.KeyboardEvent('keyup',{\n            bubbles:true,composed:true,cancelable:true,key:'ArrowDown',code:'ArrowDown'\n          }));\n          await new Promise(function(resolve){setTimeout(resolve,180);});\n          input.dispatchEvent(new pw.KeyboardEvent('keydown',{\n            bubbles:true,composed:true,cancelable:true,key:'Enter',code:'Enter'\n          }));\n          input.dispatchEvent(new pw.KeyboardEvent('keyup',{\n            bubbles:true,composed:true,cancelable:true,key:'Enter',code:'Enter'\n          }));\n          await new Promise(function(resolve){setTimeout(resolve,100);});\n        }catch(e){}\n      }\n\n      input=findInput()||input;\n\n      // If AAA is visibly present, allow the workflow to continue to Save.\n      // ALTA sometimes keeps the Angular invalid class for a short time even\n      // after the visible value is filled. The Save click is the final validator.\n      const strictOk=isSelected(input);\n      const visibleOk=txNorm(input && input.value||'')===wanted;\n      const ok=strictOk || visibleOk;\n      if(strictOk){\n        try{ input.blur(); }catch(e){}\n      }\n\n      console.log('[TritoX TM] page-realm company result',{\n        value:input && input.value,\n        ariaExpanded:input && input.getAttribute('aria-expanded'),\n        ariaControls:input && input.getAttribute('aria-controls'),\n        ariaInvalid:input && input.getAttribute('aria-invalid'),\n        className:input && input.className,\n        optionFound:!!option,\n        ok:ok\n      });\n      return ok;\n    }\n\n    function txExactInsuranceValues(drawer){\n      const company=txCompanyInputExact(drawer);\n      const bi=document.getElementById('auto-add-driver-policyBILimits__input-section');\n      const date=document.querySelector(\n        'mat-form-field#policyExpiryDate input#policyExpiryDate[type=\"tel\"], input#policyExpiryDate[type=\"tel\"]'\n      );\n      const tenure=document.getElementById('auto-add-driver-insuranceTenure__input-section');\n      return {\n        company:company ? cleanText(company.value||'') : '',\n        bi:txExactSelectedText(bi),\n        date:date ? cleanText(date.value||'') : '',\n        tenure:txExactSelectedText(tenure)\n      };\n    }\n\n    async function addDummyInsurance(){\n      const status=document.getElementById('tx-alta-status');\n      function say(msg,color){\n        if(status){ status.textContent=msg; status.style.color=color||'#64748b'; }\n      }\n\n      const prior=priorInsuranceSnapshot();\n      if(prior.visible && prior.inEffect){\n        say('In Effect already exists','#15803d');\n        setTimeout(function(){\n          if(status){status.textContent='Auto-saved';status.style.color='#64748b';}\n        },1800);\n        return;\n      }\n\n      say(document.hidden?'Opening insurance in background\u2026':'Opening insurance\u2026','#2563eb');\n\n      const addBtn=txFindButton(/add\\s+in-force/i,document);\n      if(!addBtn){\n        say('Open Drivers & vehicles','#b45309');\n        return;\n      }\n\n      txClickLikeUser(addBtn);\n\n      let drawer=await txWaitFor(txFindDrawer,5000);\n      if(!drawer){\n        say('Insurance form not found','#b91c1c');\n        return;\n      }\n\n      // ALTA mounts this drawer in stages. Wait for the four required rows.\n      const controlsReady=await txWaitFor(function(){\n        drawer=txFindDrawer()||drawer;\n        const txt=cleanText(drawer.innerText||'');\n        const required=\n          /Current insurance company/i.test(txt) &&\n          /Current BI limits/i.test(txt) &&\n          /Policy expiration date/i.test(txt) &&\n          /How long were they insured/i.test(txt);\n        return required ? drawer : null;\n      },3500);\n      if(controlsReady) drawer=controlsReady;\n\n      say('Filling insurance\u2026','#2563eb');\n\n      const expiration=txSixMonthsFromToday();\n\n      // ONE PASS ONLY:\n      // Company -> BI -> Date -> Tenure -> Save.\n      // Do not return to the company field after tenure.\n      const companyOk=await txFillCompanyExact(drawer,'AAA');\n\n      const biOk=await txPickMatSelectExact(\n        'auto-add-driver-policyBILimits__input-section',\n        '$100,000/$300,000'\n      );\n\n      const dateOk=await txFillPolicyExpiryExact(expiration);\n\n      const tenureOk=await txPickMatSelectExact(\n        'auto-add-driver-insuranceTenure__input-section',\n        '6 - 11 Months'\n      );\n\n      // Tenure causes ALTA to auto-select Yes. Wait for that Angular state via a\n      // DOM mutation, not a short timer that Chrome may throttle in background.\n      await txWaitFor(function(){\n        const radios=Array.from(drawer.querySelectorAll('input[type=\"radio\"]'));\n        return radios.find(function(r){ return r.checked; }) || null;\n      },1200);\n\n      // All four controls are now visibly filled in ALTA. Do not re-read the\n      // Angular FormControl state here: ALTA can briefly report the company as\n      // empty even while AAA is visibly selected. Go straight to Save.\n      console.log('[TritoX TM] insurance fill finished',{\n        companyOk:companyOk,biOk:biOk,dateOk:dateOk,tenureOk:tenureOk\n      });\n\n      say(document.hidden?'Saving insurance in background\u2026':'Saving insurance\u2026','#2563eb');\n\n      const pw=txPageWindow();\n      let saveBtn=\n        pw.document.querySelector('button.auto-add-driver-save__button') ||\n        document.querySelector('button.auto-add-driver-save__button');\n\n      if(!saveBtn){\n        say('Insurance Save not found','#b91c1c');\n        return;\n      }\n\n      function clickSaveDirect(btn){\n        if(!btn) return false;\n        try{\n          btn.dispatchEvent(new pw.MouseEvent('mousedown',{bubbles:true,cancelable:true,view:pw}));\n          btn.dispatchEvent(new pw.MouseEvent('mouseup',{bubbles:true,cancelable:true,view:pw}));\n          btn.dispatchEvent(new pw.MouseEvent('click',{bubbles:true,cancelable:true,view:pw}));\n          return true;\n        }catch(e){\n          try{\n            pw.HTMLElement.prototype.click.call(btn);\n            return true;\n          }catch(_e){\n            try{ btn.click(); return true; }catch(__e){ return false; }\n          }\n        }\n      }\n\n      clickSaveDirect(saveBtn);\n\n      let finalClosed=await txWaitFor(function(){\n        const d=txFindDrawer();\n        return !d || !txVisible(d) ? true : null;\n      },650);\n\n      // If ALTA needs a moment to enable/commit the form, retry Save only.\n      // Never touch Company / BI / Date / Tenure again.\n      if(!finalClosed){\n        saveBtn=\n          pw.document.querySelector('button.auto-add-driver-save__button') ||\n          document.querySelector('button.auto-add-driver-save__button');\n        clickSaveDirect(saveBtn);\n\n        finalClosed=await txWaitFor(function(){\n          const d=txFindDrawer();\n          return !d || !txVisible(d) ? true : null;\n        },1800);\n      }\n\n      if(!finalClosed){\n        say('Fields filled \u2014 Save did not close drawer','#b91c1c');\n        return;\n      }\n\n      say('Insurance added \u2713','#15803d');\n      setTimeout(function(){\n        try{ buildPanel(); }catch(e){}\n        const s=document.getElementById('tx-alta-status');\n        if(s){s.textContent='Auto-saved';s.style.color='#64748b';}\n      },900);\n    }\n\n    function buildPanel(){\n      const ident=altaIdentity();\n      if(!ident.id || !ident.name) return;\n      let panel=document.getElementById('tritox-alta-panel');\n      const existing=readSaved(ident.id);\n      const prior=priorInsuranceSnapshot();\n      const detected={\n        company:prior.inEffect?prior.company:'',\n        renewalDate:prior.inEffect?prior.renewalDate:'',\n        star:detectStar()\n      };\n      // If the Prior insurance section is visible and is not In Effect, clear\n      // carrier/date for this lead. On other ALTA pages preserve the last valid\n      // In Effect values captured earlier in the same 2-hour window.\n      if(prior.visible && !prior.inEffect){\n        existing.company='';\n        existing.renewalDate='';\n        existing.companyInEffect=false;\n      }\n      const state={\n        name:ident.name,\n        altaId:ident.id,\n        company:(prior.inEffect?detected.company:(existing.companyInEffect?existing.company:''))||'',\n        renewalDate:(prior.inEffect?detected.renewalDate:(existing.companyInEffect?existing.renewalDate:''))||'',\n        // Keep blank until ALTA's Auto coverages page exposes the actual star.\n        // On that page, the detected value wins so an old/manual value cannot\n        // survive when ALTA clearly shows a different rating.\n        star:onAutoCoverageSection() ? (detected.star||'') : (existing.star||''),\n        companyInEffect:prior.inEffect?true:!!existing.companyInEffect\n      };\n\n      if(!panel){\n        panel=document.createElement('div');\n        panel.id='tritox-alta-panel';\n        panel.style.cssText='position:fixed;right:20px;bottom:20px;z-index:2147483646;width:315px;background:#fff;border:2px solid #17243b;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:14px;font-family:Arial,sans-serif;color:#17243b;';\n        panel.innerHTML=''\n          +'<div id=\"tx-alta-head\" style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;\">'\n          +'<strong style=\"font-size:14px;white-space:nowrap;\">TritoX Lead Info</strong>'\n          +'<div style=\"display:flex;align-items:center;gap:7px;\">'\n          +'<span id=\"tx-alta-status\" style=\"font-size:11px;color:#64748b;white-space:nowrap;\">Auto-saved</span>'\n          +'<button id=\"tx-alta-minimize\" type=\"button\" title=\"Minimize\" aria-label=\"Minimize TritoX Lead Info\" style=\"width:25px;height:25px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#17243b;font-size:18px;line-height:20px;font-weight:700;cursor:pointer;padding:0;\">\u2212</button>'\n          +'</div></div>'\n          +'<div id=\"tx-alta-body\">'\n          +'<div id=\"tx-alta-ident\" style=\"font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.45;\"></div>'\n          +'<label style=\"display:block;font-size:11px;font-weight:700;margin:7px 0 4px;\">Current Company</label>'\n          +'<input id=\"tx-alta-company\" list=\"tx-carriers\" placeholder=\"Select or type carrier\" style=\"width:100%;height:34px;border:1px solid #cbd5e1;border-radius:7px;padding:0 9px;font-size:12px;\">'\n          +'<datalist id=\"tx-carriers\">'+CARRIERS.map(function(c){return '<option value=\"'+c.replace(/\"/g,'&quot;')+'\"></option>';}).join('')+'</datalist>'\n          +'<label style=\"display:block;font-size:11px;font-weight:700;margin:9px 0 4px;\">Auto Renewal Date</label>'\n          +'<input id=\"tx-alta-date\" type=\"text\" placeholder=\"MM/DD/YYYY\" style=\"width:100%;height:34px;border:1px solid #cbd5e1;border-radius:7px;padding:0 9px;font-size:12px;\">'\n          +'<label style=\"display:block;font-size:11px;font-weight:700;margin:9px 0 4px;\">Star / BW</label>'\n          +'<select id=\"tx-alta-star\" style=\"width:100%;height:34px;border:1px solid #cbd5e1;border-radius:7px;padding:0 8px;font-size:12px;background:#fff;\">'\n          +'<option value=\"\">Select</option><option value=\"1\">1 Star</option><option value=\"2\">2 Stars</option><option value=\"3\">3 Stars</option><option value=\"BW\">BW</option></select>'\n          +'<button id=\"tx-alta-save\" style=\"width:100%;margin-top:11px;height:36px;border:0;border-radius:8px;background:#2563eb;color:white;font-weight:700;cursor:pointer;\">Save Lead Info</button>'\n          +'<button id=\"tx-alta-add-insurance\" style=\"width:100%;margin-top:8px;height:36px;border:0;border-radius:8px;background:#0f766e;color:white;font-weight:700;cursor:pointer;\">+ Add Insurance</button>'\n          +'</div>';\n        document.body.appendChild(panel);\n\n        // Minimize/expand the ALTA lead panel without affecting auto-save.\n        const panelBody=document.getElementById('tx-alta-body');\n        const panelHead=document.getElementById('tx-alta-head');\n        const minimizeBtn=document.getElementById('tx-alta-minimize');\n        function setPanelMinimized(minimized){\n          if(panelBody) panelBody.style.display=minimized?'none':'block';\n          if(panelHead) panelHead.style.marginBottom=minimized?'0':'10px';\n          panel.style.width=minimized?'245px':'315px';\n          if(minimizeBtn){\n            minimizeBtn.textContent=minimized?'+':'\u2212';\n            minimizeBtn.title=minimized?'Expand':'Minimize';\n            minimizeBtn.setAttribute('aria-label',(minimized?'Expand':'Minimize')+' TritoX Lead Info');\n          }\n          GM_setValue('tritox_alta_panel_minimized',!!minimized);\n        }\n        setPanelMinimized(!!GM_getValue('tritox_alta_panel_minimized',false));\n        if(minimizeBtn){\n          minimizeBtn.addEventListener('click',function(e){\n            e.preventDefault();\n            e.stopPropagation();\n            setPanelMinimized(panelBody && panelBody.style.display!=='none');\n          });\n        }\n\n        const saveNow=function(){\n          const now=altaIdentity();\n          if(!now.id) return;\n          const priorNow=priorInsuranceSnapshot();\n          const prev=readSaved(now.id);\n          const validInEffect=priorNow.visible ? priorNow.inEffect : !!prev.companyInEffect;\n          const meta={\n            name:now.name||state.name,\n            altaId:now.id,\n            company:validInEffect?document.getElementById('tx-alta-company').value.trim():'',\n            renewalDate:validInEffect?document.getElementById('tx-alta-date').value.trim():'',\n            star:document.getElementById('tx-alta-star').value,\n            companyInEffect:validInEffect\n          };\n          saveMeta(meta);\n          const s=document.getElementById('tx-alta-status');\n          if(s){s.textContent='Saved \u2713';s.style.color='#15803d';setTimeout(function(){if(s){s.textContent='Auto-saved';s.style.color='#64748b';}},1200);}\n        };\n        document.getElementById('tx-alta-save').addEventListener('click',saveNow);\n        const addInsuranceBtn=document.getElementById('tx-alta-add-insurance');\n        if(addInsuranceBtn){\n          addInsuranceBtn.addEventListener('click',function(e){\n            e.preventDefault();\n            e.stopPropagation();\n            addDummyInsurance();\n          });\n        }\n        document.getElementById('tx-alta-company').addEventListener('change',saveNow);\n        document.getElementById('tx-alta-date').addEventListener('change',saveNow);\n        document.getElementById('tx-alta-star').addEventListener('change',saveNow);\n      }\n\n      document.getElementById('tx-alta-ident').textContent=ident.name+'  \u2022  ALTA #'+ident.id;\n      const comp=document.getElementById('tx-alta-company');\n      const date=document.getElementById('tx-alta-date');\n      const star=document.getElementById('tx-alta-star');\n      if(comp && !comp.value && state.company) comp.value=state.company;\n      if(date && !date.value && state.renewalDate) date.value=state.renewalDate;\n      if(star){\n        if(isBwCoveragePage()){\n          // BW route is authoritative: force the panel to BW immediately.\n          star.value='BW';\n        }else if(onAutoCoverageSection()){\n          // Auto-detect when ALTA displays the rating; otherwise leave blank so\n          // the user can choose 1/2/3/BW manually.\n          star.value=state.star||'';\n        }else if(!star.value && state.star){\n          star.value=state.star;\n        }\n      }\n\n      // If ALTA exposes new values as the user moves to another quote page,\n      // merge them without overwriting a manual choice already made.\n      const current=readSaved(ident.id);\n      const merged={\n        name:ident.name, altaId:ident.id,\n        company:state.companyInEffect?(current.company||state.company||''):'',\n        renewalDate:state.companyInEffect?(current.renewalDate||state.renewalDate||''):'',\n        star:isBwCoveragePage() ? 'BW' : (onAutoCoverageSection() ? (state.star||'') : (current.star||state.star||'')),\n        companyInEffect:!!state.companyInEffect\n      };\n      if(merged.company || merged.renewalDate || merged.star || prior.visible) saveMeta(merged);\n    }\n\n    buildPanel();\n    applyAltaCoverageDefaults();\n    // ALTA is a SPA. Re-read the page as the quote moves between sections.\n    let lastSig='';\n    setInterval(function(){\n      const i=altaIdentity();\n      const sig=i.id+'|'+location.pathname+'|'+detectCarrier()+'|'+detectRenewalDate()+'|'+detectStar();\n      if(sig!==lastSig){\n        lastSig=sig;\n        coveragePresetDoneSig='';\n        buildPanel();\n      }\n      applyAltaCoverageDefaults();\n    },500);\n    return;\n  }\n  if(window.location.hostname === 'tritoxtech.github.io' || (window.location.hostname === 'saravanatritox-cloud.github.io' && window.location.pathname.startsWith('/aaron/'))){\n    console.log('[TritoX TM] Running on TritoX page');\n\n    // Aaron's current GitHub page omits the processed PDF filename from\n    // buildAZData(). Patch it at runtime so AgencyZoom can retrieve the exact\n    // cached PDF that belongs to the selected quote.\n    (function patchAaronFilenameTransfer(){\n      const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;\n      let attempts=0;\n      const timer=setInterval(function(){\n        attempts++;\n        const original=pageWindow.buildAZData;\n        if(typeof original==='function' && !original.__tritoxFilenamePatched){\n          const patched=function(result){\n            const data=original.apply(this,arguments);\n            if(data && result){\n              if(result.filename) data._filename=result.filename;\n              // Transfer QC routing flags so AgencyZoom can choose the correct tags.\n              data._highPrice=!!result.putInStop;\n              if(result.homeData) data._isBundle=!!result.homeData.isBundle;\n            }\n            return data;\n          };\n          patched.__tritoxFilenamePatched=true;\n          pageWindow.buildAZData=patched;\n          clearInterval(timer);\n          console.log('[TritoX TM] Aaron filename transfer patch installed');\n        }else if(original && original.__tritoxFilenamePatched){\n          clearInterval(timer);\n        }else if(attempts>=80){\n          clearInterval(timer);\n          console.warn('[TritoX TM] Aaron buildAZData was not found');\n        }\n      },250);\n    })();\n\n    function pdfStorageKey(name){\n      let h=2166136261;\n      const s=String(name||'quote.pdf').toLowerCase();\n      for(let i=0;i<s.length;i++){\n        h^=s.charCodeAt(i);\n        h=Math.imul(h,16777619);\n      }\n      return 'tritox_pdf_'+(h>>>0).toString(16);\n    }\n\n    function cachePdf(file){\n      if(!file || !/.pdf$/i.test(file.name)) return;\n      if(file.size>20*1024*1024){\n        console.warn('[TritoX TM] PDF is larger than 20 MB and was not cached:',file.name);\n        return;\n      }\n      const reader=new FileReader();\n      reader.onload=function(){\n        try{\n          GM_setValue(pdfStorageKey(file.name),JSON.stringify({\n            name:file.name,\n            type:file.type||'application/pdf',\n            size:file.size,\n            lastModified:file.lastModified||Date.now(),\n            dataUrl:String(reader.result),\n            savedAt:Date.now()\n          }));\n          console.log('[TritoX TM] PDF cached for AgencyZoom:',file.name);\n        }catch(err){\n          console.error('[TritoX TM] Could not cache PDF:',err);\n        }\n      };\n      reader.readAsDataURL(file);\n    }\n\n    // Capture PDFs selected or dropped into Aaron QC. Each file is stored under\n    // its filename so bulk processing can still match the correct customer PDF.\n    document.addEventListener('change',function(e){\n      if(e.target && e.target.id==='fileInput' && e.target.files){\n        Array.from(e.target.files).forEach(cachePdf);\n      }\n    },true);\n    document.addEventListener('drop',function(e){\n      if(e.dataTransfer && e.dataTransfer.files && e.target.closest && e.target.closest('#uploadZone')){\n        Array.from(e.dataTransfer.files).forEach(cachePdf);\n      }\n    },true);\n\n    function mirrorCurrentAgencyZoomLead(){\n      try{\n        const raw=GM_getValue('tritox_current_az_lead','');\n        if(raw) localStorage.setItem('tritox_current_az_lead',String(raw));\n      }catch(e){}\n    }\n    mirrorCurrentAgencyZoomLead();\n    setInterval(mirrorCurrentAgencyZoomLead,200);\n\n    function checkTritoXData(){\n      try{\n        const raw = localStorage.getItem('tritox_az_data');\n        if(!raw) return;\n        const data = JSON.parse(raw);\n        if(!data || !data._name || !data._ts) return;\n\n        // Find the correct ALTA metadata from the multi-lead cache.\n        // This supports processing 4-6 ALTA quotes first, then uploading PDFs\n        // later in any order without reopening or re-saving each lead.\n        try{\n          const norm=function(v){\n            return String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\\s+/g,' ');\n          };\n          const firstLast=function(v){\n            const p=norm(v).split(' ').filter(Boolean);\n            return p.length>=2 ? p[0]+' '+p[p.length-1] : p.join(' ');\n          };\n          const indexRaw=GM_getValue('tritox_alta_index','{}');\n          const index=JSON.parse(indexRaw||'{}')||{};\n          const now=Date.now();\n          const valid=Object.keys(index).map(function(k){return index[k];}).filter(function(a){\n            return a && a.name && a._savedAt && now-Number(a._savedAt)<=7200000;\n          });\n\n          let a=valid.find(function(x){return norm(x.name)===norm(data._name);})||null;\n\n          // If the PDF includes/omits a middle name or initial, use first+last\n          // only when exactly one cached lead matches that pair.\n          if(!a){\n            const key=firstLast(data._name);\n            const matches=valid.filter(function(x){return firstLast(x.name)===key;});\n            if(matches.length===1) a=matches[0];\n          }\n\n          // If QC had to fall back to a surname-only filename\n          // (e.g. Galloway-townsend_Auto_09282026.pdf), recover the FULL ALTA\n          // customer name only when exactly one cached lead has that surname.\n          if(!a){\n            const parts=norm(data._name).split(' ').filter(Boolean);\n            const filenameBase=String(data._filename||'')\n              .replace(/\\.pdf$/i,'')\n              .replace(/[_\\-\\s]+(?:auto|bundle|home)[_\\-\\s]+\\d{8}$/i,'')\n              .replace(/_/g,' ')\n              .trim();\n            const shortName=norm(filenameBase||data._name);\n            const shortCompact=shortName.replace(/\\s+/g,'');\n            const surnameMatches=valid.filter(function(x){\n              const xp=norm(x.name).split(' ').filter(Boolean);\n              if(!xp.length) return false;\n              const last=xp[xp.length-1];\n              const compound=xp.length>=2 ? xp[xp.length-2]+xp[xp.length-1] : last;\n              return shortCompact===last.replace(/\\s+/g,'') ||\n                     shortCompact===compound.replace(/\\s+/g,'');\n            });\n            if(surnameMatches.length===1){\n              a=surnameMatches[0];\n              data._name=a.name; // restore full first + last name for AZ button/guard\n              localStorage.setItem('tritox_az_data',JSON.stringify(data));\n              console.log('[TritoX TM] Recovered full name from unique ALTA surname:',\n                filenameBase,'=>',a.name);\n            }\n          }\n\n          // Backward-compatible fallback for data captured before v4.36.\n          if(!a){\n            const latestRaw=GM_getValue('tritox_alta_latest','');\n            if(latestRaw){\n              const latest=JSON.parse(latestRaw);\n              if(latest && latest.name && norm(latest.name)===norm(data._name)) a=latest;\n            }\n          }\n\n          if(a){\n            data.current_company=a.companyInEffect ? (a.company||'') : '';\n            data.auto_renewal_date=a.companyInEffect ? (a.renewalDate||'') : '';\n            data.star_rating=a.star||'';\n            data._altaId=a.altaId||'';\n            data._altaSavedAt=a._savedAt||0;\n            localStorage.setItem('tritox_az_data',JSON.stringify(data));\n            console.log('[TritoX TM] Multi-lead ALTA match:',data._name,'=>',a.name,a.altaId);\n          }else{\n            // Explicitly keep these blank rather than borrowing another lead's data.\n            data.current_company='';\n            data.auto_renewal_date='';\n            data.star_rating='';\n            data._altaId='';\n            data._altaSavedAt=0;\n            localStorage.setItem('tritox_az_data',JSON.stringify(data));\n            console.log('[TritoX TM] No ALTA cache match for:',data._name);\n          }\n        }catch(e){ console.warn('[TritoX TM] ALTA multi-lead merge skipped:',e); }\n\n        const gmRaw = GM_getValue('tritox_az_data','');\n        let gmData={};\n        try{ gmData = JSON.parse(gmRaw||'{}')||{}; }catch(e){}\n\n        // Keep the AgencyZoom lead-ID binding ONLY for the exact same processed\n        // PDF/QC result. Never copy a previous customer's bound ID to a new PDF.\n        const sameBoundResult=\n          Number(gmData._ts||0)===Number(data._ts||0) &&\n          String(gmData._filename||'')===String(data._filename||'');\n        if(sameBoundResult && gmData._leadId && !data._leadId){\n          data._leadId=String(gmData._leadId);\n          data._leadNameBound=String(gmData._leadNameBound||'');\n        }\n\n        const gmTs = Number(gmData._ts||0);\n        const metaChanged =\n          String(gmData.current_company||'')!==String(data.current_company||'') ||\n          String(gmData.auto_renewal_date||'')!==String(data.auto_renewal_date||'') ||\n          String(gmData.star_rating||'')!==String(data.star_rating||'') ||\n          String(gmData._altaId||'')!==String(data._altaId||'');\n        if(data._ts > gmTs || (data._ts===gmTs && metaChanged)){\n          GM_setValue('tritox_az_data', JSON.stringify(data));\n          console.log('[TritoX TM] Saved to GM for:', data._name, 'metadata changed:',metaChanged);\n        }\n      }catch(e){ console.log('[TritoX TM] Error:', e); }\n    }\n    setInterval(checkTritoXData, 1000);\n    return;\n  }\n\n  console.log('[TritoX TM] Running on AgencyZoom page');\n\n  function normalizeLeadName(value){\n    return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\\s+/g,' ');\n  }\n\n  // v4.44: Merge ALTA metadata again at the exact moment Fill is clicked.\n  // This removes timing dependence on the QC bridge and is important when\n  // several ALTA leads are quoted first, then PDFs are processed later.\n  function mergeAltaMetadataAtFill(data){\n    try{\n      if(!data || !data._name) return data;\n      const indexRaw=GM_getValue('tritox_alta_index','{}');\n      const index=JSON.parse(indexRaw||'{}')||{};\n      const now=Date.now();\n      const valid=Object.keys(index).map(function(k){return index[k];}).filter(function(a){\n        return a && a.name && a._savedAt && now-Number(a._savedAt)<=7200000;\n      });\n      const target=normalizeLeadName(data._name);\n      let matches=valid.filter(function(a){return normalizeLeadName(a.name)===target;});\n\n      if(!matches.length){\n        const parts=target.split(' ').filter(Boolean);\n        const key=parts.length>=2 ? parts[0]+' '+parts[parts.length-1] : target;\n        const loose=valid.filter(function(a){\n          const p=normalizeLeadName(a.name).split(' ').filter(Boolean);\n          const k=p.length>=2 ? p[0]+' '+p[p.length-1] : p.join(' ');\n          return k===key;\n        });\n        if(loose.length===1) matches=loose;\n      }\n\n      // Surname-only recovery for filename fallbacks. Use only when unique.\n      if(!matches.length){\n        const base=String(data._filename||'')\n          .replace(/\\.pdf$/i,'')\n          .replace(/[_\\-\\s]+(?:auto|bundle|home)[_\\-\\s]+\\d{8}$/i,'')\n          .replace(/_/g,' ')\n          .trim();\n        const compact=normalizeLeadName(base||data._name).replace(/\\s+/g,'');\n        const bySurname=valid.filter(function(a){\n          const p=normalizeLeadName(a.name).split(' ').filter(Boolean);\n          if(!p.length) return false;\n          const last=p[p.length-1];\n          const compound=p.length>=2 ? p[p.length-2]+p[p.length-1] : last;\n          return compact===last.replace(/\\s+/g,'') ||\n                 compact===compound.replace(/\\s+/g,'');\n        });\n        if(bySurname.length===1){\n          matches=bySurname;\n          data._name=bySurname[0].name;\n          console.log('[TritoX TM] Direct full-name recovery:',base,'=>',data._name);\n        }\n      }\n\n      if(matches.length){\n        matches.sort(function(a,b){return Number(b._savedAt||0)-Number(a._savedAt||0);});\n        const a=matches[0];\n        data.current_company=a.companyInEffect ? String(a.company||'') : '';\n        data.auto_renewal_date=a.companyInEffect ? String(a.renewalDate||'') : '';\n        data.star_rating=String(a.star||'');\n        data._altaId=String(a.altaId||'');\n        data._altaSavedAt=Number(a._savedAt||0);\n        console.log('[TritoX TM] Direct ALTA merge at Fill:',data._name,data.current_company,data.auto_renewal_date,data.star_rating,data._altaId);\n      }else{\n        console.log('[TritoX TM] No direct ALTA match at Fill for:',data._name);\n      }\n      return data;\n    }catch(e){\n      console.warn('[TritoX TM] Direct ALTA merge failed:',e);\n      return data;\n    }\n  }\n\n  function getVisibleLeadHeaderText(){\n    const pieces=[];\n    const selectors=[\n      '#referral-container',\n      '[class*=\\\"lead-header\\\"]','[class*=\\\"referral-header\\\"]','[class*=\\\"contact-header\\\"]',\n      '[class*=\\\"leadHeader\\\"]','[class*=\\\"referralHeader\\\"]','[class*=\\\"contactHeader\\\"]'\n    ];\n    selectors.forEach(function(selector){\n      document.querySelectorAll(selector).forEach(function(el){\n        const r=el.getBoundingClientRect();\n        if(r.width>0 && r.height>0 && r.top<220){\n          pieces.push(el.innerText||el.textContent||'');\n        }\n      });\n    });\n    // AgencyZoom's lead name is often outside #referral-container. Capture only\n    // visible text in the upper lead pane so old activity/history names do not count.\n    document.querySelectorAll('h1,h2,h3,h4,strong,b,span,div').forEach(function(el){\n      const r=el.getBoundingClientRect();\n      if(r.width<=0 || r.height<=0 || r.top<0 || r.top>150 || r.left<0) return;\n      const text=(el.textContent||'').trim();\n      if(text && text.length<=100) pieces.push(text);\n    });\n    return normalizeLeadName(pieces.join(' | '));\n  }\n\n  function currentLeadMatchesData(data){\n    const wanted=normalizeLeadName(data && data._name);\n    if(!wanted) return true;\n    const header=getVisibleLeadHeaderText();\n    return !!header && header.includes(wanted);\n  }\n\n  // Fill popup lifecycle: same 7-second untouched window used by the\n  // original Aaron/TritoX workflow. Once a popup expires/cancels, the same\n  // processed lead will not be recreated; any newer lead replaces it instantly.\n  let expiredTs = Number(GM_getValue('tritox_popup_expired_ts',0)) || 0;\n\n  function expireFillPopup(ts){\n    expiredTs=Math.max(expiredTs,Number(ts||0));\n    GM_setValue('tritox_popup_expired_ts',expiredTs);\n    const oldBtn=document.getElementById('tritox-fill-btn');\n    if(oldBtn) oldBtn.remove();\n    const oldOverlay=document.getElementById('tritox-fill-overlay');\n    if(oldOverlay) oldOverlay.remove();\n  }\n\n  function addFillButton(){\n    const raw = GM_getValue('tritox_az_data','');\n    if(!raw) return;\n    let data;\n    try{ data = JSON.parse(raw); }catch(e){ return; }\n    if(!data || !data._name) return;\n\n    // Bind the processed PDF/QC result to this AgencyZoom lead ID as soon as a\n    // safe customer-name match is available. Future checks use the ID first.\n    data=bindDataToCurrentLeadId(data);\n\n    const buttonDataTs = data._ts || 0;\n\n    // Do not recreate data that was already filled.\n    if(buttonDataTs <= filledTs || buttonDataTs <= expiredTs) return;\n\n    const age = Date.now() - buttonDataTs;\n    if(age > 7200000) return;\n\n    // If a new PDF/lead arrives while AgencyZoom stays on the same URL,\n    // replace the previous Fill button immediately.\n    const existingBtn=document.getElementById('tritox-fill-btn');\n    if(existingBtn){\n      const existingTs=Number(existingBtn.dataset.tritoxTs||0);\n      if(existingTs===buttonDataTs) return;\n      existingBtn.remove();\n    }\n\n    const btn = document.createElement('div');\n    btn.dataset.tritoxTs=String(buttonDataTs);\n    btn.id = 'tritox-fill-btn';\n    btn.style.cssText = 'position:fixed;top:80px;right:20px;z-index:99999;background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(0,212,255,0.4);font-family:sans-serif;text-align:center;min-width:160px;';\n    btn.innerHTML = '\ud83d\ude80 Fill + Attach PDF<br><span style=\"font-size:11px;font-weight:400;opacity:0.9;\">' + data._name + '</span>';\n\n    // Initial Fill button is visible for a maximum of 7 seconds if untouched.\n    let autoHideTimer=null;\n    let manualMismatchOverride=false;\n\n    btn.addEventListener('click', function(){\n      if(autoHideTimer){ clearTimeout(autoHideTimer); autoHideTimer=null; }\n\n      // v4.45.52 PDF / AgencyZoom lead guard.\n      // Never fill fields, attach a PDF, add tags, or click Update when the\n      // customer in the processed PDF does not match the open AgencyZoom lead.\n      const identityCheck=validateLeadIdentity(data);\n      if(identityCheck.mismatch && !manualMismatchOverride){\n        const reasons=[];\n        if(identityCheck.idMatch===false){\n          reasons.push('Bound lead ID: '+identityCheck.expectedId+' | Open lead ID: '+identityCheck.leadId);\n        }else if(identityCheck.idMatch===null && identityCheck.nameMatch===false){\n          reasons.push('PDF customer: '+(identityCheck.pdfName||'Unknown')+' | AgencyZoom lead: '+(identityCheck.leadName||'Unknown'));\n        }\n\n        const proceed=window.confirm(\n          '\u26a0\ufe0f WRONG LEAD / PDF WARNING\\n\\n'\n          +reasons.join('\\n')\n          +'\\n\\nPlease check the lead manually.\\n\\n'\n          +'OK = Proceed Anyway\\nCancel = Stop'\n        );\n\n        if(!proceed) return;\n\n        manualMismatchOverride=true;\n        console.warn('[TritoX TM] Manual mismatch override approved for:',\n          data._name,'open lead:',identityCheck.leadName,identityCheck.leadId);\n      }\n\n      // Show confirmation popup\n      const oldOverlay=document.getElementById('tritox-fill-overlay');\n      if(oldOverlay) oldOverlay.remove();\n      const overlay = document.createElement('div');\n      overlay.id='tritox-fill-overlay';\n      overlay.dataset.tritoxTs=String(buttonDataTs);\n      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;';\n      const box = document.createElement('div');\n      box.style.cssText = 'background:#fff;border-radius:16px;padding:28px 32px;max-width:380px;width:90%;text-align:center;font-family:sans-serif;box-shadow:0 20px 60px rgba(0,0,0,0.3);';\n      box.innerHTML = '<div style=\"font-size:32px;margin-bottom:12px;\">\u26a0\ufe0f</div>'\n        +'<div style=\"font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:8px;\">Confirm Fill + PDF Attachment</div>'\n        +'<div style=\"font-size:13px;color:#666;margin-bottom:6px;\">You are about to fill and attach the quote PDF for:</div>'\n        +'<div style=\"font-size:15px;font-weight:700;color:#7b2fff;margin-bottom:10px;padding:10px;background:#f0e8ff;border-radius:8px;\">'+data._name+'</div>'\n        +(manualMismatchOverride\n          ? '<div style=\"font-size:12px;color:#b45309;margin-bottom:8px;font-weight:700;padding:8px;background:#fff7ed;border:1px solid #fdba74;border-radius:7px;\">\u26a0 Manual override \u2014 verify this is the correct AgencyZoom lead before filling.</div>'\n          : (identityCheck.idMatch===true\n            ? '<div style=\"font-size:12px;color:#15803d;margin-bottom:6px;font-weight:700;\">\u2705 Lead ID matched: '+identityCheck.leadId+'</div>'\n            : (identityCheck.nameMatch===true\n              ? '<div style=\"font-size:12px;color:#15803d;margin-bottom:6px;font-weight:700;\">\u2705 Customer matched \u2014 binding Lead ID: '+(identityCheck.leadId||'Not detected')+'</div>'\n              : '<div style=\"font-size:12px;color:#b45309;margin-bottom:6px;font-weight:700;\">\u26a0 AgencyZoom customer/ID could not be verified automatically.</div>')))\n        +'<div style=\"font-size:12px;color:#666;margin-bottom:20px;\">AgencyZoom Lead ID: '+(identityCheck.leadId||'Not detected')+(identityCheck.expectedId?' | Bound ID: '+identityCheck.expectedId:'')+'</div>'\n        +'<div style=\"display:flex;gap:10px;justify-content:center;\">'\n        +'<button id=\"tritox-cancel\" style=\"flex:1;padding:10px;border:2px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#666;\">\u274c Cancel</button>'\n        +'<button id=\"tritox-confirm\" style=\"flex:1;padding:10px;border:none;background:linear-gradient(135deg,#00d4ff,#7b2fff);border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;\">\u2705 Fill + Attach</button>'\n        +'</div>';\n      overlay.appendChild(box);\n      document.body.appendChild(overlay);\n\n      // Cancel\n      document.getElementById('tritox-cancel').addEventListener('click', function(){\n        overlay.remove();\n        expireFillPopup(buttonDataTs);\n      });\n\n      // Confirm\n      document.getElementById('tritox-confirm').addEventListener('click', async function(){\n        const finalIdentity=validateLeadIdentity(data);\n        if(finalIdentity.mismatch && !manualMismatchOverride){\n          const reasons=[];\n          if(finalIdentity.idMatch===false){\n            reasons.push('Bound lead ID: '+finalIdentity.expectedId+' | Open lead ID: '+finalIdentity.leadId);\n          }else if(finalIdentity.idMatch===null && finalIdentity.nameMatch===false){\n            reasons.push('PDF customer: '+(finalIdentity.pdfName||'Unknown')+' | AgencyZoom lead: '+(finalIdentity.leadName||'Unknown'));\n          }\n\n          const proceedFinal=window.confirm(\n            '\u26a0\ufe0f LEAD CHANGED / PDF MISMATCH\\n\\n'\n            +reasons.join('\\n')\n            +'\\n\\nPlease verify manually.\\n\\n'\n            +'OK = Proceed Anyway\\nCancel = Stop'\n          );\n\n          if(!proceedFinal) return;\n          manualMismatchOverride=true;\n        }\n\n        const tritoxStart=performance.now();\n        overlay.remove();\n        btn.style.background='linear-gradient(135deg,#0085ff,#7b2fff)';\n        btn.innerHTML='\u23f3 Attaching PDF\u2026<br><span style=\"font-size:11px;font-weight:400;opacity:0.9;\">'+data._name+'</span>';\n\n        // v4.22 ULTRAFAST: keep the lead on Main, fill immediately, and run\n        // PDF upload + tag save in parallel. This removes the slow Files-tab\n        // verification/repaint cycle that previously consumed most of the time.\n        if(!document.getElementById('customfields-cf30203')){\n          await openLeadTab('Main');\n          await waitFor(function(){return document.getElementById('customfields-cf30203');},800);\n        }\n        // Always refresh the correct ALTA record immediately before filling.\n        // This makes company/date/Star-BW work even when QC was processed before\n        // the latest ALTA auto-save or when several leads are handled in a batch.\n        mergeAltaMetadataAtFill(data);\n        fillFields(data);\n\n        // Start PDF upload immediately. Give AgencyZoom a very short moment to\n        // commit the Main-page custom-field/select changes before opening Add Tag.\n        // This prevents the Star field/selectpicker update from racing the tag modal.\n        const pdfPromise=attachPdfFast(data);\n        await wait(180);\n        let tagResult=await applyQuoteTags(data);\n        if(!tagResult.ok){\n          // One fast retry handles transient AgencyZoom re-renders without\n          // changing the user's working field/PDF flow.\n          await wait(140);\n          tagResult=await applyQuoteTags(data);\n        }\n        const attachResult=await pdfPromise;\n\n        // Separate-script change: after all existing field/PDF/tag work is done,\n        // automatically save the AgencyZoom Main form by clicking Update.\n        await wait(120);\n        const updateResult=await clickAgencyZoomUpdate();\n\n        console.log('[TritoX TM] Total automation time:', Math.round(performance.now()-tritoxStart)+'ms', {pdf:attachResult, tags:tagResult, update:updateResult});\n        // Store timestamp of this fill to prevent reappearing\n        try{\n          const d = JSON.parse(GM_getValue('tritox_az_data','{}'));\n          filledTs = d._ts || Date.now();\n        }catch(e){ filledTs = Date.now(); }\n        GM_setValue('tritox_az_data','');\n        if(attachResult.ok && data._filename){\n          GM_deleteValue(pdfStorageKey(data._filename));\n        }\n\n        // Show done state with close button and countdown\n        let secs = 1;\n        btn.style.background = attachResult.ok && tagResult.ok ? 'linear-gradient(135deg,#00e887,#00b359)' : '#a65b00';\n        btn.style.minWidth = '180px';\n\n        function updateBtn(){\n          btn.innerHTML = (attachResult.ok && tagResult.ok?'\u2705 Filled + Verified PDF + Tags':'\u26a0\ufe0f Filled \u2014 Review PDF / Tags')+'<br>'\n            +'<span style=\"font-size:11px;font-weight:400;opacity:0.9;\">' + data._name + '</span><br>'\n            +'<span style=\"font-size:10px;font-weight:400;opacity:0.9;\">'+attachResult.message+'</span><br>'\n            +'<span style=\"font-size:10px;font-weight:400;opacity:0.9;\">'+tagResult.message+'</span><br>'\n            +'<span style=\"font-size:10px;font-weight:400;opacity:0.9;\">'+updateResult.message+'</span><br>'\n            +'<div style=\"display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;\">'\n            +'<span style=\"font-size:10px;opacity:0.8;\">Auto close in '+secs+'s</span>'\n            +'<button id=\"tritox-close-btn\" style=\"background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:700;\">\u2715 Close</button>'\n            +'</div>';\n\n          // Attach close button listener after innerHTML update\n          const closeBtn = document.getElementById('tritox-close-btn');\n          if(closeBtn){\n            closeBtn.addEventListener('click', function(e){\n              e.stopPropagation();\n              btn.remove();\n            });\n          }\n        }\n\n        updateBtn();\n\n        // Countdown timer\n        const timer = setInterval(function(){\n          secs--;\n          if(secs <= 0){\n            clearInterval(timer);\n            btn.remove();\n          } else {\n            updateBtn();\n          }\n        }, 400);\n      });\n\n      // Click outside to cancel\n      overlay.addEventListener('click', function(e){\n        if(e.target === overlay){\n          overlay.remove();\n          expireFillPopup(buttonDataTs);\n        }\n      });\n    });\n\n    document.body.appendChild(btn);\n\n    // If untouched, disappear after 7 seconds and do not recreate this same\n    // lead. Processing a new PDF creates a newer timestamp and shows immediately.\n    autoHideTimer=setTimeout(function(){\n      if(btn.isConnected) btn.remove();\n      expiredTs=Math.max(expiredTs,buttonDataTs);\n      GM_setValue('tritox_popup_expired_ts',expiredTs);\n    },7000);\n\n  }\n\n  function pdfStorageKey(name){\n    let h=2166136261;\n    const s=String(name||'quote.pdf').toLowerCase();\n    for(let i=0;i<s.length;i++){\n      h^=s.charCodeAt(i);\n      h=Math.imul(h,16777619);\n    }\n    return 'tritox_pdf_'+(h>>>0).toString(16);\n  }\n\n  function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}\n\n  async function clickAgencyZoomUpdate(){\n    function findUpdateButton(){\n      const selectors=[\n        '#referral-container button.btn.btn-primary.action[onclick*=\"leadDetailTab.doSave\"]',\n        '#referral-container button[onclick*=\"leadDetailTab.doSave\"]',\n        'button.btn.btn-primary.action[onclick*=\"leadDetailTab.doSave\"]',\n        'button[onclick*=\"leadDetailTab.doSave\"]'\n      ];\n      for(const selector of selectors){\n        const buttons=Array.from(document.querySelectorAll(selector));\n        const found=buttons.find(function(btn){\n          try{\n            const r=btn.getBoundingClientRect();\n            const visible=r.width>0 && r.height>0;\n            const text=String(btn.textContent||btn.value||'').trim().toLowerCase();\n            return visible && text==='update' && !btn.disabled && btn.getAttribute('aria-disabled')!=='true';\n          }catch(e){ return false; }\n        });\n        if(found) return found;\n      }\n\n      const roots=[\n        document.getElementById('referral-container'),\n        document.querySelector('#detailDockform'),\n        document\n      ].filter(Boolean);\n      for(const root of roots){\n        const found=Array.from(root.querySelectorAll('button,input[type=\"button\"],input[type=\"submit\"]')).find(function(btn){\n          try{\n            const r=btn.getBoundingClientRect();\n            const visible=r.width>0 && r.height>0;\n            const text=String(btn.textContent||btn.value||'').trim().toLowerCase();\n            return visible && text==='update' && !btn.disabled && btn.getAttribute('aria-disabled')!=='true';\n          }catch(e){ return false; }\n        });\n        if(found) return found;\n      }\n      return null;\n    }\n\n    const start=Date.now();\n    let btn=null;\n    while(Date.now()-start<2500){\n      btn=findUpdateButton();\n      if(btn) break;\n      await wait(80);\n    }\n    if(!btn) return {ok:false,message:'Update button was not found'};\n\n    try{ btn.scrollIntoView({block:'center',inline:'nearest'}); }catch(e){}\n    await wait(80);\n\n    try{\n      btn.focus();\n      btn.click();\n      console.log('[TritoX TM] AgencyZoom Update clicked automatically');\n      return {ok:true,message:'Update clicked automatically'};\n    }catch(e){\n      console.warn('[TritoX TM] Automatic Update click failed:',e);\n      return {ok:false,message:'Update click failed'};\n    }\n  }\n\n  async function waitFor(getter,timeout){\n    const start=Date.now();\n    while(Date.now()-start<timeout){\n      const value=getter();\n      if(value) return value;\n      await wait(250);\n    }\n    return null;\n  }\n\n  function findLeadTab(label){\n    const wanted=String(label).toLowerCase();\n    const match=Array.from(document.querySelectorAll('#referral-container a,#referral-container button,#referral-container [role=\"tab\"],#referral-container li,#referral-container span,#referral-container div'))\n      .find(function(el){return (el.textContent||'').trim().toLowerCase()===wanted;})||null;\n    return match ? (match.closest('a,button,li,[role=\"tab\"]')||match) : null;\n  }\n\n  async function openLeadTab(label){\n    const tab=findLeadTab(label);\n    if(!tab) return false;\n    tab.click();\n    await wait(900);\n    return true;\n  }\n\n  function payloadToFile(payload){\n    const parts=String(payload.dataUrl||'').split(',');\n    if(parts.length<2) throw new Error('Stored PDF data is incomplete');\n    const bytes=atob(parts[1]);\n    const array=new Uint8Array(bytes.length);\n    for(let i=0;i<bytes.length;i++) array[i]=bytes.charCodeAt(i);\n    return new File([array],payload.name,{\n      type:payload.type||'application/pdf',\n      lastModified:payload.lastModified||Date.now()\n    });\n  }\n\n  function findAgencyZoomFileInput(){\n    const selectors=[\n      '#referral-container input[type=\"file\"]',\n      '.agencydocupload_doc input[type=\"file\"]',\n      '#agencyDocUploader input[type=\"file\"]',\n      'input.agencydocupload_doc[type=\"file\"]',\n      'input[type=\"file\"][multiple]',\n      'input[type=\"file\"]'\n    ];\n    for(const selector of selectors){\n      const inputs=Array.from(document.querySelectorAll(selector));\n      if(inputs.length) return inputs[inputs.length-1];\n    }\n    return null;\n  }\n\n  function pdfNameIsVisible(fileName){\n    const wanted=String(fileName||'').toLowerCase();\n    const panel=document.getElementById('referral-container');\n    if(!panel || !wanted) return false;\n    if((panel.innerText||'').toLowerCase().includes(wanted)) return true;\n    return Array.from(panel.querySelectorAll('[title],[data-name],[data-file-name],a'))\n      .some(function(el){\n        return [el.getAttribute('title'),el.getAttribute('data-name'),el.getAttribute('data-file-name'),el.textContent]\n          .some(function(value){return String(value||'').toLowerCase().includes(wanted);});\n      });\n  }\n\n  function getCurrentLeadId(){\n    // The visible \"ID: 12345678\" is in AgencyZoom's lead header, outside\n    // #referral-container. Search the complete rendered page first.\n    const texts=[\n      document.body&&document.body.innerText,\n      document.documentElement&&document.documentElement.innerText,\n      document.getElementById('referral-container')&&document.getElementById('referral-container').innerText\n    ];\n    for(const text of texts){\n      const match=String(text||'').match(/\\bID\\s*:\\s*(\\d{5,})\\b/i);\n      if(match) return match[1];\n    }\n\n    const selectors=[\n      '[data-entity-id]','[data-entityid]','[data-lead-id]','[data-leadid]',\n      'input[name=\"entityId\"]','input[name=\"leadId\"]'\n    ];\n    for(const selector of selectors){\n      const el=document.querySelector(selector);\n      if(!el) continue;\n      const value=el.value||el.getAttribute('data-entity-id')||el.getAttribute('data-entityid')||\n        el.getAttribute('data-lead-id')||el.getAttribute('data-leadid');\n      if(/^\\d{5,}$/.test(String(value||''))) return String(value);\n    }\n\n    // Final fallback: AgencyZoom often embeds the active lead ID in its\n    // uploader configuration even when the header has not finished rendering.\n    const html=document.documentElement&&document.documentElement.innerHTML||'';\n    const configMatch=html.match(/(?:entityId|leadId)[\"']?\\s*[:=]\\s*[\"']?(\\d{5,})/i);\n    if(configMatch) return configMatch[1];\n    return '';\n  }\n\n  function normalizePersonName(v){\n    let s=String(v||'').toLowerCase();\n\n    // Remove accents when available, then normalize punctuation/hyphens/apostrophes.\n    try{ s=s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,''); }catch(e){}\n    return s\n      .replace(/&/g,' and ')\n      .replace(/[^a-z0-9]+/g,' ')\n      .trim()\n      .replace(/\\s+/g,' ');\n  }\n\n  function nameTokens(v){\n    let parts=normalizePersonName(v).split(' ').filter(Boolean);\n\n    // Ignore common suffixes for matching: Jr, Sr, II, III, IV, V, Junior, Senior.\n    const suffixes=new Set(['jr','sr','ii','iii','iv','v','junior','senior']);\n    while(parts.length>1 && suffixes.has(parts[parts.length-1])){\n      parts.pop();\n    }\n    return parts;\n  }\n\n  function getCurrentLeadName(){\n    const text=String(document.body&&document.body.innerText||'');\n\n    let m=text.match(/(?:^|\\n)\\s*([A-Za-z][A-Za-z .'\\-]{1,80})\\s*\\n\\s*QuoteWizard\\s*\\|\\s*ID\\s*:/i);\n    if(m) return String(m[1]||'').trim();\n\n    m=text.match(/(?:^|\\n)\\s*([A-Za-z][A-Za-z .'\\-]{1,80}?)\\s+QuoteWizard\\s*\\|\\s*ID\\s*:/i);\n    if(m) return String(m[1]||'').trim();\n\n    const id=getCurrentLeadId();\n    if(id){\n      const lines=text.split(/\\n+/).map(function(x){return String(x||'').trim();}).filter(Boolean);\n      const rx=new RegExp('\\\\bID\\\\s*:\\\\s*'+id+'\\\\b','i');\n      const pos=lines.findIndex(function(x){return rx.test(x);});\n      if(pos>0){\n        for(let j=pos-1;j>=Math.max(0,pos-4);j--){\n          const candidate=lines[j];\n          if(!candidate || /quotewizard|activities|contacts|opportunities|quotes|referral|main/i.test(candidate)) continue;\n          if(/^[A-Za-z][A-Za-z .'\\-]{1,80}$/.test(candidate)) return candidate;\n        }\n      }\n    }\n    return '';\n  }\n\n  function publishCurrentAgencyZoomLead(){\n    try{\n      const leadId=getCurrentLeadId();\n      if(!leadId)return;\n      const leadName=getCurrentLeadName();\n      GM_setValue('tritox_current_az_lead',JSON.stringify({\n        leadId:String(leadId),\n        leadName:String(leadName||''),\n        ts:Date.now()\n      }));\n    }catch(e){}\n  }\n  publishCurrentAgencyZoomLead();\n  setInterval(publishCurrentAgencyZoomLead,300);\n\n  function firstNameCandidates(parts){\n    const out=new Set();\n    if(!parts.length) return out;\n    out.add(parts[0]);\n\n    // Handles PDF text splits such as \"Je ff\" => \"jeff\".\n    if(parts.length>=2 && (parts[0].length<=2 || parts[1].length<=2)){\n      out.add(parts[0]+parts[1]);\n    }\n\n    // Handles hyphenated/compound first names when one source removes punctuation:\n    // Mary-Anne <=> Maryanne.\n    if(parts.length>=3){\n      out.add(parts[0]+parts[1]);\n    }\n    return out;\n  }\n\n  function lastNameCandidates(parts){\n    const out=new Set();\n    if(!parts.length) return out;\n    out.add(parts[parts.length-1]);\n\n    // Handles split/compound/hyphenated surnames:\n    // Van Dyke <=> VanDyke, Smith-Jones <=> SmithJones.\n    if(parts.length>=3){\n      out.add(parts[parts.length-2]+parts[parts.length-1]);\n    }\n    return out;\n  }\n\n  function tokenSetIntersects(a,b){\n    for(const x of a){ if(b.has(x)) return true; }\n    return false;\n  }\n\n  function namesMatch(pdfName,leadName){\n    const aa=nameTokens(pdfName), bb=nameTokens(leadName);\n    if(!aa.length || !bb.length) return null;\n\n    const a=aa.join(' ');\n    const b=bb.join(' ');\n    if(a===b) return true;\n\n    // Capitalization, spaces, hyphens, apostrophes and PDF word-splitting disappear\n    // in this form. Examples: \"Je ff\" == \"Jeff\", \"O'Connor\" == \"OConnor\".\n    const compactA=aa.join('');\n    const compactB=bb.join('');\n    if(compactA===compactB) return true;\n\n    const firstA=firstNameCandidates(aa);\n    const firstB=firstNameCandidates(bb);\n    const lastA=lastNameCandidates(aa);\n    const lastB=lastNameCandidates(bb);\n\n    // Main real-world rule: same first + same last. Middle names/initials are\n    // intentionally ignored, so 2-name, 3-name and 4-name forms can match.\n    if(tokenSetIntersects(firstA,firstB) && tokenSetIntersects(lastA,lastB)){\n      return true;\n    }\n\n    // First-name initial/prefix support, but only when the surname matches.\n    // Examples: \"J Smith\" <=> \"Jeff Smith\", \"Les Modrow\" <=> \"Lester Modrow\".\n    if(tokenSetIntersects(lastA,lastB)){\n      for(const fa of firstA){\n        for(const fb of firstB){\n          if((fa.length===1 && fb.startsWith(fa)) ||\n             (fb.length===1 && fa.startsWith(fb)) ||\n             (Math.min(fa.length,fb.length)>=3 &&\n               (fa.startsWith(fb)||fb.startsWith(fa)))){\n            return true;\n          }\n        }\n      }\n    }\n\n    return false;\n  }\n\n\n  function filenameFallbackMatches(data,leadName){\n    try{\n      const filename=String(data&&data._filename||'').replace(/\\.pdf$/i,'').trim();\n      if(!filename || !leadName) return false;\n\n      // Recognize our normal saved-file pattern, e.g.\n      // Galloway-townsend_Auto_09282026.pdf\n      // Siboloski_Auto_09252026.pdf\n      // Smith_Bundle_09252026.pdf\n      const m=filename.match(/^(.*?)[_\\-\\s]+(?:auto|bundle|home)(?:[_\\-\\s]+(\\d{8}))?$/i);\n      if(!m) return false;\n\n      const fileCustomer=String(m[1]||'').trim();\n      if(!fileCustomer) return false;\n\n      const leadParts=nameTokens(leadName);\n      if(!leadParts.length) return false;\n\n      const leadLast=lastNameCandidates(leadParts);\n      const fileParts=nameTokens(fileCustomer);\n      if(!fileParts.length) return false;\n\n      const fileCompact=fileParts.join('');\n      if(!fileCompact) return false;\n\n      // Exact surname / compound-surname comparison only.\n      // This is used only when PDF text extraction fell back to the filename.\n      for(const last of leadLast){\n        if(fileCompact===String(last||'').replace(/\\s+/g,'')) return true;\n      }\n      return false;\n    }catch(e){\n      return false;\n    }\n  }\n\n  function bindDataToCurrentLeadId(data){\n    try{\n      if(!data || !data._name) return data;\n\n      const leadId=getCurrentLeadId();\n      const leadName=getCurrentLeadName();\n      let currentNameMatch=namesMatch(data._name,leadName);\n\n      // If PDF.js failed to read \"Prepared for\" and QC fell back to a filename\n      // such as Galloway-townsend_Auto_09282026, allow an exact surname match\n      // from that filename to establish the AgencyZoom Lead ID.\n      if(currentNameMatch!==true && filenameFallbackMatches(data,leadName)){\n        currentNameMatch=true;\n        console.log('[TritoX TM] Filename fallback matched AgencyZoom surname:',\n          data._filename,'=>',leadName);\n      }\n\n      let existingId=String(data._leadId||'').trim();\n      const boundName=String(data._leadNameBound||'').trim();\n\n      if(existingId){\n        const boundNameMatch=boundName ? namesMatch(data._name,boundName) : null;\n\n        // Recovery for v4.46.11/v4.46.12 stale bindings:\n        // if the stored bound name belongs to another PDF/customer, discard it.\n        if(boundName && boundNameMatch===false){\n          console.warn('[TritoX TM] Clearing stale AgencyZoom ID binding:',\n            data._name,'was bound to',existingId,boundName);\n          data._leadId='';\n          data._leadNameBound='';\n          existingId='';\n        }\n\n        // If the current lead name safely matches this PDF but the existing ID\n        // points elsewhere, rebind to the current lead. This repairs stale IDs\n        // without requiring the PDF to be processed again.\n        if(existingId && leadId && existingId!==String(leadId) && currentNameMatch===true){\n          console.warn('[TritoX TM] Rebinding stale AgencyZoom ID:',\n            existingId,'->',leadId,'for',data._name);\n          data._leadId=String(leadId);\n          data._leadNameBound=String(leadName||'');\n          GM_setValue('tritox_az_data',JSON.stringify(data));\n          return data;\n        }\n\n        // A valid existing binding remains authoritative.\n        if(existingId) return data;\n      }\n\n      if(!leadId) return data;\n\n      // First-time binding. The robust matcher accepts capitalization,\n      // punctuation/hyphens, middle names/initials, suffixes, and PDF word splits.\n      if(currentNameMatch===true){\n        data._leadId=String(leadId);\n        data._leadNameBound=String(leadName||'');\n        GM_setValue('tritox_az_data',JSON.stringify(data));\n        console.log('[TritoX TM] PDF bound to AgencyZoom lead ID:',\n          data._name,'=>',leadId,leadName);\n      }\n      return data;\n    }catch(e){\n      console.warn('[TritoX TM] Lead ID binding skipped:',e);\n      return data;\n    }\n  }\n\n\n  function validateLeadIdentity(data){\n    data=bindDataToCurrentLeadId(data);\n\n    const pdfName=String(data&&data._name||'').trim();\n    const leadName=getCurrentLeadName();\n    const leadId=getCurrentLeadId();\n    const expectedId=String(data&&data._leadId||'').trim();\n\n    let nameMatch=namesMatch(pdfName,leadName);\n    if(nameMatch!==true && filenameFallbackMatches(data,leadName)){\n      nameMatch=true;\n    }\n    const idMatch=(expectedId && leadId) ? expectedId===leadId : null;\n\n    // ID is authoritative after the first safe binding.\n    // If no expected ID exists yet, use the name guard as the fallback.\n    const mismatch=(idMatch!==null) ? (idMatch===false) : (nameMatch===false);\n\n    return {\n      pdfName:pdfName,\n      leadName:leadName,\n      leadId:leadId,\n      expectedId:expectedId,\n      nameMatch:nameMatch,\n      idMatch:idMatch,\n      mismatch:mismatch\n    };\n  }\n\n\n  function agencyZoomUploadName(originalName){\n    const name=String(originalName||'quote.pdf');\n\n    // Rename ONLY the AgencyZoom upload. Keep the original local/cached name\n    // unchanged so PDF matching still works for multi-quote processing.\n    //\n    // Example:\n    //   Wolthuis_Auto_09252026.pdf -> Wolthuis_Auto.pdf\n    //\n    // Only remove a trailing _MMDDYYYY date immediately before .pdf.\n    const m=name.match(/^(.*)_((?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])(?:19|20)\\d{2})(\\.pdf)$/i);\n    if(!m) return name;\n\n    const trimmed=String(m[1]||'').replace(/[_\\-\\s]+$/,'');\n    return (trimmed||'quote')+m[3];\n  }\n\n  async function uploadPdfDirect(file,leadId){\n    const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;\n    const jq=pageWindow.jQuery;\n    if(!jq || typeof jq.ajax!=='function') throw new Error('AgencyZoom uploader session was not ready');\n\n    const uploadName=agencyZoomUploadName(file.name);\n\n    const query=new URLSearchParams({\n      docType:'undefined',\n      fileName:uploadName,\n      docuSign:'0'\n    });\n    // Create the upload File with the SHORTENED AgencyZoom filename only.\n    // The cached/original PDF name remains unchanged.\n    const bytes=await file.arrayBuffer();\n    const pageFile=new pageWindow.File([bytes],uploadName,{\n      type:file.type||'application/pdf',\n      lastModified:file.lastModified||Date.now()\n    });\n    const form=new pageWindow.FormData();\n    form.append('contacts','[]');\n    form.append('emailSubject','');\n    form.append('emailBody','');\n    form.append('entityId',String(leadId));\n    form.append('linkToType','lead');\n    form.append('files[]',pageFile,uploadName);\n\n    console.log('[TritoX TM] AgencyZoom PDF name:',file.name,'->',uploadName);\n\n    return new Promise(function(resolve,reject){\n      jq.ajax({\n        url:'/lead/doc?'+query.toString(),\n        type:'POST',\n        data:form,\n        processData:false,\n        contentType:false,\n        cache:false,\n        success:function(result){\n          if(result && result.docName && String(result.docName)!==uploadName){\n            reject(new Error('AgencyZoom returned a different filename'));\n            return;\n          }\n          resolve(result);\n        },\n        error:function(xhr){\n          let detail='HTTP '+(xhr&&xhr.status||'error');\n          try{\n            const body=xhr.responseJSON||JSON.parse(xhr.responseText||'{}');\n            detail=body.message||body.error||detail;\n          }catch(e){}\n          reject(new Error(detail));\n        }\n      });\n    });\n  }\n\n  async function attachPdfFast(data){\n    if(!data._filename) return {ok:false,message:'PDF filename was not transferred'};\n    const stored=GM_getValue(pdfStorageKey(data._filename),'');\n    if(!stored) return {ok:false,message:'PDF was not cached \u2014 select it again in Aaron QC'};\n\n    let payload;\n    try{payload=JSON.parse(stored);}catch(e){return {ok:false,message:'Stored PDF could not be read'};}\n    if(payload.name!==data._filename) return {ok:false,message:'PDF filename mismatch \u2014 attachment stopped'};\n\n    const file=payloadToFile(payload);\n    const leadId=getCurrentLeadId();\n    if(!leadId) return {ok:false,message:'AgencyZoom lead ID was not found'};\n\n    // Fast mode: trust AgencyZoom's successful upload response instead of\n    // navigating to Files and waiting for the filename to repaint.\n    try{\n      const result=await uploadPdfDirect(file,leadId);\n      if(result===undefined || result===null) return {ok:true,message:'PDF upload accepted by AgencyZoom'};\n      return {ok:true,message:'PDF uploaded to AgencyZoom'};\n    }catch(err){\n      console.error('[TritoX TM] Fast PDF upload failed:',err);\n      return {ok:false,message:'AgencyZoom rejected PDF upload: '+String(err.message||err)};\n    }\n  }\n\n  async function attachPdfToLead(data){\n    if(!data._filename) return {ok:false,message:'PDF filename was not transferred'};\n    const stored=GM_getValue(pdfStorageKey(data._filename),'');\n    if(!stored) return {ok:false,message:'PDF was not cached \u2014 select it again in Aaron QC'};\n\n    let payload;\n    try{payload=JSON.parse(stored);}catch(e){return {ok:false,message:'Stored PDF could not be read'};}\n    if(payload.name!==data._filename) return {ok:false,message:'PDF filename mismatch \u2014 attachment stopped'};\n\n    const file=payloadToFile(payload);\n    const leadId=getCurrentLeadId();\n    if(!leadId) return {ok:false,message:'AgencyZoom lead ID was not found'};\n\n    // Upload through AgencyZoom's own multipart endpoint.\n    await openLeadTab('Files');\n    await waitFor(function(){return document.getElementById('referral-container');},5000);\n\n    try{\n      await uploadPdfDirect(file,leadId);\n    }catch(err){\n      console.error('[TritoX TM] Direct PDF upload failed:',err);\n      return {ok:false,message:'AgencyZoom rejected PDF upload: '+String(err.message||err)};\n    }\n\n    // IMPORTANT: a 200/upload object is not treated as success by itself.\n    // Confirm the actual filename appears in the lead's Files UI.\n    let visible=await waitFor(function(){\n      return pdfNameIsVisible(agencyZoomUploadName(file.name)) ? true : null;\n    },5000);\n\n    // AgencyZoom sometimes does not repaint the Files list immediately.\n    // Force a tab re-render once, then verify again.\n    if(!visible){\n      await openLeadTab('Main');\n      await wait(500);\n      await openLeadTab('Files');\n      visible=await waitFor(function(){\n        return pdfNameIsVisible(agencyZoomUploadName(file.name)) ? true : null;\n      },7000);\n    }\n\n    if(visible){\n      return {ok:true,message:'PDF verified in AgencyZoom Files'};\n    }\n\n    console.warn('[TritoX TM] Upload response received but file was not visible:',agencyZoomUploadName(file.name));\n    return {\n      ok:false,\n      message:'PDF upload was not verified in Files \u2014 please check/attach manually'\n    };\n  }\n\n  function fillText(id, val){\n    if(!val && val !== 0) return;\n    const el = document.getElementById('customfields-' + id);\n    if(!el) return;\n    try{\n      el.focus();\n      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;\n      setter.call(el, String(val));\n      el.dispatchEvent(new Event('focus',{bubbles:true}));\n      el.dispatchEvent(new Event('input',{bubbles:true}));\n      el.dispatchEvent(new Event('change',{bubbles:true}));\n      el.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true}));\n      el.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true}));\n      el.blur();\n      el.dispatchEvent(new Event('blur',{bubbles:true}));\n    }catch(e){}\n  }\n\n  function fillSelect(id, val){\n    if(!val) return;\n    const el = document.getElementById('customfields-' + id);\n    if(!el) return;\n    try{\n      const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,'value').set;\n      setter.call(el, String(val));\n      el.dispatchEvent(new Event('change',{bubbles:true}));\n    }catch(e){}\n  }\n\n  function quoteTagNames(data){\n    const isBundle = typeof data._isBundle === 'boolean'\n      ? data._isBundle\n      : !!(data.home_coverage_a || data.home_annual);\n    const isHighPrice = !!(data && (data._highPrice === true || data.high_price === true || String(data._highPrice||'').toLowerCase()==='true'));\n    const names=[isHighPrice ? 'PRICE TOO HIGH' : 'Ready to send'];\n    if(isBundle) names.push('Home is quoted');\n    return names;\n  }\n\n  function resolveStarTagName(select,data){\n    const raw=String((data&&data.star_rating)||'').trim();\n    if(!raw || !select) return '';\n    const options=Array.from(select.options||[]).filter(function(o){return !o.disabled;});\n    const text=function(o){return String(o.textContent||'').replace(/\\s+/g,' ').trim();};\n    const starMatch=raw.match(/(?:^|\\b)([123])(?:\\s*stars?)?(?:\\b|$)/i);\n    const isBW=/\\bbw\\b|bristol\\s*west/i.test(raw);\n\n    if(starMatch){\n      const n=starMatch[1];\n      const patterns=[\n        new RegExp('^'+n+'\\\\s*stars?$', 'i'),\n        new RegExp('^star\\\\s*'+n+'$', 'i'),\n        new RegExp('^'+n+'$', 'i')\n      ];\n      for(const re of patterns){\n        const hit=options.find(function(o){return re.test(text(o));});\n        if(hit) return text(hit);\n      }\n    }\n    if(isBW){\n      const hit=options.find(function(o){return /^(?:BW|Bristol\\s*West)$/i.test(text(o));});\n      if(hit) return text(hit);\n    }\n    return '';\n  }\n\n  async function applyQuoteTags(data){\n    let toggle=null;\n    let opened=false;\n    try{\n      const names=quoteTagNames(data);\n      const norm=function(v){return String(v||'').replace(/\\s+/g,' ').trim().toLowerCase();};\n      const wanted=names.map(norm);\n      const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;\n      const jq=pageWindow.jQuery;\n      const PageEvent=pageWindow.Event||Event;\n\n      function isVisible(el){\n        if(!el) return false;\n        const r=el.getBoundingClientRect();\n        const cs=pageWindow.getComputedStyle? pageWindow.getComputedStyle(el):window.getComputedStyle(el);\n        return !!(el.getClientRects().length && r.width>0 && r.height>0 && cs.display!=='none' && cs.visibility!=='hidden');\n      }\n\n      function openAddTagPanelIfNeeded(){\n        // If the Add Tag panel is closed, open it first. AgencyZoom has used\n        // different button markup across builds, so match accessible labels,\n        // titles and nearby tag-related controls rather than one brittle selector.\n        const selectors=[\n          '[aria-label*=\"tag\" i]','[title*=\"tag\" i]','[data-original-title*=\"tag\" i]',\n          'button','a','[role=\"button\"]'\n        ];\n        const seen=new Set();\n        const candidates=[];\n        selectors.forEach(function(sel){\n          document.querySelectorAll(sel).forEach(function(el){\n            if(seen.has(el) || !isVisible(el)) return;\n            seen.add(el);\n            const txt=norm((el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+(el.getAttribute('data-original-title')||'')+' '+(el.textContent||''));\n            if(txt==='add tag' || txt.includes('add tag') || txt==='tags' || txt==='tag') candidates.push(el);\n          });\n        });\n        if(candidates.length){\n          try{ candidates[0].click(); return true; }catch(e){}\n        }\n        return false;\n      }\n\n      function collectTagCandidates(){\n        return Array.from(document.querySelectorAll('select')).map(function(select,index){\n        const options=Array.from(select.options||[]);\n        const optionNames=options.map(function(o){return norm(o.textContent);});\n        if(!wanted.every(function(name){return optionNames.includes(name);})) return null;\n        const wrapper=select.closest('.bootstrap-select');\n        const button=wrapper&&wrapper.querySelector('button.dropdown-toggle');\n        const selectedNames=Array.from(select.selectedOptions||[]).map(function(o){return norm(o.textContent);}).filter(Boolean);\n        const identity=norm((select.id||'')+' '+(select.name||'')+' '+(select.className||''));\n        let score=0;\n        if(select.closest('#referral-container')) score+=1000;\n        if(select.name==='tags[]') score+=1000;\n        if(identity.includes('tag')) score+=600;\n        if(select.multiple) score+=400;\n        if(isVisible(wrapper||select)) score+=700;\n        if(button && isVisible(button)) score+=400;\n        if(selectedNames.length) score+=500;\n        if(selectedNames.includes('quote team')) score+=2000;\n        score+=index/10000;\n        return {select,wrapper,button,selectedNames,score};\n        }).filter(Boolean).sort(function(a,b){return b.score-a.score;});\n      }\n\n      let candidates=collectTagCandidates();\n      if(!candidates.length){\n        openAddTagPanelIfNeeded();\n        await wait(120);\n        candidates=collectTagCandidates();\n      }\n\n      if(!candidates.length) throw new Error('Lead tag field was not found \u2014 open Add Tag and add '+names.join(' + ')+' manually');\n      const chosen=candidates[0];\n      const select=chosen.select;\n      const wrapper=chosen.wrapper;\n      toggle=chosen.button;\n      if(!wrapper || !toggle) throw new Error('Lead tag dropdown UI was not found');\n\n      // Add the matching Star/BW TAG using the exact option text available in\n      // AgencyZoom. This is separate from filling the Star 1-3 custom field.\n      const starTagName=resolveStarTagName(select,data);\n      if(starTagName && !names.some(function(n){return norm(n)===norm(starTagName);})) names.push(starTagName);\n\n      const beforeValues=Array.from(select.selectedOptions||[]).map(function(o){return String(o.value);});\n\n      function syncTagSelect(changedIndex){\n        try{ select.dispatchEvent(new PageEvent('input',{bubbles:true})); }catch(e){}\n        try{ select.dispatchEvent(new PageEvent('change',{bubbles:true})); }catch(e){}\n        if(jq){\n          try{ jq(select).trigger('change'); }catch(e){}\n          if(Number.isInteger(changedIndex)){\n            try{ jq(select).trigger('changed.bs.select',[changedIndex,true,null]); }catch(e){}\n          }\n          try{ if(typeof jq(select).selectpicker==='function') jq(select).selectpicker('refresh'); }catch(e){}\n        }\n      }\n\n      if(toggle.getAttribute('aria-expanded')!=='true'){\n        toggle.click();\n        opened=true;\n        await wait(25);\n      }\n\n      const listId=toggle.getAttribute('aria-owns')||toggle.getAttribute('aria-controls');\n      const list=(listId&&document.getElementById(listId))||wrapper;\n\n      for(const name of names){\n        const options=Array.from(select.options||[]);\n        const option=options.find(function(o){return norm(o.textContent)===norm(name);});\n        if(!option) throw new Error('Tag unavailable: '+name);\n        if(option.disabled) throw new Error('Tag disabled: '+name);\n        const optionIndex=options.indexOf(option);\n\n        if(!option.selected){\n          let item=list.querySelector('li[data-original-index=\"'+optionIndex+'\"] a, li[data-original-index=\"'+optionIndex+'\"] [role=\"option\"]');\n          if(!item){\n            item=Array.from(list.querySelectorAll('a,[role=\"option\"],button,li')).find(function(el){\n              return norm(el.textContent)===norm(name) && el.getAttribute('aria-disabled')!=='true';\n            })||null;\n          }\n          if(!item) throw new Error('Tag menu item not found: '+name);\n\n          // Real option click first.\n          try{ item.click(); }catch(e){}\n          await wait(20);\n\n          // Keep the underlying select definitely in sync with what the UI shows.\n          if(!option.selected) option.selected=true;\n          syncTagSelect(optionIndex);\n          await wait(20);\n        }else{\n          // Even for an already-selected option, sync AgencyZoom's model once.\n          syncTagSelect(optionIndex);\n        }\n      }\n\n      // One final model sync before Save. This is the key v4.21 change: the\n      // tags could look selected in Bootstrap while AgencyZoom's form model was\n      // still unchanged, causing Save to do nothing.\n      syncTagSelect(null);\n\n      if(opened && toggle.getAttribute('aria-expanded')==='true'){\n        toggle.click();\n        opened=false;\n        await wait(20);\n      }\n\n      // Find the EXACT Add Tag container by walking upward from this select.\n      // AgencyZoom's current Add Tag UI is not always a Bootstrap .modal.\n      function findTagDialog(){\n        let el=select;\n        while(el && el!==document.body){\n          if(isVisible(el)){\n            const txt=norm(el.textContent);\n            if(txt.includes('add tag') && txt.includes('choose tags')){\n              const save=Array.from(el.querySelectorAll('button,input[type=\"button\"],input[type=\"submit\"],a,[role=\"button\"]')).find(function(b){\n                return isVisible(b) && !b.disabled && b.getAttribute('aria-disabled')!=='true' && norm(b.value||b.textContent||b.getAttribute('aria-label'))==='save';\n              });\n              if(save) return {root:el,saveBtn:save};\n            }\n          }\n          el=el.parentElement;\n        }\n\n        // Fallback: smallest visible page container that contains Add Tag,\n        // Choose tags and a visible Save button.\n        const saves=Array.from(document.querySelectorAll('button,input[type=\"button\"],input[type=\"submit\"],a,[role=\"button\"]')).filter(function(b){\n          return isVisible(b) && !b.disabled && b.getAttribute('aria-disabled')!=='true' && norm(b.value||b.textContent||b.getAttribute('aria-label'))==='save';\n        });\n        for(const saveBtn of saves){\n          let root=saveBtn.parentElement;\n          for(let i=0;root && root!==document.body && i<8;i++,root=root.parentElement){\n            const txt=norm(root.textContent);\n            if(txt.includes('add tag') && txt.includes('choose tags')) return {root,saveBtn};\n          }\n        }\n        return null;\n      }\n\n      const tagDialog=findTagDialog();\n      if(!tagDialog) throw new Error('Tags selected, but the Add Tag Save button was not found');\n      const dialog=tagDialog.root;\n      let saveBtn=tagDialog.saveBtn;\n\n      // Make sure AgencyZoom receives the final selected values immediately\n      // before the Save handler reads them.\n      syncTagSelect(null);\n      await wait(20);\n\n      function clickSave(btn){\n        if(!btn) return false;\n        try{ btn.focus(); }catch(e){}\n        try{ btn.click(); return true; }catch(e){}\n        if(jq){\n          try{ jq(btn).trigger('click'); return true; }catch(e){}\n        }\n        return false;\n      }\n\n      let clicked=clickSave(saveBtn);\n      if(!clicked) throw new Error('AgencyZoom tag Save button could not be clicked');\n\n      // Fast confirmation: most saves close the Add Tag panel in under 1 second.\n      let closed=await waitFor(function(){ return !isVisible(dialog) ? true : null; },150);\n\n      if(!closed){\n        // If click alone did not invoke the form submission, submit the exact\n        // form containing the Save button. This preserves AgencyZoom validation.\n        const form=saveBtn.closest('form');\n        if(form){\n          try{\n            if(typeof form.requestSubmit==='function') form.requestSubmit(saveBtn);\n            else form.dispatchEvent(new PageEvent('submit',{bubbles:true,cancelable:true}));\n          }catch(e){console.warn('[TritoX TM] Tag form submit fallback:',e);}\n        }else if(jq){\n          try{ jq(saveBtn).trigger('click'); }catch(e){}\n        }\n        closed=await waitFor(function(){ return !isVisible(dialog) ? true : null; },200);\n      }\n\n      if(!closed) throw new Error('Tags are selected, but AgencyZoom did not save/close the Add Tag window');\n\n      // Preserve existing tags.\n      const afterValues=Array.from(select.selectedOptions||[]).map(function(o){return String(o.value);});\n      if(!beforeValues.every(function(v){return afterValues.includes(v);})){ \n        throw new Error('Existing tags changed; review the lead tags');\n      }\n\n      return {ok:true,message:'Tags saved automatically: '+names.join(' + ')+(data.star_rating && !starTagName?' (Star tag option not found)':'')};\n    }catch(error){\n      console.error('[TritoX TM] Quote tags:',error);\n      return {ok:false,message:String(error.message||error)};\n    }finally{\n      if(opened && toggle && toggle.getAttribute('aria-expanded')==='true') toggle.click();\n    }\n  }\n\n  function findControlByLabel(labelText){\n    const wanted=String(labelText||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();\n    const labels=Array.from(document.querySelectorAll('label,.control-label,[class*=\"label\"]'));\n    for(const lab of labels){\n      const txt=String(lab.textContent||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();\n      if(txt!==wanted && !txt.startsWith(wanted)) continue;\n      if(lab.htmlFor){\n        const byFor=document.getElementById(lab.htmlFor);\n        if(byFor && /^(INPUT|SELECT|TEXTAREA)$/.test(byFor.tagName)) return byFor;\n      }\n      const containers=[lab.parentElement,lab.closest('.form-group'),lab.closest('.az-form-group'),lab.closest('[class*=\"form-group\"]')].filter(Boolean);\n      for(const c of containers){\n        const el=c.querySelector('input,select,textarea');\n        if(el) return el;\n      }\n    }\n    return null;\n  }\n\n  function setAnyControl(el,value){\n    if(!el || value===undefined || value===null || String(value)==='') return false;\n    const wanted=String(value).trim();\n    try{\n      if(el.tagName==='SELECT'){\n        const options=Array.from(el.options||[]);\n        let opt=options.find(function(o){return String(o.value).trim().toLowerCase()===wanted.toLowerCase();});\n        if(!opt) opt=options.find(function(o){return String(o.textContent||'').trim().toLowerCase()===wanted.toLowerCase();});\n        if(!opt && /^[123]$/.test(wanted)) opt=options.find(function(o){return new RegExp('^\\\\s*'+wanted+'(?:\\\\s|$)').test(String(o.textContent||''));});\n        if(!opt && /^bw$/i.test(wanted)) opt=options.find(function(o){return /\\\\bBW\\\\b|Bristol West/i.test(String(o.textContent||''));});\n        if(!opt) return false;\n        el.value=opt.value;\n        opt.selected=true;\n        el.dispatchEvent(new Event('input',{bubbles:true}));\n        el.dispatchEvent(new Event('change',{bubbles:true}));\n        return true;\n      }\n      const proto=el.tagName==='TEXTAREA'?window.HTMLTextAreaElement.prototype:window.HTMLInputElement.prototype;\n      const desc=Object.getOwnPropertyDescriptor(proto,'value');\n      if(desc&&desc.set) desc.set.call(el,wanted); else el.value=wanted;\n      el.dispatchEvent(new Event('input',{bubbles:true}));\n      el.dispatchEvent(new Event('change',{bubbles:true}));\n      el.dispatchEvent(new Event('blur',{bubbles:true}));\n      return true;\n    }catch(e){console.warn('[TritoX TM] Could not fill',labelText,value,e);return false;}\n  }\n\n  function findStarControl(){\n    // First use the visible field label.\n    let el=findControlByLabel('Star 1-3') || findControlByLabel('Star 1 - 3') || findControlByLabel('Star');\n    if(el && el.tagName==='SELECT') return el;\n\n    // AgencyZoom sometimes renders the visible Bootstrap control separately\n    // from its real <select>. Find a select in the same field container.\n    const labels=Array.from(document.querySelectorAll('label,.control-label,[class*=\"label\"]'));\n    for(const lab of labels){\n      const txt=String(lab.textContent||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();\n      if(!txt.includes('star')) continue;\n      let c=lab.closest('.form-group,[class*=\"form-group\"],.row,.col-md-6,.col-sm-6') || lab.parentElement;\n      if(!c) continue;\n      const sel=c.querySelector('select');\n      if(sel) return sel;\n    }\n\n    // Final fallback: identify the unique select whose options look like\n    // 1/2/3 stars or BW. This avoids relying on a brittle AgencyZoom field id.\n    const candidates=Array.from(document.querySelectorAll('select')).filter(function(sel){\n      const text=Array.from(sel.options||[]).map(function(o){return String(o.textContent||'').trim();}).join(' | ');\n      const has1=/(^|\\|)\\s*1(?:\\s*star)?\\s*(\\||$)/i.test(text);\n      const has2=/(^|\\|)\\s*2(?:\\s*stars?)?\\s*(\\||$)/i.test(text);\n      const has3=/(^|\\|)\\s*3(?:\\s*stars?)?\\s*(\\||$)/i.test(text);\n      const hasBW=/\\bBW\\b|Bristol West/i.test(text);\n      return has1 && has2 && has3 && hasBW;\n    });\n    return candidates.length===1 ? candidates[0] : (candidates[0]||el||null);\n  }\n\n  function setStarControl(value){\n    if(value===undefined || value===null || String(value).trim()==='') return false;\n    const wanted=String(value).trim();\n    const el=findStarControl();\n    if(!el) return false;\n    if(el.tagName!=='SELECT') return setAnyControl(el,wanted);\n\n    try{\n      const options=Array.from(el.options||[]);\n      let opt=options.find(function(o){return String(o.value||'').trim().toLowerCase()===wanted.toLowerCase();});\n      if(!opt && /^[123]$/.test(wanted)){\n        opt=options.find(function(o){\n          const t=String(o.textContent||'').trim();\n          return new RegExp('^'+wanted+'(?:\\s*stars?)?$', 'i').test(t) || new RegExp('^'+wanted+'(?:\\s|$)').test(t);\n        });\n      }\n      if(!opt && /^bw$/i.test(wanted)) opt=options.find(function(o){return /\\bBW\\b|Bristol West/i.test(String(o.textContent||''));});\n      if(!opt) return false;\n\n      // Preserve normal AgencyZoom behavior and refresh Bootstrap-select UI.\n      Array.from(el.options||[]).forEach(function(o){o.selected=(o===opt);});\n      el.value=opt.value;\n      el.dispatchEvent(new Event('input',{bubbles:true}));\n      el.dispatchEvent(new Event('change',{bubbles:true}));\n      const pageWindow=typeof unsafeWindow!=='undefined'?unsafeWindow:window;\n      const jq=pageWindow.jQuery;\n      if(jq){\n        try{\n          const $el=jq(el);\n          $el.val(opt.value).trigger('change');\n          if(typeof $el.selectpicker==='function') $el.selectpicker('refresh');\n        }catch(e){}\n      }\n      return String(el.value)===String(opt.value) || !!opt.selected;\n    }catch(e){\n      console.warn('[TritoX TM] Star field fill failed:',e);\n      return false;\n    }\n  }\n\n  function fillAltaMetadataFields(d){\n    const results={company:false,date:false,star:false};\n    if(d.current_company){\n      results.company=setAnyControl(findControlByLabel('Current Company'),d.current_company);\n    }\n    if(d.auto_renewal_date){\n      results.date=setAnyControl(findControlByLabel('Auto renewal date'),d.auto_renewal_date);\n    }\n    if(d.star_rating){\n      results.star=setStarControl(d.star_rating);\n      // A short second pass handles AgencyZoom fields that finish rendering\n      // just after the rest of Main is available.\n      if(!results.star){\n        setTimeout(function(){\n          const ok=setStarControl(d.star_rating);\n          console.log('[TritoX TM] Star retry:',ok,d.star_rating);\n        },250);\n      }\n    }\n    console.log('[TritoX TM] ALTA metadata autofill:',results,d.current_company,d.auto_renewal_date,d.star_rating);\n    return results;\n  }\n\n  function fillFields(d){\n    fillText('cf30203', d.vehicles_policy);\n    fillSelect('cf56698', d.bodily_injury);\n    fillText('cf47028', d.home_coverage_a);\n    fillText('cf37981', d.home_annual);\n    fillText('cf56654', d.auto1);\n    fillSelect('cf56655', d.auto1_ded);\n    fillText('cf56656', d.auto2);\n    fillSelect('cf56657', d.auto2_ded);\n    fillText('cf56692', d.auto3);\n    fillSelect('cf56693', d.auto3_ded);\n    fillText('cf56694', d.auto4);\n    fillSelect('cf56695', d.auto4_ded);\n    fillText('cf56696', d.auto5);\n    fillSelect('cf56697', d.auto5_ded);\n    fillAltaMetadataFields(d);\n    function fillMoneyFields(attempt){\n      const mEl = document.querySelector('input[name=\"customFields[cf30197]\"]');\n      const sEl = document.querySelector('input[name=\"customFields[cf30199]\"]');\n      if(mEl){\n        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;\n        setter.call(mEl, String(d.monthly_auto).replace(/[$,]/g,''));\n        mEl.dispatchEvent(new Event('input',{bubbles:true}));\n        mEl.dispatchEvent(new Event('change',{bubbles:true}));\n      }\n      if(sEl){\n        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;\n        setter.call(sEl, String(d.auto_6months).replace(/[$,]/g,''));\n        sEl.dispatchEvent(new Event('input',{bubbles:true}));\n        sEl.dispatchEvent(new Event('change',{bubbles:true}));\n      }\n      if((!mEl || !sEl) && attempt < 30){\n        setTimeout(function(){ fillMoneyFields(attempt+1); }, 800);\n      }\n    }\n    fillMoneyFields(1);\n  }\n\n  let filledTs = 0; // timestamp of last fill action\n  let lastSeenDataTs = 0;\n\n  function refreshFillButton(){\n    const gmRaw = GM_getValue('tritox_az_data','');\n    if(!gmRaw) return;\n    let gmData;\n    try{ gmData = JSON.parse(gmRaw); }catch(e){ return; }\n    const gmTs = Number(gmData && gmData._ts || 0);\n    if(!gmTs || gmTs <= filledTs || gmTs <= expiredTs) return;\n\n    // New data must replace any old Fill button even when the AgencyZoom URL\n    // and lead panel do not rerender.\n    if(gmTs !== lastSeenDataTs){\n      lastSeenDataTs = gmTs;\n      const existing=document.getElementById('tritox-fill-btn');\n      if(existing) existing.remove();\n      const oldOverlay=document.getElementById('tritox-fill-overlay');\n      if(oldOverlay) oldOverlay.remove();\n    }\n    addFillButton();\n  }\n\n  // Fast poll so the popup appears almost immediately after QC finishes.\n  setInterval(refreshFillButton, 250);\n  setTimeout(refreshFillButton, 100);\n\n  // AgencyZoom is a SPA; rerenders can remove fixed DOM nodes. Re-add the\n  // current Fill button after DOM changes without waiting for a navigation.\n  const tmObserver=new MutationObserver(function(){\n    if(!document.getElementById('tritox-fill-btn')) refreshFillButton();\n  });\n  tmObserver.observe(document.documentElement,{childList:true,subtree:true});\n\n})();\n";
-
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-  const box = document.createElement('div');
-  box.style.cssText = 'background:#111520;border:1px solid #252d45;border-radius:16px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;padding:28px;';
-  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
-    +'<h3 style="font-family:monospace;color:#00d4ff;font-size:15px;">📜 Tampermonkey Script</h3>'
-    +'<button id="tmClose" style="background:#1e2438;border:1px solid #252d45;color:#dce4f5;border-radius:8px;padding:6px 14px;cursor:pointer;">✕ Close</button>'
-    +'</div>'
-    +'<div style="color:#8a97bb;font-size:12px;margin-bottom:12px;line-height:1.7;">'
-    +'<strong style="color:#dce4f5;">Setup Steps:</strong><br>'
-    +'1. Install Tampermonkey<br>'
-    +'2. Replace your existing TritoX script with this version<br>'
-    +'3. Refresh ALTA, Aaron QC and AgencyZoom<br>'
-    +'4. In ALTA, confirm Current Company / Renewal Date / Star-BW. The lead name and ALTA ID are detected automatically.<br>'
-    +'5. Process the PDF in Aaron QC, then use Fill + Attach in AgencyZoom.'
-    +'</div>'
-    +'<button id="tmCopyBtn" style="background:linear-gradient(135deg,#00d4ff,#7b2fff);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px;">📋 Copy Script</button>'
-    +'<pre id="tmScriptPre" style="background:#080a0f;border:1px solid #252d45;border-radius:8px;padding:14px;font-size:11px;color:#dce4f5;white-space:pre-wrap;overflow-x:auto;max-height:350px;overflow-y:auto;"></pre>';
-  modal.appendChild(box);
-  document.body.appendChild(modal);
-  document.getElementById('tmScriptPre').textContent = script;
-  document.getElementById('tmCopyBtn').addEventListener('click', function(){
-    navigator.clipboard.writeText(script).then(function(){
-      document.getElementById('tmCopyBtn').textContent = '✅ Copied!';
-      setTimeout(function(){ document.getElementById('tmCopyBtn').textContent = '📋 Copy Script'; }, 2000);
-    });
-  });
-  document.getElementById('tmClose').addEventListener('click', function(){ modal.remove(); });
-  modal.addEventListener('click', function(e){ if(e.target===modal) modal.remove(); });
-}
-
-// ── UPDATE Tampermonkey data save ── 
-// After processing, also save to Tampermonkey via a special localStorage key
-// that the Tampermonkey script will read
-function saveTMData(data){
-  // We store in a special key that Tampermonkey can access
-  // via GM_setValue bridge - this is done through a hidden element
-  try{
-    // Create/update a hidden meta tag with the data
-    let meta = document.getElementById('tritox-tm-bridge');
-    if(!meta){
-      meta = document.createElement('meta');
-      meta.id = 'tritox-tm-bridge';
-      meta.name = 'tritox-data';
-      document.head.appendChild(meta);
+  function findAgencyZoomFileInput(){
+    const selectors=[
+      &#x27;#referral-container input[type=&quot;file&quot;]&#x27;,
+      &#x27;.agencydocupload_doc input[type=&quot;file&quot;]&#x27;,
+      &#x27;#agencyDocUploader input[type=&quot;file&quot;]&#x27;,
+      &#x27;input.agencydocupload_doc[type=&quot;file&quot;]&#x27;,
+      &#x27;input[type=&quot;file&quot;][multiple]&#x27;,
+      &#x27;input[type=&quot;file&quot;]&#x27;
+    ];
+    for(const selector of selectors){
+      const inputs=Array.from(document.querySelectorAll(selector));
+      if(inputs.length) return inputs[inputs.length-1];
     }
-    meta.content = JSON.stringify(data);
-  } catch(e){}
-}
+    return null;
+  }
 
-function updateSummary(){
-  document.getElementById('scTotal').textContent=allResults.length;
-  document.getElementById('scPass').textContent=allResults.filter(r=>r.status==='pass').length;
-  document.getElementById('scFail').textContent=allResults.filter(r=>r.status==='fail').length;
-  document.getElementById('scWarn').textContent=allResults.filter(r=>r.status==='warn').length;
-}
+  function pdfNameIsVisible(fileName){
+    const wanted=String(fileName||&#x27;&#x27;).toLowerCase();
+    const panel=document.getElementById(&#x27;referral-container&#x27;);
+    if(!panel || !wanted) return false;
+    if((panel.innerText||&#x27;&#x27;).toLowerCase().includes(wanted)) return true;
+    return Array.from(panel.querySelectorAll(&#x27;[title],[data-name],[data-file-name],a&#x27;))
+      .some(function(el){
+        return [el.getAttribute(&#x27;title&#x27;),el.getAttribute(&#x27;data-name&#x27;),el.getAttribute(&#x27;data-file-name&#x27;),el.textContent]
+          .some(function(value){return String(value||&#x27;&#x27;).toLowerCase().includes(wanted);});
+      });
+  }
 
-function exportCSV(type){
-  const data=type==='flagged'?allResults.filter(r=>r.status==='fail'):allResults;
-  if(!data.length){alert('No results to export.');return;}
-  const rows=[['Customer','Filename','Type','Vehicles','Monthly EFT','Status','Errors','Warnings']];
-  data.forEach(r=>rows.push([r.name,r.filename,r.quoteType,r.vehicleCount,
-    r.monthlyEFT?'$'+r.monthlyEFT.toFixed(2):'',r.status.toUpperCase(),
-    r.errors.join(' | '),r.warnings.join(' | ')]));
-  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download=`TritoX_QC_${type}_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-}
+  function getCurrentLeadId(){
+    // The visible &quot;ID: 12345678&quot; is in AgencyZoom&#x27;s lead header, outside
+    // #referral-container. Search the complete rendered page first.
+    const texts=[
+      document.body&amp;&amp;document.body.innerText,
+      document.documentElement&amp;&amp;document.documentElement.innerText,
+      document.getElementById(&#x27;referral-container&#x27;)&amp;&amp;document.getElementById(&#x27;referral-container&#x27;).innerText
+    ];
+    for(const text of texts){
+      const match=String(text||&#x27;&#x27;).match(/\bID\s*:\s*(\d{5,})\b/i);
+      if(match) return match[1];
+    }
 
-function clearAll(){
-  allResults=[];
-  document.getElementById('resultsBody').innerHTML='';
-  document.getElementById('summaryBar').style.display='none';
-  document.getElementById('toolbar').style.display='none';
-  document.getElementById('resultsWrap').style.display='none';
-  updateSummary();
-}
-initSheetSync();
-</script>
+    const selectors=[
+      &#x27;[data-entity-id]&#x27;,&#x27;[data-entityid]&#x27;,&#x27;[data-lead-id]&#x27;,&#x27;[data-leadid]&#x27;,
+      &#x27;input[name=&quot;entityId&quot;]&#x27;,&#x27;input[name=&quot;leadId&quot;]&#x27;
+    ];
+    for(const selector of selectors){
+      const el=document.querySelector(selector);
+      if(!el) continue;
+      const value=el.value||el.getAttribute(&#x27;data-entity-id&#x27;)||el.getAttribute(&#x27;data-entityid&#x27;)||
+        el.getAttribute(&#x27;data-lead-id&#x27;)||el.getAttribute(&#x27;data-leadid&#x27;);
+      if(/^\d{5,}$/.test(String(value||&#x27;&#x27;))) return String(value);
+    }
+
+    // Final fallback: AgencyZoom often embeds the active lead ID in its
+    // uploader configuration even when the header has not finished rendering.
+    const html=document.documentElement&amp;&amp;document.documentElement.innerHTML||&#x27;&#x27;;
+    const configMatch=html.match(/(?:entityId|leadId)[&quot;&#x27;]?\s*[:=]\s*[&quot;&#x27;]?(\d{5,})/i);
+    if(configMatch) return configMatch[1];
+    return &#x27;&#x27;;
+  }
+
+  function normalizePersonName(v){
+    let s=String(v||&#x27;&#x27;).toLowerCase();
+
+    // Remove accents when available, then normalize punctuation/hyphens/apostrophes.
+    try{ s=s.normalize(&#x27;NFD&#x27;).replace(/[\u0300-\u036f]/g,&#x27;&#x27;); }catch(e){}
+    return s
+      .replace(/&amp;/g,&#x27; and &#x27;)
+      .replace(/[^a-z0-9]+/g,&#x27; &#x27;)
+      .trim()
+      .replace(/\s+/g,&#x27; &#x27;);
+  }
+
+  function nameTokens(v){
+    let parts=normalizePersonName(v).split(&#x27; &#x27;).filter(Boolean);
+
+    // Ignore common suffixes for matching: Jr, Sr, II, III, IV, V, Junior, Senior.
+    const suffixes=new Set([&#x27;jr&#x27;,&#x27;sr&#x27;,&#x27;ii&#x27;,&#x27;iii&#x27;,&#x27;iv&#x27;,&#x27;v&#x27;,&#x27;junior&#x27;,&#x27;senior&#x27;]);
+    while(parts.length&gt;1 &amp;&amp; suffixes.has(parts[parts.length-1])){
+      parts.pop();
+    }
+    return parts;
+  }
+
+  function getCurrentLeadName(){
+    const text=String(document.body&amp;&amp;document.body.innerText||&#x27;&#x27;);
+
+    let m=text.match(/(?:^|\n)\s*([A-Za-z][A-Za-z .&#x27;\-]{1,80})\s*\n\s*QuoteWizard\s*\|\s*ID\s*:/i);
+    if(m) return String(m[1]||&#x27;&#x27;).trim();
+
+    m=text.match(/(?:^|\n)\s*([A-Za-z][A-Za-z .&#x27;\-]{1,80}?)\s+QuoteWizard\s*\|\s*ID\s*:/i);
+    if(m) return String(m[1]||&#x27;&#x27;).trim();
+
+    const id=getCurrentLeadId();
+    if(id){
+      const lines=text.split(/\n+/).map(function(x){return String(x||&#x27;&#x27;).trim();}).filter(Boolean);
+      const rx=new RegExp(&#x27;\\bID\\s*:\\s*&#x27;+id+&#x27;\\b&#x27;,&#x27;i&#x27;);
+      const pos=lines.findIndex(function(x){return rx.test(x);});
+      if(pos&gt;0){
+        for(let j=pos-1;j&gt;=Math.max(0,pos-4);j--){
+          const candidate=lines[j];
+          if(!candidate || /quotewizard|activities|contacts|opportunities|quotes|referral|main/i.test(candidate)) continue;
+          if(/^[A-Za-z][A-Za-z .&#x27;\-]{1,80}$/.test(candidate)) return candidate;
+        }
+      }
+    }
+    return &#x27;&#x27;;
+  }
+
+  function publishCurrentAgencyZoomLead(){
+    try{
+      const leadId=getCurrentLeadId();
+      if(!leadId)return;
+      const leadName=getCurrentLeadName();
+      GM_setValue(&#x27;tritox_current_az_lead&#x27;,JSON.stringify({
+        leadId:String(leadId),
+        leadName:String(leadName||&#x27;&#x27;),
+        ts:Date.now()
+      }));
+    }catch(e){}
+  }
+  publishCurrentAgencyZoomLead();
+  setInterval(publishCurrentAgencyZoomLead,300);
+
+  function firstNameCandidates(parts){
+    const out=new Set();
+    if(!parts.length) return out;
+    out.add(parts[0]);
+
+    // Handles PDF text splits such as &quot;Je ff&quot; =&gt; &quot;jeff&quot;.
+    if(parts.length&gt;=2 &amp;&amp; (parts[0].length&lt;=2 || parts[1].length&lt;=2)){
+      out.add(parts[0]+parts[1]);
+    }
+
+    // Handles hyphenated/compound first names when one source removes punctuation:
+    // Mary-Anne &lt;=&gt; Maryanne.
+    if(parts.length&gt;=3){
+      out.add(parts[0]+parts[1]);
+    }
+    return out;
+  }
+
+  function lastNameCandidates(parts){
+    const out=new Set();
+    if(!parts.length) return out;
+    out.add(parts[parts.length-1]);
+
+    // Handles split/compound/hyphenated surnames:
+    // Van Dyke &lt;=&gt; VanDyke, Smith-Jones &lt;=&gt; SmithJones.
+    if(parts.length&gt;=3){
+      out.add(parts[parts.length-2]+parts[parts.length-1]);
+    }
+    return out;
+  }
+
+  function tokenSetIntersects(a,b){
+    for(const x of a){ if(b.has(x)) return true; }
+    return false;
+  }
+
+  function namesMatch(pdfName,leadName){
+    const aa=nameTokens(pdfName), bb=nameTokens(leadName);
+    if(!aa.length || !bb.length) return null;
+
+    const a=aa.join(&#x27; &#x27;);
+    const b=bb.join(&#x27; &#x27;);
+    if(a===b) return true;
+
+    // Capitalization, spaces, hyphens, apostrophes and PDF word-splitting disappear
+    // in this form. Examples: &quot;Je ff&quot; == &quot;Jeff&quot;, &quot;O&#x27;Connor&quot; == &quot;OConnor&quot;.
+    const compactA=aa.join(&#x27;&#x27;);
+    const compactB=bb.join(&#x27;&#x27;);
+    if(compactA===compactB) return true;
+
+    const firstA=firstNameCandidates(aa);
+    const firstB=firstNameCandidates(bb);
+    const lastA=lastNameCandidates(aa);
+    const lastB=lastNameCandidates(bb);
+
+    // Main real-world rule: same first + same last. Middle names/initials are
+    // intentionally ignored, so 2-name, 3-name and 4-name forms can match.
+    if(tokenSetIntersects(firstA,firstB) &amp;&amp; tokenSetIntersects(lastA,lastB)){
+      return true;
+    }
+
+    // First-name initial/prefix support, but only when the surname matches.
+    // Examples: &quot;J Smith&quot; &lt;=&gt; &quot;Jeff Smith&quot;, &quot;Les Modrow&quot; &lt;=&gt; &quot;Lester Modrow&quot;.
+    if(tokenSetIntersects(lastA,lastB)){
+      for(const fa of firstA){
+        for(const fb of firstB){
+          if((fa.length===1 &amp;&amp; fb.startsWith(fa)) ||
+             (fb.length===1 &amp;&amp; fa.startsWith(fb)) ||
+             (Math.min(fa.length,fb.length)&gt;=3 &amp;&amp;
+               (fa.startsWith(fb)||fb.startsWith(fa)))){
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+
+  function filenameFallbackMatches(data,leadName){
+    try{
+      const filename=String(data&amp;&amp;data._filename||&#x27;&#x27;).replace(/\.pdf$/i,&#x27;&#x27;).trim();
+      if(!filename || !leadName) return false;
+
+      // Recognize our normal saved-file pattern, e.g.
+      // Galloway-townsend_Auto_09282026.pdf
+      // Siboloski_Auto_09252026.pdf
+      // Smith_Bundle_09252026.pdf
+      const m=filename.match(/^(.*?)[_\-\s]+(?:auto|bundle|home)(?:[_\-\s]+(\d{8}))?$/i);
+      if(!m) return false;
+
+      const fileCustomer=String(m[1]||&#x27;&#x27;).trim();
+      if(!fileCustomer) return false;
+
+      const leadParts=nameTokens(leadName);
+      if(!leadParts.length) return false;
+
+      const leadLast=lastNameCandidates(leadParts);
+      const fileParts=nameTokens(fileCustomer);
+      if(!fileParts.length) return false;
+
+      const fileCompact=fileParts.join(&#x27;&#x27;);
+      if(!fileCompact) return false;
+
+      // Exact surname / compound-surname comparison only.
+      // This is used only when PDF text extraction fell back to the filename.
+      for(const last of leadLast){
+        if(fileCompact===String(last||&#x27;&#x27;).replace(/\s+/g,&#x27;&#x27;)) return true;
+      }
+      return false;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function bindDataToCurrentLeadId(data){
+    try{
+      if(!data || !data._name) return data;
+
+      const leadId=getCurrentLeadId();
+      const leadName=getCurrentLeadName();
+      let currentNameMatch=namesMatch(data._name,leadName);
+
+      // If PDF.js failed to read &quot;Prepared for&quot; and QC fell back to a filename
+      // such as Galloway-townsend_Auto_09282026, allow an exact surname match
+      // from that filename to establish the AgencyZoom Lead ID.
+      if(currentNameMatch!==true &amp;&amp; filenameFallbackMatches(data,leadName)){
+        currentNameMatch=true;
+        console.log(&#x27;[TritoX TM] Filename fallback matched AgencyZoom surname:&#x27;,
+          data._filename,&#x27;=&gt;&#x27;,leadName);
+      }
+
+      let existingId=String(data._leadId||&#x27;&#x27;).trim();
+      const boundName=String(data._leadNameBound||&#x27;&#x27;).trim();
+
+      if(existingId){
+        const boundNameMatch=boundName ? namesMatch(data._name,boundName) : null;
+
+        // Recovery for v4.46.11/v4.46.12 stale bindings:
+        // if the stored bound name belongs to another PDF/customer, discard it.
+        if(boundName &amp;&amp; boundNameMatch===false){
+          console.warn(&#x27;[TritoX TM] Clearing stale AgencyZoom ID binding:&#x27;,
+            data._name,&#x27;was bound to&#x27;,existingId,boundName);
+          data._leadId=&#x27;&#x27;;
+          data._leadNameBound=&#x27;&#x27;;
+          existingId=&#x27;&#x27;;
+        }
+
+        // If the current lead name safely matches this PDF but the existing ID
+        // points elsewhere, rebind to the current lead. This repairs stale IDs
+        // without requiring the PDF to be processed again.
+        if(existingId &amp;&amp; leadId &amp;&amp; existingId!==String(leadId) &amp;&amp; currentNameMatch===true){
+          console.warn(&#x27;[TritoX TM] Rebinding stale AgencyZoom ID:&#x27;,
+            existingId,&#x27;-&gt;&#x27;,leadId,&#x27;for&#x27;,data._name);
+          data._leadId=String(leadId);
+          data._leadNameBound=String(leadName||&#x27;&#x27;);
+          GM_setValue(&#x27;tritox_az_data&#x27;,JSON.stringify(data));
+          return data;
+        }
+
+        // A valid existing binding remains authoritative.
+        if(existingId) return data;
+      }
+
+      if(!leadId) return data;
+
+      // First-time binding. The robust matcher accepts capitalization,
+      // punctuation/hyphens, middle names/initials, suffixes, and PDF word splits.
+      if(currentNameMatch===true){
+        data._leadId=String(leadId);
+        data._leadNameBound=String(leadName||&#x27;&#x27;);
+        GM_setValue(&#x27;tritox_az_data&#x27;,JSON.stringify(data));
+        console.log(&#x27;[TritoX TM] PDF bound to AgencyZoom lead ID:&#x27;,
+          data._name,&#x27;=&gt;&#x27;,leadId,leadName);
+      }
+      return data;
+    }catch(e){
+      console.warn(&#x27;[TritoX TM] Lead ID binding skipped:&#x27;,e);
+      return data;
+    }
+  }
+
+
+  function validateLeadIdentity(data){
+    data=bindDataToCurrentLeadId(data);
+
+    const pdfName=String(data&amp;&amp;data._name||&#x27;&#x27;).trim();
+    const leadName=getCurrentLeadName();
+    const leadId=getCurrentLeadId();
+    const expectedId=String(data&amp;&amp;data._leadId||&#x27;&#x27;).trim();
+
+    let nameMatch=namesMatch(pdfName,leadName);
+    if(nameMatch!==true &amp;&amp; filenameFallbackMatches(data,leadName)){
+      nameMatch=true;
+    }
+    const idMatch=(expectedId &amp;&amp; leadId) ? expectedId===leadId : null;
+
+    // ID is authoritative after the first safe binding.
+    // If no expected ID exists yet, use the name guard as the fallback.
+    const mismatch=(idMatch!==null) ? (idMatch===false) : (nameMatch===false);
+
+    return {
+      pdfName:pdfName,
+      leadName:leadName,
+      leadId:leadId,
+      expectedId:expectedId,
+      nameMatch:nameMatch,
+      idMatch:idMatch,
+      mismatch:mismatch
+    };
+  }
+
+
+  function agencyZoomUploadName(originalName){
+    const name=String(originalName||&#x27;quote.pdf&#x27;);
+
+    // Rename ONLY the AgencyZoom upload. Keep the original local/cached name
+    // unchanged so PDF matching still works for multi-quote processing.
+    //
+    // Example:
+    //   Wolthuis_Auto_09252026.pdf -&gt; Wolthuis_Auto.pdf
+    //
+    // Only remove a trailing _MMDDYYYY date immediately before .pdf.
+    const m=name.match(/^(.*)_((?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?:19|20)\d{2})(\.pdf)$/i);
+    if(!m) return name;
+
+    const trimmed=String(m[1]||&#x27;&#x27;).replace(/[_\-\s]+$/,&#x27;&#x27;);
+    return (trimmed||&#x27;quote&#x27;)+m[3];
+  }
+
+  async function uploadPdfDirect(file,leadId){
+    const pageWindow=typeof unsafeWindow!==&#x27;undefined&#x27;?unsafeWindow:window;
+    const jq=pageWindow.jQuery;
+    if(!jq || typeof jq.ajax!==&#x27;function&#x27;) throw new Error(&#x27;AgencyZoom uploader session was not ready&#x27;);
+
+    const uploadName=agencyZoomUploadName(file.name);
+
+    const query=new URLSearchParams({
+      docType:&#x27;undefined&#x27;,
+      fileName:uploadName,
+      docuSign:&#x27;0&#x27;
+    });
+    // Create the upload File with the SHORTENED AgencyZoom filename only.
+    // The cached/original PDF name remains unchanged.
+    const bytes=await file.arrayBuffer();
+    const pageFile=new pageWindow.File([bytes],uploadName,{
+      type:file.type||&#x27;application/pdf&#x27;,
+      lastModified:file.lastModified||Date.now()
+    });
+    const form=new pageWindow.FormData();
+    form.append(&#x27;contacts&#x27;,&#x27;[]&#x27;);
+    form.append(&#x27;emailSubject&#x27;,&#x27;&#x27;);
+    form.append(&#x27;emailBody&#x27;,&#x27;&#x27;);
+    form.append(&#x27;entityId&#x27;,String(leadId));
+    form.append(&#x27;linkToType&#x27;,&#x27;lead&#x27;);
+    form.append(&#x27;files[]&#x27;,pageFile,uploadName);
+
+    console.log(&#x27;[TritoX TM] AgencyZoom PDF name:&#x27;,file.name,&#x27;-&gt;&#x27;,uploadName);
+
+    return new Promise(function(resolve,reject){
+      jq.ajax({
+        url:&#x27;/lead/doc?&#x27;+query.toString(),
+        type:&#x27;POST&#x27;,
+        data:form,
+        processData:false,
+        contentType:false,
+        cache:false,
+        success:function(result){
+          if(result &amp;&amp; result.docName &amp;&amp; String(result.docName)!==uploadName){
+            reject(new Error(&#x27;AgencyZoom returned a different filename&#x27;));
+            return;
+          }
+          resolve(result);
+        },
+        error:function(xhr){
+          let detail=&#x27;HTTP &#x27;+(xhr&amp;&amp;xhr.status||&#x27;error&#x27;);
+          try{
+            const body=xhr.responseJSON||JSON.parse(xhr.responseText||&#x27;{}&#x27;);
+            detail=body.message||body.error||detail;
+          }catch(e){}
+          reject(new Error(detail));
+        }
+      });
+    });
+  }
+
+  async function attachPdfFast(data){
+    if(!data._filename) return {ok:false,message:&#x27;PDF filename was not transferred&#x27;};
+    const stored=GM_getValue(pdfStorageKey(data._filename),&#x27;&#x27;);
+    if(!stored) return {ok:false,message:&#x27;PDF was not cached — select it again in Aaron QC&#x27;};
+
+    let payload;
+    try{payload=JSON.parse(stored);}catch(e){return {ok:false,message:&#x27;Stored PDF could not be read&#x27;};}
+    if(payload.name!==data._filename) return {ok:false,message:&#x27;PDF filename mismatch — attachment stopped&#x27;};
+
+    const file=payloadToFile(payload);
+    const leadId=getCurrentLeadId();
+    if(!leadId) return {ok:false,message:&#x27;AgencyZoom lead ID was not found&#x27;};
+
+    // Fast mode: trust AgencyZoom&#x27;s successful upload response instead of
+    // navigating to Files and waiting for the filename to repaint.
+    try{
+      const result=await uploadPdfDirect(file,leadId);
+      if(result===undefined || result===null) return {ok:true,message:&#x27;PDF upload accepted by AgencyZoom&#x27;};
+      return {ok:true,message:&#x27;PDF uploaded to AgencyZoom&#x27;};
+    }catch(err){
+      console.error(&#x27;[TritoX TM] Fast PDF upload failed:&#x27;,err);
+      return {ok:false,message:&#x27;AgencyZoom rejected PDF upload: &#x27;+String(err.message||err)};
+    }
+  }
+
+  async function attachPdfToLead(data){
+    if(!data._filename) return {ok:false,message:&#x27;PDF filename was not transferred&#x27;};
+    const stored=GM_getValue(pdfStorageKey(data._filename),&#x27;&#x27;);
+    if(!stored) return {ok:false,message:&#x27;PDF was not cached — select it again in Aaron QC&#x27;};
+
+    let payload;
+    try{payload=JSON.parse(stored);}catch(e){return {ok:false,message:&#x27;Stored PDF could not be read&#x27;};}
+    if(payload.name!==data._filename) return {ok:false,message:&#x27;PDF filename mismatch — attachment stopped&#x27;};
+
+    const file=payloadToFile(payload);
+    const leadId=getCurrentLeadId();
+    if(!leadId) return {ok:false,message:&#x27;AgencyZoom lead ID was not found&#x27;};
+
+    // Upload through AgencyZoom&#x27;s own multipart endpoint.
+    await openLeadTab(&#x27;Files&#x27;);
+    await waitFor(function(){return document.getElementById(&#x27;referral-container&#x27;);},5000);
+
+    try{
+      await uploadPdfDirect(file,leadId);
+    }catch(err){
+      console.error(&#x27;[TritoX TM] Direct PDF upload failed:&#x27;,err);
+      return {ok:false,message:&#x27;AgencyZoom rejected PDF upload: &#x27;+String(err.message||err)};
+    }
+
+    // IMPORTANT: a 200/upload object is not treated as success by itself.
+    // Confirm the actual filename appears in the lead&#x27;s Files UI.
+    let visible=await waitFor(function(){
+      return pdfNameIsVisible(agencyZoomUploadName(file.name)) ? true : null;
+    },5000);
+
+    // AgencyZoom sometimes does not repaint the Files list immediately.
+    // Force a tab re-render once, then verify again.
+    if(!visible){
+      await openLeadTab(&#x27;Main&#x27;);
+      await wait(500);
+      await openLeadTab(&#x27;Files&#x27;);
+      visible=await waitFor(function(){
+        return pdfNameIsVisible(agencyZoomUploadName(file.name)) ? true : null;
+      },7000);
+    }
+
+    if(visible){
+      return {ok:true,message:&#x27;PDF verified in AgencyZoom Files&#x27;};
+    }
+
+    console.warn(&#x27;[TritoX TM] Upload response received but file was not visible:&#x27;,agencyZoomUploadName(file.name));
+    return {
+      ok:false,
+      message:&#x27;PDF upload was not verified in Files — please check/attach manually&#x27;
+    };
+  }
+
+  function fillText(id, val){
+    if(!val &amp;&amp; val !== 0) return;
+    const el = document.getElementById(&#x27;customfields-&#x27; + id);
+    if(!el) return;
+    try{
+      el.focus();
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,&#x27;value&#x27;).set;
+      setter.call(el, String(val));
+      el.dispatchEvent(new Event(&#x27;focus&#x27;,{bubbles:true}));
+      el.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+      el.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+      el.dispatchEvent(new KeyboardEvent(&#x27;keydown&#x27;,{bubbles:true}));
+      el.dispatchEvent(new KeyboardEvent(&#x27;keyup&#x27;,{bubbles:true}));
+      el.blur();
+      el.dispatchEvent(new Event(&#x27;blur&#x27;,{bubbles:true}));
+    }catch(e){}
+  }
+
+  function fillSelect(id, val){
+    if(!val) return;
+    const el = document.getElementById(&#x27;customfields-&#x27; + id);
+    if(!el) return;
+    try{
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype,&#x27;value&#x27;).set;
+      setter.call(el, String(val));
+      el.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+    }catch(e){}
+  }
+
+  function quoteTagNames(data){
+    const isBundle = typeof data._isBundle === &#x27;boolean&#x27;
+      ? data._isBundle
+      : !!(data.home_coverage_a || data.home_annual);
+    const isHighPrice = !!(data &amp;&amp; (data._highPrice === true || data.high_price === true || String(data._highPrice||&#x27;&#x27;).toLowerCase()===&#x27;true&#x27;));
+    const names=[isHighPrice ? &#x27;PRICE TOO HIGH&#x27; : &#x27;Ready to send&#x27;];
+    if(isBundle) names.push(&#x27;Home is quoted&#x27;);
+    return names;
+  }
+
+  function resolveStarTagName(select,data){
+    const raw=String((data&amp;&amp;data.star_rating)||&#x27;&#x27;).trim();
+    if(!raw || !select) return &#x27;&#x27;;
+    const options=Array.from(select.options||[]).filter(function(o){return !o.disabled;});
+    const text=function(o){return String(o.textContent||&#x27;&#x27;).replace(/\s+/g,&#x27; &#x27;).trim();};
+    const starMatch=raw.match(/(?:^|\b)([123])(?:\s*stars?)?(?:\b|$)/i);
+    const isBW=/\bbw\b|bristol\s*west/i.test(raw);
+
+    if(starMatch){
+      const n=starMatch[1];
+      const patterns=[
+        new RegExp(&#x27;^&#x27;+n+&#x27;\\s*stars?$&#x27;, &#x27;i&#x27;),
+        new RegExp(&#x27;^star\\s*&#x27;+n+&#x27;$&#x27;, &#x27;i&#x27;),
+        new RegExp(&#x27;^&#x27;+n+&#x27;$&#x27;, &#x27;i&#x27;)
+      ];
+      for(const re of patterns){
+        const hit=options.find(function(o){return re.test(text(o));});
+        if(hit) return text(hit);
+      }
+    }
+    if(isBW){
+      const hit=options.find(function(o){return /^(?:BW|Bristol\s*West)$/i.test(text(o));});
+      if(hit) return text(hit);
+    }
+    return &#x27;&#x27;;
+  }
+
+  async function applyQuoteTags(data){
+    let toggle=null;
+    let opened=false;
+    try{
+      const names=quoteTagNames(data);
+      const norm=function(v){return String(v||&#x27;&#x27;).replace(/\s+/g,&#x27; &#x27;).trim().toLowerCase();};
+      const wanted=names.map(norm);
+      const pageWindow=typeof unsafeWindow!==&#x27;undefined&#x27;?unsafeWindow:window;
+      const jq=pageWindow.jQuery;
+      const PageEvent=pageWindow.Event||Event;
+
+      function isVisible(el){
+        if(!el) return false;
+        const r=el.getBoundingClientRect();
+        const cs=pageWindow.getComputedStyle? pageWindow.getComputedStyle(el):window.getComputedStyle(el);
+        return !!(el.getClientRects().length &amp;&amp; r.width&gt;0 &amp;&amp; r.height&gt;0 &amp;&amp; cs.display!==&#x27;none&#x27; &amp;&amp; cs.visibility!==&#x27;hidden&#x27;);
+      }
+
+      function openAddTagPanelIfNeeded(){
+        // If the Add Tag panel is closed, open it first. AgencyZoom has used
+        // different button markup across builds, so match accessible labels,
+        // titles and nearby tag-related controls rather than one brittle selector.
+        const selectors=[
+          &#x27;[aria-label*=&quot;tag&quot; i]&#x27;,&#x27;[title*=&quot;tag&quot; i]&#x27;,&#x27;[data-original-title*=&quot;tag&quot; i]&#x27;,
+          &#x27;button&#x27;,&#x27;a&#x27;,&#x27;[role=&quot;button&quot;]&#x27;
+        ];
+        const seen=new Set();
+        const candidates=[];
+        selectors.forEach(function(sel){
+          document.querySelectorAll(sel).forEach(function(el){
+            if(seen.has(el) || !isVisible(el)) return;
+            seen.add(el);
+            const txt=norm((el.getAttribute(&#x27;aria-label&#x27;)||&#x27;&#x27;)+&#x27; &#x27;+(el.getAttribute(&#x27;title&#x27;)||&#x27;&#x27;)+&#x27; &#x27;+(el.getAttribute(&#x27;data-original-title&#x27;)||&#x27;&#x27;)+&#x27; &#x27;+(el.textContent||&#x27;&#x27;));
+            if(txt===&#x27;add tag&#x27; || txt.includes(&#x27;add tag&#x27;) || txt===&#x27;tags&#x27; || txt===&#x27;tag&#x27;) candidates.push(el);
+          });
+        });
+        if(candidates.length){
+          try{ candidates[0].click(); return true; }catch(e){}
+        }
+        return false;
+      }
+
+      function collectTagCandidates(){
+        return Array.from(document.querySelectorAll(&#x27;select&#x27;)).map(function(select,index){
+        const options=Array.from(select.options||[]);
+        const optionNames=options.map(function(o){return norm(o.textContent);});
+        if(!wanted.every(function(name){return optionNames.includes(name);})) return null;
+        const wrapper=select.closest(&#x27;.bootstrap-select&#x27;);
+        const button=wrapper&amp;&amp;wrapper.querySelector(&#x27;button.dropdown-toggle&#x27;);
+        const selectedNames=Array.from(select.selectedOptions||[]).map(function(o){return norm(o.textContent);}).filter(Boolean);
+        const identity=norm((select.id||&#x27;&#x27;)+&#x27; &#x27;+(select.name||&#x27;&#x27;)+&#x27; &#x27;+(select.className||&#x27;&#x27;));
+        let score=0;
+        if(select.closest(&#x27;#referral-container&#x27;)) score+=1000;
+        if(select.name===&#x27;tags[]&#x27;) score+=1000;
+        if(identity.includes(&#x27;tag&#x27;)) score+=600;
+        if(select.multiple) score+=400;
+        if(isVisible(wrapper||select)) score+=700;
+        if(button &amp;&amp; isVisible(button)) score+=400;
+        if(selectedNames.length) score+=500;
+        if(selectedNames.includes(&#x27;quote team&#x27;)) score+=2000;
+        score+=index/10000;
+        return {select,wrapper,button,selectedNames,score};
+        }).filter(Boolean).sort(function(a,b){return b.score-a.score;});
+      }
+
+      let candidates=collectTagCandidates();
+      if(!candidates.length){
+        openAddTagPanelIfNeeded();
+        await wait(120);
+        candidates=collectTagCandidates();
+      }
+
+      if(!candidates.length) throw new Error(&#x27;Lead tag field was not found — open Add Tag and add &#x27;+names.join(&#x27; + &#x27;)+&#x27; manually&#x27;);
+      const chosen=candidates[0];
+      const select=chosen.select;
+      const wrapper=chosen.wrapper;
+      toggle=chosen.button;
+      if(!wrapper || !toggle) throw new Error(&#x27;Lead tag dropdown UI was not found&#x27;);
+
+      // Add the matching Star/BW TAG using the exact option text available in
+      // AgencyZoom. This is separate from filling the Star 1-3 custom field.
+      const starTagName=resolveStarTagName(select,data);
+      if(starTagName &amp;&amp; !names.some(function(n){return norm(n)===norm(starTagName);})) names.push(starTagName);
+
+      const beforeValues=Array.from(select.selectedOptions||[]).map(function(o){return String(o.value);});
+
+      function syncTagSelect(changedIndex){
+        try{ select.dispatchEvent(new PageEvent(&#x27;input&#x27;,{bubbles:true})); }catch(e){}
+        try{ select.dispatchEvent(new PageEvent(&#x27;change&#x27;,{bubbles:true})); }catch(e){}
+        if(jq){
+          try{ jq(select).trigger(&#x27;change&#x27;); }catch(e){}
+          if(Number.isInteger(changedIndex)){
+            try{ jq(select).trigger(&#x27;changed.bs.select&#x27;,[changedIndex,true,null]); }catch(e){}
+          }
+          try{ if(typeof jq(select).selectpicker===&#x27;function&#x27;) jq(select).selectpicker(&#x27;refresh&#x27;); }catch(e){}
+        }
+      }
+
+      if(toggle.getAttribute(&#x27;aria-expanded&#x27;)!==&#x27;true&#x27;){
+        toggle.click();
+        opened=true;
+        await wait(25);
+      }
+
+      const listId=toggle.getAttribute(&#x27;aria-owns&#x27;)||toggle.getAttribute(&#x27;aria-controls&#x27;);
+      const list=(listId&amp;&amp;document.getElementById(listId))||wrapper;
+
+      for(const name of names){
+        const options=Array.from(select.options||[]);
+        const option=options.find(function(o){return norm(o.textContent)===norm(name);});
+        if(!option) throw new Error(&#x27;Tag unavailable: &#x27;+name);
+        if(option.disabled) throw new Error(&#x27;Tag disabled: &#x27;+name);
+        const optionIndex=options.indexOf(option);
+
+        if(!option.selected){
+          let item=list.querySelector(&#x27;li[data-original-index=&quot;&#x27;+optionIndex+&#x27;&quot;] a, li[data-original-index=&quot;&#x27;+optionIndex+&#x27;&quot;] [role=&quot;option&quot;]&#x27;);
+          if(!item){
+            item=Array.from(list.querySelectorAll(&#x27;a,[role=&quot;option&quot;],button,li&#x27;)).find(function(el){
+              return norm(el.textContent)===norm(name) &amp;&amp; el.getAttribute(&#x27;aria-disabled&#x27;)!==&#x27;true&#x27;;
+            })||null;
+          }
+          if(!item) throw new Error(&#x27;Tag menu item not found: &#x27;+name);
+
+          // Real option click first.
+          try{ item.click(); }catch(e){}
+          await wait(20);
+
+          // Keep the underlying select definitely in sync with what the UI shows.
+          if(!option.selected) option.selected=true;
+          syncTagSelect(optionIndex);
+          await wait(20);
+        }else{
+          // Even for an already-selected option, sync AgencyZoom&#x27;s model once.
+          syncTagSelect(optionIndex);
+        }
+      }
+
+      // One final model sync before Save. This is the key v4.21 change: the
+      // tags could look selected in Bootstrap while AgencyZoom&#x27;s form model was
+      // still unchanged, causing Save to do nothing.
+      syncTagSelect(null);
+
+      if(opened &amp;&amp; toggle.getAttribute(&#x27;aria-expanded&#x27;)===&#x27;true&#x27;){
+        toggle.click();
+        opened=false;
+        await wait(20);
+      }
+
+      // Find the EXACT Add Tag container by walking upward from this select.
+      // AgencyZoom&#x27;s current Add Tag UI is not always a Bootstrap .modal.
+      function findTagDialog(){
+        let el=select;
+        while(el &amp;&amp; el!==document.body){
+          if(isVisible(el)){
+            const txt=norm(el.textContent);
+            if(txt.includes(&#x27;add tag&#x27;) &amp;&amp; txt.includes(&#x27;choose tags&#x27;)){
+              const save=Array.from(el.querySelectorAll(&#x27;button,input[type=&quot;button&quot;],input[type=&quot;submit&quot;],a,[role=&quot;button&quot;]&#x27;)).find(function(b){
+                return isVisible(b) &amp;&amp; !b.disabled &amp;&amp; b.getAttribute(&#x27;aria-disabled&#x27;)!==&#x27;true&#x27; &amp;&amp; norm(b.value||b.textContent||b.getAttribute(&#x27;aria-label&#x27;))===&#x27;save&#x27;;
+              });
+              if(save) return {root:el,saveBtn:save};
+            }
+          }
+          el=el.parentElement;
+        }
+
+        // Fallback: smallest visible page container that contains Add Tag,
+        // Choose tags and a visible Save button.
+        const saves=Array.from(document.querySelectorAll(&#x27;button,input[type=&quot;button&quot;],input[type=&quot;submit&quot;],a,[role=&quot;button&quot;]&#x27;)).filter(function(b){
+          return isVisible(b) &amp;&amp; !b.disabled &amp;&amp; b.getAttribute(&#x27;aria-disabled&#x27;)!==&#x27;true&#x27; &amp;&amp; norm(b.value||b.textContent||b.getAttribute(&#x27;aria-label&#x27;))===&#x27;save&#x27;;
+        });
+        for(const saveBtn of saves){
+          let root=saveBtn.parentElement;
+          for(let i=0;root &amp;&amp; root!==document.body &amp;&amp; i&lt;8;i++,root=root.parentElement){
+            const txt=norm(root.textContent);
+            if(txt.includes(&#x27;add tag&#x27;) &amp;&amp; txt.includes(&#x27;choose tags&#x27;)) return {root,saveBtn};
+          }
+        }
+        return null;
+      }
+
+      const tagDialog=findTagDialog();
+      if(!tagDialog) throw new Error(&#x27;Tags selected, but the Add Tag Save button was not found&#x27;);
+      const dialog=tagDialog.root;
+      let saveBtn=tagDialog.saveBtn;
+
+      // Make sure AgencyZoom receives the final selected values immediately
+      // before the Save handler reads them.
+      syncTagSelect(null);
+      await wait(20);
+
+      function clickSave(btn){
+        if(!btn) return false;
+        try{ btn.focus(); }catch(e){}
+        try{ btn.click(); return true; }catch(e){}
+        if(jq){
+          try{ jq(btn).trigger(&#x27;click&#x27;); return true; }catch(e){}
+        }
+        return false;
+      }
+
+      let clicked=clickSave(saveBtn);
+      if(!clicked) throw new Error(&#x27;AgencyZoom tag Save button could not be clicked&#x27;);
+
+      // Fast confirmation: most saves close the Add Tag panel in under 1 second.
+      let closed=await waitFor(function(){ return !isVisible(dialog) ? true : null; },150);
+
+      if(!closed){
+        // If click alone did not invoke the form submission, submit the exact
+        // form containing the Save button. This preserves AgencyZoom validation.
+        const form=saveBtn.closest(&#x27;form&#x27;);
+        if(form){
+          try{
+            if(typeof form.requestSubmit===&#x27;function&#x27;) form.requestSubmit(saveBtn);
+            else form.dispatchEvent(new PageEvent(&#x27;submit&#x27;,{bubbles:true,cancelable:true}));
+          }catch(e){console.warn(&#x27;[TritoX TM] Tag form submit fallback:&#x27;,e);}
+        }else if(jq){
+          try{ jq(saveBtn).trigger(&#x27;click&#x27;); }catch(e){}
+        }
+        closed=await waitFor(function(){ return !isVisible(dialog) ? true : null; },200);
+      }
+
+      if(!closed) throw new Error(&#x27;Tags are selected, but AgencyZoom did not save/close the Add Tag window&#x27;);
+
+      // Preserve existing tags.
+      const afterValues=Array.from(select.selectedOptions||[]).map(function(o){return String(o.value);});
+      if(!beforeValues.every(function(v){return afterValues.includes(v);})){ 
+        throw new Error(&#x27;Existing tags changed; review the lead tags&#x27;);
+      }
+
+      return {ok:true,message:&#x27;Tags saved automatically: &#x27;+names.join(&#x27; + &#x27;)+(data.star_rating &amp;&amp; !starTagName?&#x27; (Star tag option not found)&#x27;:&#x27;&#x27;)};
+    }catch(error){
+      console.error(&#x27;[TritoX TM] Quote tags:&#x27;,error);
+      return {ok:false,message:String(error.message||error)};
+    }finally{
+      if(opened &amp;&amp; toggle &amp;&amp; toggle.getAttribute(&#x27;aria-expanded&#x27;)===&#x27;true&#x27;) toggle.click();
+    }
+  }
+
+  function findControlByLabel(labelText){
+    const wanted=String(labelText||&#x27;&#x27;).toLowerCase().replace(/[^a-z0-9]+/g,&#x27; &#x27;).trim();
+    const labels=Array.from(document.querySelectorAll(&#x27;label,.control-label,[class*=&quot;label&quot;]&#x27;));
+    for(const lab of labels){
+      const txt=String(lab.textContent||&#x27;&#x27;).toLowerCase().replace(/[^a-z0-9]+/g,&#x27; &#x27;).trim();
+      if(txt!==wanted &amp;&amp; !txt.startsWith(wanted)) continue;
+      if(lab.htmlFor){
+        const byFor=document.getElementById(lab.htmlFor);
+        if(byFor &amp;&amp; /^(INPUT|SELECT|TEXTAREA)$/.test(byFor.tagName)) return byFor;
+      }
+      const containers=[lab.parentElement,lab.closest(&#x27;.form-group&#x27;),lab.closest(&#x27;.az-form-group&#x27;),lab.closest(&#x27;[class*=&quot;form-group&quot;]&#x27;)].filter(Boolean);
+      for(const c of containers){
+        const el=c.querySelector(&#x27;input,select,textarea&#x27;);
+        if(el) return el;
+      }
+    }
+    return null;
+  }
+
+  function setAnyControl(el,value){
+    if(!el || value===undefined || value===null || String(value)===&#x27;&#x27;) return false;
+    const wanted=String(value).trim();
+    try{
+      if(el.tagName===&#x27;SELECT&#x27;){
+        const options=Array.from(el.options||[]);
+        let opt=options.find(function(o){return String(o.value).trim().toLowerCase()===wanted.toLowerCase();});
+        if(!opt) opt=options.find(function(o){return String(o.textContent||&#x27;&#x27;).trim().toLowerCase()===wanted.toLowerCase();});
+        if(!opt &amp;&amp; /^[123]$/.test(wanted)) opt=options.find(function(o){return new RegExp(&#x27;^\\s*&#x27;+wanted+&#x27;(?:\\s|$)&#x27;).test(String(o.textContent||&#x27;&#x27;));});
+        if(!opt &amp;&amp; /^bw$/i.test(wanted)) opt=options.find(function(o){return /\\bBW\\b|Bristol West/i.test(String(o.textContent||&#x27;&#x27;));});
+        if(!opt) return false;
+        el.value=opt.value;
+        opt.selected=true;
+        el.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+        el.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+        return true;
+      }
+      const proto=el.tagName===&#x27;TEXTAREA&#x27;?window.HTMLTextAreaElement.prototype:window.HTMLInputElement.prototype;
+      const desc=Object.getOwnPropertyDescriptor(proto,&#x27;value&#x27;);
+      if(desc&amp;&amp;desc.set) desc.set.call(el,wanted); else el.value=wanted;
+      el.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+      el.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+      el.dispatchEvent(new Event(&#x27;blur&#x27;,{bubbles:true}));
+      return true;
+    }catch(e){console.warn(&#x27;[TritoX TM] Could not fill&#x27;,labelText,value,e);return false;}
+  }
+
+  function findStarControl(){
+    // First use the visible field label.
+    let el=findControlByLabel(&#x27;Star 1-3&#x27;) || findControlByLabel(&#x27;Star 1 - 3&#x27;) || findControlByLabel(&#x27;Star&#x27;);
+    if(el &amp;&amp; el.tagName===&#x27;SELECT&#x27;) return el;
+
+    // AgencyZoom sometimes renders the visible Bootstrap control separately
+    // from its real &lt;select&gt;. Find a select in the same field container.
+    const labels=Array.from(document.querySelectorAll(&#x27;label,.control-label,[class*=&quot;label&quot;]&#x27;));
+    for(const lab of labels){
+      const txt=String(lab.textContent||&#x27;&#x27;).toLowerCase().replace(/[^a-z0-9]+/g,&#x27; &#x27;).trim();
+      if(!txt.includes(&#x27;star&#x27;)) continue;
+      let c=lab.closest(&#x27;.form-group,[class*=&quot;form-group&quot;],.row,.col-md-6,.col-sm-6&#x27;) || lab.parentElement;
+      if(!c) continue;
+      const sel=c.querySelector(&#x27;select&#x27;);
+      if(sel) return sel;
+    }
+
+    // Final fallback: identify the unique select whose options look like
+    // 1/2/3 stars or BW. This avoids relying on a brittle AgencyZoom field id.
+    const candidates=Array.from(document.querySelectorAll(&#x27;select&#x27;)).filter(function(sel){
+      const text=Array.from(sel.options||[]).map(function(o){return String(o.textContent||&#x27;&#x27;).trim();}).join(&#x27; | &#x27;);
+      const has1=/(^|\|)\s*1(?:\s*star)?\s*(\||$)/i.test(text);
+      const has2=/(^|\|)\s*2(?:\s*stars?)?\s*(\||$)/i.test(text);
+      const has3=/(^|\|)\s*3(?:\s*stars?)?\s*(\||$)/i.test(text);
+      const hasBW=/\bBW\b|Bristol West/i.test(text);
+      return has1 &amp;&amp; has2 &amp;&amp; has3 &amp;&amp; hasBW;
+    });
+    return candidates.length===1 ? candidates[0] : (candidates[0]||el||null);
+  }
+
+  function setStarControl(value){
+    if(value===undefined || value===null || String(value).trim()===&#x27;&#x27;) return false;
+    const wanted=String(value).trim();
+    const el=findStarControl();
+    if(!el) return false;
+    if(el.tagName!==&#x27;SELECT&#x27;) return setAnyControl(el,wanted);
+
+    try{
+      const options=Array.from(el.options||[]);
+      let opt=options.find(function(o){return String(o.value||&#x27;&#x27;).trim().toLowerCase()===wanted.toLowerCase();});
+      if(!opt &amp;&amp; /^[123]$/.test(wanted)){
+        opt=options.find(function(o){
+          const t=String(o.textContent||&#x27;&#x27;).trim();
+          return new RegExp(&#x27;^&#x27;+wanted+&#x27;(?:\s*stars?)?$&#x27;, &#x27;i&#x27;).test(t) || new RegExp(&#x27;^&#x27;+wanted+&#x27;(?:\s|$)&#x27;).test(t);
+        });
+      }
+      if(!opt &amp;&amp; /^bw$/i.test(wanted)) opt=options.find(function(o){return /\bBW\b|Bristol West/i.test(String(o.textContent||&#x27;&#x27;));});
+      if(!opt) return false;
+
+      // Preserve normal AgencyZoom behavior and refresh Bootstrap-select UI.
+      Array.from(el.options||[]).forEach(function(o){o.selected=(o===opt);});
+      el.value=opt.value;
+      el.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+      el.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+      const pageWindow=typeof unsafeWindow!==&#x27;undefined&#x27;?unsafeWindow:window;
+      const jq=pageWindow.jQuery;
+      if(jq){
+        try{
+          const $el=jq(el);
+          $el.val(opt.value).trigger(&#x27;change&#x27;);
+          if(typeof $el.selectpicker===&#x27;function&#x27;) $el.selectpicker(&#x27;refresh&#x27;);
+        }catch(e){}
+      }
+      return String(el.value)===String(opt.value) || !!opt.selected;
+    }catch(e){
+      console.warn(&#x27;[TritoX TM] Star field fill failed:&#x27;,e);
+      return false;
+    }
+  }
+
+  function fillAltaMetadataFields(d){
+    const results={company:false,date:false,star:false};
+    if(d.current_company){
+      results.company=setAnyControl(findControlByLabel(&#x27;Current Company&#x27;),d.current_company);
+    }
+    if(d.auto_renewal_date){
+      results.date=setAnyControl(findControlByLabel(&#x27;Auto renewal date&#x27;),d.auto_renewal_date);
+    }
+    if(d.star_rating){
+      results.star=setStarControl(d.star_rating);
+      // A short second pass handles AgencyZoom fields that finish rendering
+      // just after the rest of Main is available.
+      if(!results.star){
+        setTimeout(function(){
+          const ok=setStarControl(d.star_rating);
+          console.log(&#x27;[TritoX TM] Star retry:&#x27;,ok,d.star_rating);
+        },250);
+      }
+    }
+    console.log(&#x27;[TritoX TM] ALTA metadata autofill:&#x27;,results,d.current_company,d.auto_renewal_date,d.star_rating);
+    return results;
+  }
+
+  function fillFields(d){
+    fillText(&#x27;cf30203&#x27;, d.vehicles_policy);
+    fillSelect(&#x27;cf56698&#x27;, d.bodily_injury);
+    fillText(&#x27;cf47028&#x27;, d.home_coverage_a);
+    fillText(&#x27;cf37981&#x27;, d.home_annual);
+    fillText(&#x27;cf56654&#x27;, d.auto1);
+    fillSelect(&#x27;cf56655&#x27;, d.auto1_ded);
+    fillText(&#x27;cf56656&#x27;, d.auto2);
+    fillSelect(&#x27;cf56657&#x27;, d.auto2_ded);
+    fillText(&#x27;cf56692&#x27;, d.auto3);
+    fillSelect(&#x27;cf56693&#x27;, d.auto3_ded);
+    fillText(&#x27;cf56694&#x27;, d.auto4);
+    fillSelect(&#x27;cf56695&#x27;, d.auto4_ded);
+    fillText(&#x27;cf56696&#x27;, d.auto5);
+    fillSelect(&#x27;cf56697&#x27;, d.auto5_ded);
+    fillAltaMetadataFields(d);
+    function fillMoneyFields(attempt){
+      const mEl = document.querySelector(&#x27;input[name=&quot;customFields[cf30197]&quot;]&#x27;);
+      const sEl = document.querySelector(&#x27;input[name=&quot;customFields[cf30199]&quot;]&#x27;);
+      if(mEl){
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,&#x27;value&#x27;).set;
+        setter.call(mEl, String(d.monthly_auto).replace(/[$,]/g,&#x27;&#x27;));
+        mEl.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+        mEl.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+      }
+      if(sEl){
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,&#x27;value&#x27;).set;
+        setter.call(sEl, String(d.auto_6months).replace(/[$,]/g,&#x27;&#x27;));
+        sEl.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true}));
+        sEl.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true}));
+      }
+      if((!mEl || !sEl) &amp;&amp; attempt &lt; 30){
+        setTimeout(function(){ fillMoneyFields(attempt+1); }, 800);
+      }
+    }
+    fillMoneyFields(1);
+  }
+
+  let filledTs = 0; // timestamp of last fill action
+  let lastSeenDataTs = 0;
+
+  function refreshFillButton(){
+    const gmRaw = GM_getValue(&#x27;tritox_az_data&#x27;,&#x27;&#x27;);
+    if(!gmRaw) return;
+    let gmData;
+    try{ gmData = JSON.parse(gmRaw); }catch(e){ return; }
+    const gmTs = Number(gmData &amp;&amp; gmData._ts || 0);
+    if(!gmTs || gmTs &lt;= filledTs || gmTs &lt;= expiredTs) return;
+
+    // New data must replace any old Fill button even when the AgencyZoom URL
+    // and lead panel do not rerender.
+    if(gmTs !== lastSeenDataTs){
+      lastSeenDataTs = gmTs;
+      const existing=document.getElementById(&#x27;tritox-fill-btn&#x27;);
+      if(existing) existing.remove();
+      const oldOverlay=document.getElementById(&#x27;tritox-fill-overlay&#x27;);
+      if(oldOverlay) oldOverlay.remove();
+    }
+    addFillButton();
+  }
+
+  // Fast poll so the popup appears almost immediately after QC finishes.
+  setInterval(refreshFillButton, 250);
+  setTimeout(refreshFillButton, 100);
+
+  // AgencyZoom is a SPA; rerenders can remove fixed DOM nodes. Re-add the
+  // current Fill button after DOM changes without waiting for a navigation.
+  const tmObserver=new MutationObserver(function(){
+    if(!document.getElementById(&#x27;tritox-fill-btn&#x27;)) refreshFillButton();
+  });
+  tmObserver.observe(document.documentElement,{childList:true,subtree:true});
+
+})();
+</pre>
+  </div>
+</div>
 </body>
 </html>
